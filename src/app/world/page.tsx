@@ -73,6 +73,15 @@ export default function WorldPage() {
         toast({ title: 'User Left', description: `${leftEmail} has left the space.` });
     });
 
+    chatService.onHistory((history: Ably.Types.Message[]) => {
+      const pastMessages: Message[] = history.map(message => {
+        const authorEmail = (message.data.author || message.clientId);
+        const author = authorEmail === userEmail ? 'You' : authorEmail;
+        return { author, text: message.data.text };
+      });
+      setMessages(prev => [...prev, ...pastMessages.reverse()]);
+    });
+
     // This must be called to start listening to the events.
     chatService.subscribeToEvents();
 
@@ -80,7 +89,7 @@ export default function WorldPage() {
     return () => {
       chatService.disconnect();
     };
-  }, [toast]);
+  }, [toast, currentUserEmail]); // Depend on currentUserEmail
 
 
   const handlePlayerNear = useCallback(() => {
@@ -92,8 +101,8 @@ export default function WorldPage() {
   }, []);
 
   const handleSendMessage = useCallback((text: string) => {
-    chatService.sendMessage(text);
-  }, []);
+    chatService.sendMessage(text, { author: currentUserEmail });
+  }, [currentUserEmail]);
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-background flex flex-col md:flex-row">
