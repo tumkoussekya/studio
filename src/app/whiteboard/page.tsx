@@ -5,7 +5,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent } from '@/components/ui/card';
-import { Eraser, Palette, Pen, Users, Square } from 'lucide-react';
+import { Eraser, Palette, Pen, Users, Square, Save } from 'lucide-react';
 import * as Ably from 'ably';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/ui/badge';
@@ -216,6 +216,16 @@ export default function WhiteboardPage() {
     }
   };
 
+  const saveCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const link = document.createElement('a');
+    link.download = 'whiteboard.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
       <header className="p-4 border-b flex justify-between items-center">
@@ -250,6 +260,10 @@ export default function WhiteboardPage() {
                     <Button variant="outline" onClick={() => clearCanvas(true)}>
                         <Eraser className="h-5 w-5 mr-2" />
                         Clear
+                    </Button>
+                    <Button variant="outline" onClick={saveCanvas}>
+                        <Save className="h-5 w-5 mr-2" />
+                        Save
                     </Button>
                 </CardContent>
             </Card>
