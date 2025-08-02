@@ -1,8 +1,8 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, LogIn, MessageSquare, UserPlus, Users, Volume2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ArrowRight, LogIn, UserPlus, Users, Volume2, MessageSquare, Video, KanbanSquare, Shapes, ClipboardList, BarChart2, Shield } from 'lucide-react';
 import LogoutButton from '@/components/world/LogoutButton';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
@@ -81,43 +81,108 @@ export default function Home() {
                 <h3 className="text-3xl font-bold font-headline">Everything You Need to Collaborate</h3>
                 <p className="text-muted-foreground mt-2">All-in-one platform for a distributed team.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="text-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <Card className="text-left">
                 <CardHeader>
-                  <CardTitle className="flex flex-col items-center gap-2">
-                    <Users className="text-accent h-8 w-8 mb-2" />
-                    <span>Virtual Office Space</span>
+                  <CardTitle className="flex items-center gap-3">
+                    <Users className="text-accent h-6 w-6" />
+                    <span>Virtual World</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Explore a 2D world with custom avatars. Move around different rooms for focused work or casual chats.
+                    Explore a 2D world, move your avatar, and interact with colleagues in different rooms.
                   </p>
                 </CardContent>
               </Card>
-              <Card className="text-center">
+              <Card className="text-left">
                 <CardHeader>
-                  <CardTitle className="flex flex-col items-center gap-2">
-                    <Volume2 className="text-accent h-8 w-8 mb-2" />
-                    <span>Spatial Audio & Chat</span>
+                  <CardTitle className="flex items-center gap-3">
+                    <Volume2 className="text-accent h-6 w-6" />
+                    <span>Spatial Audio</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Engage in natural conversations. Hear and talk to colleagues who are near you, just like in a real office.
+                    Engage in natural conversations by hearing only those who are near you in the virtual space.
                   </p>
                 </CardContent>
               </Card>
-              <Card className="text-center">
+              <Card className="text-left">
                 <CardHeader>
-                  <CardTitle className="flex flex-col items-center gap-2">
-                    <MessageSquare className="text-accent h-8 w-8 mb-2" />
-                    <span>AI-Powered Communication</span>
+                  <CardTitle className="flex items-center gap-3">
+                    <MessageSquare className="text-accent h-6 w-6" />
+                    <span>Team Chat</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Never be at a loss for words. Get AI icebreakers, chat summaries, and assistance from our friendly AI, Alex.
+                    Communicate in real-time with one-to-one DMs and group channels.
+                  </p>
+                </CardContent>
+              </Card>
+               <Card className="text-left">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <Video className="text-accent h-6 w-6" />
+                    <span>Video Meetings</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Jump into audio/video calls with screen sharing for quick syncs or scheduled meetings.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="text-left">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <KanbanSquare className="text-accent h-6 w-6" />
+                    <span>Task Management</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Organize work and track progress with a collaborative Kanban board.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="text-left">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <Shapes className="text-accent h-6 w-6" />
+                    <span>Whiteboards</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Brainstorm ideas together in real-time on an infinite, collaborative canvas.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="text-left">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <ClipboardList className="text-accent h-6 w-6" />
+                    <span>Surveys & Polls</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Gather feedback and make decisions quickly with team-wide surveys and polls.
+                  </p>
+                </CardContent>
+              </Card>
+               <Card className="text-left">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <BarChart2 className="text-accent h-6 w-6" />
+                    <span>Analytics</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Admins can view dashboards on team activity, engagement, and productivity.
                   </p>
                 </CardContent>
               </Card>
