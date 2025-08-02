@@ -66,7 +66,7 @@ export function LoginForm() {
         description: "Welcome back! You're being redirected.",
       });
       // Use window.location.href for a full redirect to ensure middleware catches the change
-      window.location.href = '/world';
+      window.location.href = '/dashboard';
     } catch (error: any) {
       toast({
         variant: 'destructive',

@@ -13,11 +13,11 @@ export function middleware(request: NextRequest) {
   const publicRoutes = ['/login', '/signup'];
   const isPublicRoute = publicRoutes.includes(pathname);
 
-  // If user has a token and tries to access a public route, redirect to /world
+  // If user has a token and tries to access a public route, redirect to /dashboard
   if (token && isPublicRoute) {
     try {
       verify(token, JWT_SECRET);
-      return NextResponse.redirect(new URL('/world', request.url));
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     } catch (error) {
       // Invalid token, allow access to public route
       return NextResponse.next();
@@ -26,6 +26,10 @@ export function middleware(request: NextRequest) {
 
   // If user has no token and tries to access a protected route, redirect to /login
   if (!token && !isPublicRoute) {
+    // allow access to home page
+    if (pathname === '/') {
+        return NextResponse.next();
+    }
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

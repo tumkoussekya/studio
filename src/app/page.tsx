@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,10 +32,10 @@ export default function Home() {
                 Kanban
               </Button>
             </Link>
-             <Link href="/world" passHref>
+             <Link href="/dashboard" passHref>
               <Button variant="ghost">
                 <Users />
-                World
+                Dashboard
               </Button>
             </Link>
             {isAuthenticated ? (
