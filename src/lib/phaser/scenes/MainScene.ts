@@ -76,24 +76,25 @@ export class MainScene extends Phaser.Scene {
   private playerStartY = 200;
 
   create() {
-    const wallColor = 0x6678b8; // Primary color
-    const playerColor = 0xf7b733; // Accent color
+    const wallColor = 0x553a99; // Primary color
+    const playerColor = 0xe040fb; // Accent color
     const otherPlayerColor = 0x38bdf8; // sky-400
-    const npcColor = 0x374151; // Gray-700
+    const npcColor = 0x9ca3af; // Gray-400
     const portalColor = 0x4ade80; // Green-400
+    const textColor = '#e5e7eb';
     
     // World bounds
     this.physics.world.setBounds(0, 0, 800, 1200);
 
     // --- Room definitions ---
     this.add.rectangle(225, 200, 350, 300).setStrokeStyle(2, wallColor, 0.3);
-    this.add.text(65, 65, 'Lounge', { font: '24px Inter', color: '#6678b8' });
+    this.add.text(65, 65, 'Lounge', { font: '24px "Press Start 2P"', color: textColor });
 
     this.add.rectangle(575, 400, 350, 300).setStrokeStyle(2, wallColor, 0.3);
-    this.add.text(420, 265, 'Focus Zone', { font: '24px Inter', color: '#6678b8' });
+    this.add.text(420, 265, 'Focus Zone', { font: '24px "Press Start 2P"', color: textColor });
     
     this.add.rectangle(400, 900, 700, 500).setStrokeStyle(2, wallColor, 0.3);
-    this.add.text(80, 665, 'Coffee Room', { font: '24px Inter', color: '#6678b8' });
+    this.add.text(80, 665, 'Coffee Room', { font: '24px "Press Start 2P"', color: textColor });
     this.add.circle(150, 800, 30, 0x8c5e3c).setStrokeStyle(2, 0x6f4e37);
     this.add.circle(650, 1000, 30, 0x8c5e3c).setStrokeStyle(2, 0x6f4e37);
 
@@ -132,7 +133,7 @@ export class MainScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, toCoffeeRoomPortal, () => {
         (this.player.body as Phaser.Physics.Arcade.Body).setPosition(375, 680);
     });
-    this.add.text(180, 500, 'To Coffee Room', { font: '12px Inter', color: '#ffffff' });
+    this.add.text(180, 500, 'To Coffee Room', { font: '16px VT323', color: '#ffffff' });
 
     const toLoungePortal = this.add.rectangle(400, 680, 100, 10, portalColor);
     this.physics.add.existing(toLoungePortal);
@@ -141,7 +142,7 @@ export class MainScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, toLoungePortal, () => {
         (this.player.body as Phaser.Physics.Arcade.Body).setPosition(200, 480);
     });
-    this.add.text(355, 660, 'To Lounge', { font: '12px Inter', color: '#ffffff' });
+    this.add.text(355, 660, 'To Lounge', { font: '16px VT323', color: '#ffffff' });
 
 
     // Physics
@@ -227,7 +228,7 @@ export class MainScene extends Phaser.Scene {
       (avatar.body as Phaser.Physics.Arcade.Body).setImmovable(true);
       
       const nameTag = this.add.text(x, y - 15, email, { 
-        font: '10px Inter', 
+        font: '12px VT323', 
         color: '#ffffff',
         backgroundColor: 'rgba(0,0,0,0.5)',
         padding: { x:2, y: 1 }

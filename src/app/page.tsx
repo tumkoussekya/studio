@@ -6,6 +6,7 @@ import { ArrowRight, LogIn, MessageSquare, UserPlus, Users, Volume2, KanbanSquar
 import LogoutButton from '@/components/world/LogoutButton';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
+import Image from 'next/image';
 
 function IsAuthenticated() {
     const token = cookies().get('token');
@@ -60,7 +61,7 @@ export default function Home() {
       </header>
       <main className="flex-grow">
         <section className="container mx-auto px-4 sm:px-6 lg:px-8 text-center py-16 md:py-24">
-          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground mb-4 font-headline">
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4 font-headline leading-tight">
             A new dimension for connection.
           </h2>
           <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground mb-8">
@@ -74,11 +75,8 @@ export default function Home() {
         </section>
 
         <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-            <div className="w-full h-64 md:h-96 rounded-xl bg-secondary/50 border-2 border-dashed border-primary/20 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                    <p className="font-bold text-lg">Your 2D world awaits</p>
-                    <p className="text-sm" data-ai-hint="pixel art world">Avatars, chat, and exploration.</p>
-                </div>
+            <div className="w-full h-64 md:h-96 rounded-xl bg-secondary/50 border-2 border-dashed border-primary/20 flex items-center justify-center overflow-hidden">
+                <Image src="https://placehold.co/1200x400.png" width={1200} height={400} alt="Pixelated world" data-ai-hint="pixel art space" className="object-cover w-full h-full"/>
             </div>
         </section>
 
