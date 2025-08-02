@@ -7,6 +7,7 @@ import { verify } from 'jsonwebtoken';
 import Link from 'next/link';
 import LogoutButton from '@/components/world/LogoutButton';
 import type { User } from '@/models/User';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 
 function getUser(): (User & {userId: string}) | null {
@@ -30,7 +31,10 @@ export default function DashboardPage() {
         <div className="flex flex-col min-h-screen bg-background">
             <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-primary font-headline">Pixel Space</h1>
-                 {user && <LogoutButton />}
+                 <div className="flex items-center gap-4">
+                    <ThemeToggle />
+                    {user && <LogoutButton />}
+                 </div>
             </header>
             <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-8">
