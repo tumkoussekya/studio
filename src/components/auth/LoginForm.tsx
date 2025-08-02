@@ -65,8 +65,8 @@ export function LoginForm() {
         title: 'Login Successful',
         description: "Welcome back! You're being redirected.",
       });
-      router.push('/world');
-      router.refresh(); // Important to refresh the page to reflect auth state
+      // Use window.location.href for a full redirect to ensure middleware catches the change
+      window.location.href = '/world';
     } catch (error: any) {
       toast({
         variant: 'destructive',
