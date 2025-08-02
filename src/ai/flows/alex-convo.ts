@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -9,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { addTask } from '@/ai/tools/kanban-tools';
 import {z} from 'genkit';
 
 const MessageSchema = z.object({
@@ -41,9 +43,12 @@ const prompt = ai.definePrompt({
   name: 'chatWithAlexPrompt',
   input: {schema: ChatWithAlexInputSchema},
   output: {schema: ChatWithAlexOutputSchema},
+  tools: [addTask],
   prompt: `You are Alex, a friendly and knowledgeable virtual assistant in Pixel Space. You are standing in the "Focus Zone" of the world.
 
   You are talking to a user who has just walked up to you. Be helpful, engaging, and slightly witty. Keep your responses concise.
+
+  If the user asks you to create a task, add something to their todo list, or a similar request, use the 'addTask' tool to add it to their Kanban board.
 
   Here is the conversation history so far:
   {{#each history}}
