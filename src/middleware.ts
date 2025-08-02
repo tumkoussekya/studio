@@ -28,7 +28,7 @@ export function middleware(request: NextRequest) {
 
       // --- Role-based access control for protected routes ---
       // Admin-only routes
-      if (pathname.startsWith('/admin') && userRole !== 'Admin') {
+      if ((pathname.startsWith('/admin') || pathname.startsWith('/analytics')) && userRole !== 'Admin') {
           return NextResponse.redirect(new URL('/dashboard?error=unauthorized', request.url));
       }
 

@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield, MessageSquare, Video } from 'lucide-react';
+import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield, MessageSquare, Video, LayoutDashboard } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 import Link from 'next/link';
@@ -153,24 +153,44 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                     {isAdmin && (
-                        <Card className="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-3">
-                                <Shield className="text-accent" />
-                                <span>Admin Panel</span>
-                                </CardTitle>
-                                <CardDescription>
-                                    Manage users, teams, and system settings.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Link href="/admin">
-                                    <Button className="w-full">
-                                        Go to Admin <ArrowRight className="ml-2" />
-                                    </Button>
-                                </Link>
-                            </CardContent>
-                        </Card>
+                        <>
+                            <Card className="hover:shadow-lg transition-shadow">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-3">
+                                        <LayoutDashboard className="text-accent" />
+                                        <span>Analytics</span>
+                                    </CardTitle>
+                                    <CardDescription>
+                                        View usage statistics and user engagement metrics.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Link href="/analytics">
+                                        <Button className="w-full">
+                                            View Analytics <ArrowRight className="ml-2" />
+                                        </Button>
+                                    </Link>
+                                </CardContent>
+                            </Card>
+                            <Card className="hover:shadow-lg transition-shadow">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-3">
+                                    <Shield className="text-accent" />
+                                    <span>Admin Panel</span>
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Manage users, teams, and system settings.
+                                    </CardDescription>
+                                </Header>
+                                <CardContent>
+                                    <Link href="/admin">
+                                        <Button className="w-full">
+                                            Go to Admin <ArrowRight className="ml-2" />
+                                        </Button>
+                                    </Link>
+                                </CardContent>
+                            </Card>
+                        </>
                     )}
                 </div>
             </main>
