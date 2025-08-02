@@ -5,28 +5,33 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Mic, MicOff, Video, VideoOff, PhoneOff, VideoIcon } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, PhoneOff, ScreenShare, ScreenShareOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+type StreamType = 'camera' | 'screen';
 
 export default function MeetingsPage() {
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const selfVideoRef = useRef<HTMLVideoElement>(null);
+  
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
+  
+  const [activeStreamType, setActiveStreamType] = useState<StreamType>('camera');
+  
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
 
+  // Get camera permission on component mount
   useEffect(() => {
     const getCameraPermission = async () => {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        setStream(mediaStream);
+        setCameraStream(mediaStream);
         setHasCameraPermission(true);
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-        }
       } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
@@ -42,15 +47,27 @@ export default function MeetingsPage() {
     
     // Cleanup function
     return () => {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-        }
+        cameraStream?.getTracks().forEach(track => track.stop());
+        screenStream?.getTracks().forEach(track => track.stop());
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast]);
 
+  // Effect to manage the video sources
+  useEffect(() => {
+    if (videoRef.current) {
+        const activeStream = activeStreamType === 'camera' ? cameraStream : screenStream;
+        videoRef.current.srcObject = activeStream;
+    }
+     if (selfVideoRef.current && cameraStream) {
+        selfVideoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream, screenStream, activeStreamType]);
+
+
   const toggleAudio = () => {
-    if (stream) {
-      stream.getAudioTracks().forEach(track => {
+    if (cameraStream) {
+      cameraStream.getAudioTracks().forEach(track => {
         track.enabled = !track.enabled;
         setIsAudioMuted(!track.enabled);
       });
@@ -58,8 +75,8 @@ export default function MeetingsPage() {
   };
 
   const toggleVideo = () => {
-    if (stream) {
-      stream.getVideoTracks().forEach(track => {
+    if (cameraStream) {
+      cameraStream.getVideoTracks().forEach(track => {
         track.enabled = !track.enabled;
         setIsVideoEnabled(!track.enabled);
       });
@@ -67,16 +84,46 @@ export default function MeetingsPage() {
   };
   
   const handleHangUp = () => {
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-    }
-    setStream(null);
+    cameraStream?.getTracks().forEach(track => track.stop());
+    screenStream?.getTracks().forEach(track => track.stop());
+    setCameraStream(null);
+    setScreenStream(null);
     toast({
         title: "Call Ended",
         description: "You have left the meeting."
     })
     // In a real app, you'd redirect or change state here
   }
+  
+  const toggleScreenShare = async () => {
+    if (screenStream) {
+        // Stop screen sharing
+        screenStream.getTracks().forEach(track => track.stop());
+        setScreenStream(null);
+        setActiveStreamType('camera');
+    } else {
+        // Start screen sharing
+        try {
+            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+            
+            // Listen for when the user stops sharing via the browser's native UI
+            stream.getVideoTracks()[0].addEventListener('ended', () => {
+                setScreenStream(null);
+                setActiveStreamType('camera');
+            });
+            
+            setScreenStream(stream);
+            setActiveStreamType('screen');
+        } catch (error) {
+            console.error("Screen sharing error:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Screen Share Failed',
+                description: 'Could not start screen sharing. Please check permissions.'
+            });
+        }
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
@@ -96,11 +143,11 @@ export default function MeetingsPage() {
 
           <video 
             ref={videoRef} 
-            className={cn("h-full w-full object-cover", !isVideoEnabled && "hidden")} 
+            className={cn("h-full w-full object-contain", (activeStreamType === 'camera' && !isVideoEnabled) && "hidden")} 
             autoPlay 
             muted 
           />
-          {!isVideoEnabled && (
+          {activeStreamType === 'camera' && !isVideoEnabled && (
             <div className="flex flex-col items-center gap-4 text-muted-foreground">
               <VideoOff className="w-24 h-24"/>
               <p className="text-xl font-medium">Your camera is off</p>
@@ -113,8 +160,11 @@ export default function MeetingsPage() {
                          <Button onClick={toggleAudio} variant={isAudioMuted ? 'destructive' : 'secondary'} size="icon" className="w-12 h-12 rounded-full">
                             {isAudioMuted ? <MicOff /> : <Mic />}
                          </Button>
-                         <Button onClick={toggleVideo} variant={!isVideoEnabled ? 'destructive' : 'secondary'} size="icon" className="w-12 h-12 rounded-full">
+                         <Button onClick={toggleVideo} variant={!isVideoEnabled ? 'destructive' : 'secondary'} size="icon" className="w-12 h-12 rounded-full" disabled={activeStreamType === 'screen'}>
                             {isVideoEnabled ? <Video /> : <VideoOff />}
+                         </Button>
+                         <Button onClick={toggleScreenShare} variant={activeStreamType === 'screen' ? 'default' : 'secondary'} size="icon" className="w-12 h-12 rounded-full">
+                            {activeStreamType === 'screen' ? <ScreenShareOff /> : <ScreenShare />}
                          </Button>
                           <Button onClick={handleHangUp} variant="destructive" size="icon" className="w-12 h-12 rounded-full">
                             <PhoneOff />
@@ -127,15 +177,17 @@ export default function MeetingsPage() {
                 <Card className="h-full w-full overflow-hidden shadow-lg">
                     <CardContent className="p-0 h-full w-full flex items-center justify-center bg-background">
                        <video 
-                          className="h-full w-full object-cover"
+                          ref={selfVideoRef}
+                          className={cn("h-full w-full object-cover", !isVideoEnabled && "hidden")}
                           autoPlay
                           muted // Mute self-view to prevent feedback
-                          ref={(el) => {
-                              if (el && stream) {
-                                  el.srcObject = stream;
-                              }
-                          }}
                        />
+                        {!isVideoEnabled && (
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground bg-secondary">
+                                <VideoOff className="w-8 h-8"/>
+                                <p className="text-xs mt-2">Camera off</p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
