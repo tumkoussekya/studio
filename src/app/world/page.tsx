@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import LogoutButton from '@/components/world/LogoutButton';
 import UserList from '@/components/world/UserList';
 import { getCookie } from 'cookies-next';
+import AudioControl from '@/components/world/AudioControl';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -118,6 +119,10 @@ export default function WorldPage() {
                         <p>Move your avatar closer to Alex to get an AI-powered conversation starter!</p>
                     </div>
                   )}
+                </div>
+                <Separator />
+                <div className="p-4">
+                  <AudioControl />
                 </div>
                 <Separator />
                 <UserList users={onlineUsers} />
