@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import Chat, { type Message } from '@/components/world/Chat';
 import ConversationStarter from '@/components/world/ConversationStarter';
-import AudioControl from '@/components/world/AudioControl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { chatService } from '@/services/ChatService';
@@ -80,7 +79,6 @@ export default function WorldPage() {
                   </div>
                   <LogoutButton />
                 </div>
-                <AudioControl />
             </CardHeader>
             <Separator />
             <CardContent className="p-0 flex-grow flex flex-col">

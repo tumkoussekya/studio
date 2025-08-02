@@ -1,5 +1,5 @@
+
 import Phaser from 'phaser';
-import * as Tone from 'tone';
 
 export class MainScene extends Phaser.Scene {
   private player!: Phaser.Types.Physics.Arcade.GameObjectWithBody & Phaser.GameObjects.Shape;
@@ -8,13 +8,9 @@ export class MainScene extends Phaser.Scene {
   private wasd!: { [key: string]: Phaser.Input.Keyboard.Key };
   private nearZone!: Phaser.GameObjects.Zone;
   private isNear = false;
-  private panner?: Tone.Panner3D;
-  private oscillator?: Tone.Oscillator;
-  private startAudioHandler: () => void;
 
   constructor() {
     super({ key: 'MainScene' });
-    this.startAudioHandler = () => this.startAudio();
   }
 
   create() {
@@ -68,39 +64,8 @@ export class MainScene extends Phaser.Scene {
     this.cameras.main.setZoom(1.5);
     this.cameras.main.setBounds(0, 0, 800, 600);
 
-    // Audio setup
-    this.setupAudio();
-    window.addEventListener('start-audio', this.startAudioHandler);
-
-    this.sys.game.events.on('destroy', () => {
-        window.removeEventListener('start-audio', this.startAudioHandler);
-        this.stopAudio();
-    });
-
     // Proximity check
     this.physics.add.overlap(this.player, this.nearZone, this.onPlayerNear, undefined, this);
-  }
-
-  setupAudio() {
-    this.panner = new Tone.Panner3D({
-      panningModel: 'HRTF',
-      distanceModel: 'inverse',
-      refDistance: 20,
-      maxDistance: 10000,
-      rolloffFactor: 2.5,
-    }).toDestination();
-    
-    this.oscillator = new Tone.Oscillator(220, 'sine').connect(this.panner);
-  }
-
-  startAudio() {
-    if (this.oscillator && this.oscillator.state !== 'started') {
-        this.oscillator.start();
-    }
-  }
-
-  stopAudio() {
-    this.oscillator?.stop();
   }
   
   onPlayerNear() {
@@ -135,16 +100,6 @@ export class MainScene extends Phaser.Scene {
       this.isNear = false;
       const onFarCallback = this.game.registry.get('onPlayerFar');
       if (onFarCallback) onFarCallback();
-    }
-    
-    if (Tone.context.state === 'running' && this.panner) {
-        Tone.Listener.positionX.value = this.player.body.x;
-        Tone.Listener.positionY.value = 0; // 2D so Y is depth
-        Tone.Listener.positionZ.value = this.player.body.y;
-        
-        this.panner.positionX.value = this.npc.body.x;
-        this.panner.positionY.value = 0;
-        this.panner.positionZ.value = this.npc.body.y;
     }
   }
 }
