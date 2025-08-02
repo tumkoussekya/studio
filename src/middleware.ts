@@ -15,6 +15,25 @@ export function middleware(request: NextRequest) {
   const publicRoutes = ['/login', '/signup'];
   const isPublicRoute = publicRoutes.includes(pathname);
   const isHomePage = pathname === '/';
+  const isApiRoute = pathname.startsWith('/api/');
+
+  if (isApiRoute) {
+    if (pathname.startsWith('/api/admin')) {
+       if (!token) {
+        return new NextResponse(JSON.stringify({ message: 'Authentication required' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+       }
+       try {
+         const decoded = verify(token, JWT_SECRET) as DecodedToken;
+         if (decoded.role !== 'Admin') {
+            return new NextResponse(JSON.stringify({ message: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+         }
+       } catch (error) {
+         return new NextResponse(JSON.stringify({ message: 'Invalid token' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+       }
+    }
+    return NextResponse.next();
+  }
+
 
   if (token) {
     try {
@@ -57,11 +76,11 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - assets (static assets for phaser)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|assets).*)',
   ],
 };

@@ -11,6 +11,22 @@ const users: User[] = [
     lastX: 200,
     lastY: 200,
     role: 'Admin'
+  },
+  {
+    id: 'default-user-2',
+    email: 'manager@example.com',
+    passwordHash: '$2a$10$V8.v4bH/wR4Fv.K5f.gS9.7Yj7.F1q.Y1q.N3.N3.L1gS9.N3.S9O',
+    lastX: 250,
+    lastY: 250,
+    role: 'ProjectManager'
+  },
+    {
+    id: 'default-user-3',
+    email: 'member@example.com',
+    passwordHash: '$2a$10$V8.v4bH/wR4Fv.K5f.gS9.7Yj7.F1q.Y1q.N3.N3.L1gS9.N3.S9O',
+    lastX: 150,
+    lastY: 150,
+    role: 'TeamMember'
   }
 ];
 
@@ -36,5 +52,8 @@ export const userStore = {
       user.lastY = y;
       console.log(`Updated position for ${email}:`, {x, y});
     }
+  },
+  getUsers: (): Omit<User, 'passwordHash'>[] => {
+    return users.map(({ passwordHash, ...user }) => user);
   }
 };
