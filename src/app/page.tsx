@@ -8,7 +8,7 @@ import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 import Image from 'next/image';
 
-function IsAuthenticated() {
+async function IsAuthenticated() {
     const token = cookies().get('token');
     if (!token) return false;
     try {
@@ -20,8 +20,8 @@ function IsAuthenticated() {
 }
 
 
-export default function Home() {
-    const isAuthenticated = IsAuthenticated();
+export default async function Home() {
+    const isAuthenticated = await IsAuthenticated();
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
