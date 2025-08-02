@@ -210,7 +210,7 @@ export default function Home() {
                     <ul className="space-y-2">
                         <li><Link href="/about" className="text-muted-foreground hover:text-primary">About Us</Link></li>
                         <li><Link href="#" className="text-muted-foreground hover:text-primary">Careers</Link></li>
-                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Contact</Link></li>
+                        <li><Link href="/contact" className="text-muted-foreground hover:text-primary">Contact</Link></li>
                     </ul>
                 </div>
                 <div>
