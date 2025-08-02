@@ -202,7 +202,7 @@ export default function Home() {
                     <ul className="space-y-2">
                         <li><Link href="/features" className="text-muted-foreground hover:text-primary">Features</Link></li>
                         <li><Link href="/pricing" className="text-muted-foreground hover:text-primary">Pricing</Link></li>
-                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Documentation</Link></li>
+                        <li><Link href="/documentation" className="text-muted-foreground hover:text-primary">Documentation</Link></li>
                     </ul>
                 </div>
                 <div>
