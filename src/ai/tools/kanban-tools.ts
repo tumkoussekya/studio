@@ -20,6 +20,7 @@ export const addTask = ai.defineTool(
         .enum(['column-1', 'column-2', 'column-3'])
         .describe('The ID of the column to add the task to. "column-1" is "To Do", "column-2" is "In Progress", and "column-3" is "Done".'),
       content: z.string().describe('The content or description of the task.'),
+      priority: z.enum(['Low', 'Medium', 'High']).optional().describe('The priority of the task.'),
     }),
     outputSchema: z.object({
       success: z.boolean(),
@@ -28,7 +29,7 @@ export const addTask = ai.defineTool(
   },
   async (input) => {
     try {
-      kanbanStore.addTask(input.columnId, input.content);
+      kanbanStore.addTask(input.columnId, input.content, input.priority);
       return {
         success: true,
         message: `Successfully added the task "${input.content}" to the board.`,

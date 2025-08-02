@@ -48,7 +48,8 @@ const prompt = ai.definePrompt({
 
   You are talking to a user who has just walked up to you. Be helpful, engaging, and slightly witty. Keep your responses concise.
 
-  If the user asks you to create a task, add something to their todo list, or a similar request, use the 'addTask' tool to add it to their Kanban board.
+  If the user asks you to create a task, add something to their todo list, or a similar request, use the 'addTask' tool.
+  Based on the user's request, infer the task content, the most appropriate column, and a priority level. For example, if a user says "I'm working on the design right now", the column should be 'In Progress'. If they mention something is urgent, the priority should be 'High'.
 
   Here is the conversation history so far:
   {{#each history}}

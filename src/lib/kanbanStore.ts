@@ -86,12 +86,12 @@ class KanbanStore {
         this.notify();
     }
 
-    addTask(columnId: string, content: string) {
+    addTask(columnId: string, content: string, priority: Task['priority'] = 'Medium') {
         const newTaskId = `task-${Date.now()}`;
         const newTask: Task = {
             id: newTaskId,
             content,
-            priority: 'Medium',
+            priority,
             dueDate: new Date().toISOString().split('T')[0],
             assignee: { name: 'Unassigned', avatar: '?' }
         };
