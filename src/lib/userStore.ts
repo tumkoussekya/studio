@@ -1,5 +1,7 @@
+
 // NOTE: This is a simple in-memory store for demonstration purposes.
-// In a real application, you would use a database.
+// In a real application, you would use a database like Supabase.
+// This file can now be considered deprecated and will be removed in a future step.
 import { User } from '@/models/User';
 
 const users: User[] = [

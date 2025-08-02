@@ -1,30 +1,43 @@
 
+import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { hash } from 'bcryptjs';
-import { userStore } from '@/lib/userStore';
 
 export async function POST(req: NextRequest) {
-  try {
-    const { email, password } = await req.json();
+  const supabase = createClient();
+  const { email, password } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
-    }
-
-    const existingUser = userStore.findByEmail(email);
-    if (existingUser) {
-      return NextResponse.json({ message: 'User already exists' }, { status: 409 });
-    }
-
-    const passwordHash = await hash(password, 10);
-    const id = Date.now().toString(); // Simple ID generation
-
-    // Start users in the lounge
-    userStore.addUser({ id, email, passwordHash, lastX: 200, lastY: 200 });
-
-    return NextResponse.json({ message: 'User created successfully' }, { status: 201 });
-  } catch (error) {
-    console.error('Signup Error:', error);
-    return NextResponse.json({ message: 'An internal server error occurred' }, { status: 500 });
+  if (!email || !password) {
+    return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
   }
+
+  // Sign up the user in Supabase Auth
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (authError) {
+    console.error('Supabase signup error:', authError.message);
+    return NextResponse.json({ message: authError.message }, { status: authError.status || 400 });
+  }
+
+  if (!authData.user) {
+    return NextResponse.json({ message: 'Signup successful, but no user data returned.' }, { status: 500 });
+  }
+
+  // Insert a corresponding row into the public.users table
+  const { error: dbError } = await supabase
+    .from('users')
+    .insert([
+      { id: authData.user.id, email: authData.user.email, role: 'TeamMember', last_x: 200, last_y: 200 },
+    ]);
+
+  if (dbError) {
+    console.error('Supabase DB insert error:', dbError.message);
+    // Best effort to clean up if DB insert fails
+    await supabase.auth.admin.deleteUser(authData.user.id);
+    return NextResponse.json({ message: 'Could not create user profile.' }, { status: 500 });
+  }
+
+  return NextResponse.json({ message: 'User created successfully. Please check your email to verify.' }, { status: 201 });
 }
