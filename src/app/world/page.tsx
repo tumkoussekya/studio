@@ -11,6 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { chatService } from '@/services/ChatService';
 import { useToast } from '@/hooks/use-toast';
 import LogoutButton from '@/components/world/LogoutButton';
+import UserList from '@/components/world/UserList';
+import { getCookie } from 'cookies-next';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -21,34 +23,48 @@ export default function WorldPage() {
   const [messages, setMessages] = useState<Message[]>([
     { author: 'System', text: 'Welcome to Pixel Space! Use WASD or arrow keys to move.' },
   ]);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
-    // Connect to the WebSocket server
-    chatService.connect(
-      process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080',
-      () => {
-        toast({ title: 'Chat Connected', description: 'You can now chat with other players.' });
-        setMessages((prev) => [...prev, { author: 'System', text: 'Chat connected.' }]);
-      },
-      () => {
-        toast({ variant: 'destructive', title: 'Chat Disconnected', description: 'Attempting to reconnect...' });
-        setMessages((prev) => [...prev, { author: 'System', text: 'Chat disconnected.' }]);
-      }
-    );
+    const token = getCookie('token') as string;
+    if (token) {
+        try {
+            // In a real app, you'd decode the token safely or get user info from a context
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            setCurrentUserEmail(payload.email);
 
-    // Set up message handler
-    chatService.onMessage((author, text) => {
-        if (author !== 'You') {
-            setMessages((prev) => [...prev, { author, text }]);
+            chatService.connect(
+              (process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080') + `?token=${token}`,
+              () => {
+                toast({ title: 'Chat Connected', description: 'You can now chat with other players.' });
+                setMessages((prev) => [...prev, { author: 'System', text: 'Chat connected.' }]);
+              },
+              () => {
+                toast({ variant: 'destructive', title: 'Chat Disconnected', description: 'Attempting to reconnect...' });
+                setMessages((prev) => [...prev, { author: 'System', text: 'Chat disconnected.' }]);
+              }
+            );
+        } catch (e) {
+            console.error("Failed to decode token or connect:", e);
         }
+    }
+
+
+    chatService.onMessage((author, text) => {
+        const messageAuthor = author === currentUserEmail ? 'You' : author;
+        setMessages((prev) => [...prev, { author: messageAuthor, text }]);
     });
 
-    // Disconnect on component unmount
+    chatService.onUserList((users) => {
+        setOnlineUsers(users);
+    });
+
     return () => {
       chatService.disconnect();
     };
-  }, [toast]);
+  }, [toast, currentUserEmail]);
 
 
   const handlePlayerNear = useCallback(() => {
@@ -60,8 +76,8 @@ export default function WorldPage() {
   }, []);
 
   const handleSendMessage = useCallback((text: string) => {
-    setMessages((prev) => [...prev, { author: 'You', text }]);
-    chatService.sendMessage('You', text);
+    // The message will be added to the state via the websocket echo
+    chatService.sendMessage(text);
   }, []);
 
   return (
@@ -81,14 +97,16 @@ export default function WorldPage() {
                 </div>
             </CardHeader>
             <Separator />
-            <CardContent className="p-0 flex-grow flex flex-col">
+            <CardContent className="p-0 flex-grow flex flex-col min-h-0">
                 <div className="p-4">
                   {isNear ? <ConversationStarter /> : (
-                     <div className="h-full flex items-center justify-center text-center text-muted-foreground p-8">
+                     <div className="h-[188px] flex items-center justify-center text-center text-muted-foreground p-8">
                         <p>Move your avatar closer to Alex to get an AI-powered conversation starter!</p>
                     </div>
                   )}
                 </div>
+                <Separator />
+                <UserList users={onlineUsers} />
                 <Chat messages={messages} onSendMessage={handleSendMessage} />
             </CardContent>
         </Card>

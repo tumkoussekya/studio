@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -36,14 +37,13 @@ export default function Chat({ messages, onSendMessage }: ChatProps) {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-[40vh] md:h-auto md:flex-grow mt-4 md:mt-0">
-      <Separator className="mb-4" />
-      <h3 className="text-lg font-semibold mb-2 px-4">Chat</h3>
+    <div className="flex flex-col h-[40vh] md:h-auto md:flex-grow mt-4 md:mt-0 border-t">
+      <h3 className="text-lg font-semibold mb-2 px-4 pt-4">Chat</h3>
       <ScrollArea className="flex-grow" viewportRef={scrollViewportRef}>
         <div className="space-y-4 px-4 pb-4">
           {messages.map((msg, index) => (
             <div key={index}>
-              <span className={`font-bold ${msg.author === 'You' ? 'text-primary' : 'text-accent-foreground'}`}>
+              <span className={`font-bold ${msg.author === 'You' ? 'text-primary' : (msg.author === 'System' || msg.author === 'Server') ? 'text-muted-foreground' : 'text-accent-foreground'}`}>
                 {msg.author}:
               </span>{' '}
               <span className="text-muted-foreground break-words">{msg.text}</span>
