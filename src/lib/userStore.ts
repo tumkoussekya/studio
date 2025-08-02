@@ -27,7 +27,7 @@ export const userStore = {
     return users.find((user) => user.email === email);
   },
   updateUserPosition: (email: string, x: number, y: number): void => {
-    const user = users.find((u) => u.email === user.email);
+    const user = users.find((u) => u.email === email);
     if (user) {
       user.lastX = x;
       user.lastY = y;

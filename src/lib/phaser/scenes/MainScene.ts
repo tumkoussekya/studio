@@ -41,6 +41,7 @@ export class MainScene extends Phaser.Scene {
     this.chatService = data.chatService;
 
     window.addEventListener('start-audio', this.initAudio, { once: true });
+    window.addEventListener('beforeunload', this.savePosition);
   }
 
   private initAudio = async () => {
@@ -61,6 +62,14 @@ export class MainScene extends Phaser.Scene {
     
     this.isAudioReady = true;
     console.log('Audio engine ready and attached to players.');
+  }
+
+  private savePosition = () => {
+    if (this.player) {
+      const { x, y } = this.player.body.position;
+      // Use sendBeacon as it's more reliable for requests during page unload
+      navigator.sendBeacon('/api/world/update-position', JSON.stringify({ x, y }));
+    }
   }
 
   private playerStartX = 200;
@@ -295,16 +304,23 @@ export class MainScene extends Phaser.Scene {
     }
   }
   
-    destroy() {
-        window.removeEventListener('start-audio', this.initAudio);
-        this.otherPlayers.forEach(p => {
-            if (p.playerNode) {
-                p.playerNode.stop();
-                p.playerNode.dispose();
-            }
-            if (p.panner) p.panner.dispose();
-        });
-        this.otherPlayers.clear();
-        this.isAudioReady = false;
-    }
+  destroy() {
+    window.removeEventListener('start-audio', this.initAudio);
+    window.removeEventListener('beforeunload', this.savePosition);
+
+    this.savePosition(); // Try to save one last time on destroy
+
+    this.otherPlayers.forEach(p => {
+        if (p.playerNode) {
+            p.playerNode.stop();
+            p.playerNode.dispose();
+        }
+        if (p.panner) p.panner.dispose();
+    });
+    this.otherPlayers.clear();
+    this.isAudioReady = false;
+    
+    // Clean up scene resources
+    this.time.removeAllEvents();
+  }
 }

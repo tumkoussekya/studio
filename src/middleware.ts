@@ -36,13 +36,7 @@ export function middleware(request: NextRequest) {
   // If user has a token and accesses a protected route, allow access
   if (token && !isPublicRoute) {
      try {
-      const decoded = verify(token, JWT_SECRET) as { email: string, lastX: number, lastY: number };
-      if (pathname.startsWith('/world')) {
-         const { x, y } = request.body ? JSON.parse(request.body as any) : { x: decoded.lastX, y: decoded.lastY };
-        if (request.method === 'POST') {
-          userStore.updateUserPosition(decoded.email, x, y);
-        }
-      }
+      verify(token, JWT_SECRET) as { email: string, lastX: number, lastY: number };
       return NextResponse.next();
     } catch (error) {
       console.error('JWT Verification Error:', error);

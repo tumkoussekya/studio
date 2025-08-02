@@ -31,7 +31,8 @@ export default function PhaserContainer({ onPlayerNear, onPlayerFar, onSceneRead
     const token = getCookie('token') as string | undefined;
     if (token) {
         try {
-            const decoded = verify(token, process.env.NEXT_PUBLIC_JWT_SECRET || 'fallback-secret') as { email: string, userId: string, lastX?: number, lastY?: number };
+            // Using a dummy secret on the client as it's just for reading public claims
+            const decoded = JSON.parse(atob(token.split('.')[1])) as { email: string, userId: string, lastX?: number, lastY?: number };
             if (decoded.lastX && decoded.lastY) {
                 startX = decoded.lastX;
                 startY = decoded.lastY;
@@ -39,7 +40,7 @@ export default function PhaserContainer({ onPlayerNear, onPlayerFar, onSceneRead
             email = decoded.email;
             clientId = decoded.userId;
         } catch (e) {
-            console.error("Invalid token:", e);
+            console.error("Could not decode token:", e);
         }
     }
 
