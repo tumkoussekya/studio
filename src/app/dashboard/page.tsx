@@ -179,7 +179,7 @@ export default function DashboardPage() {
                                     <CardDescription>
                                         Manage users, teams, and system settings.
                                     </CardDescription>
-                                </Header>
+                                </CardHeader>
                                 <CardContent>
                                     <Link href="/admin">
                                         <Button className="w-full">
