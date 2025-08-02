@@ -2,8 +2,24 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, LogIn, MessageSquare, UserPlus, Users, Volume2, KanbanSquare } from 'lucide-react';
+import LogoutButton from '@/components/world/LogoutButton';
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
+
+function IsAuthenticated() {
+    const token = cookies().get('token');
+    if (!token) return false;
+    try {
+        verify(token.value, process.env.JWT_SECRET || 'fallback-secret');
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
 
 export default function Home() {
+    const isAuthenticated = IsAuthenticated();
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -15,18 +31,30 @@ export default function Home() {
                 Kanban
               </Button>
             </Link>
-            <Link href="/login" passHref>
-                <Button variant="outline">
-                    <LogIn />
-                    Login
-                </Button>
+             <Link href="/world" passHref>
+              <Button variant="ghost">
+                <Users />
+                World
+              </Button>
             </Link>
-            <Link href="/signup" passHref>
-                <Button>
-                    <UserPlus />
-                    Sign Up
-                </Button>
-            </Link>
+            {isAuthenticated ? (
+                <LogoutButton />
+            ) : (
+                <>
+                    <Link href="/login" passHref>
+                        <Button variant="outline">
+                            <LogIn />
+                            Login
+                        </Button>
+                    </Link>
+                    <Link href="/signup" passHref>
+                        <Button>
+                            <UserPlus />
+                            Sign Up
+                        </Button>
+                    </Link>
+                </>
+            )}
         </nav>
       </header>
       <main className="flex-grow">
