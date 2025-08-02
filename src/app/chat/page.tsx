@@ -27,6 +27,7 @@ import {
   Loader2,
   Smile,
   Paperclip,
+  Rss,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -42,6 +43,7 @@ import { summarizeChat, type ChatMessage } from '@/ai/flows/summarize-chat';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Image from 'next/image';
+import Announcements from '@/components/chat/Announcements';
 
 
 const sampleUsers = [
@@ -66,6 +68,7 @@ const emojis = ['😀', '😂', '👍', '❤️', '🙏', '🎉', '🔥', '🚀'
 
 
 export default function ChatPage() {
+  const [activeView, setActiveView] = React.useState('messages');
   const [activeConversation, setActiveConversation] = React.useState('general');
   const [conversationType, setConversationType] = React.useState<'channel' | 'dm'>('channel');
   const { toast } = useToast();
@@ -133,7 +136,8 @@ export default function ChatPage() {
             <SidebarMenu>
                <SidebarMenuItem>
                 <SidebarMenuButton
-                    isActive
+                    isActive={activeView === 'messages'}
+                    onClick={() => setActiveView('messages')}
                     tooltip={{
                         children: 'Messages',
                     }}
@@ -144,12 +148,14 @@ export default function ChatPage() {
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton
+                    isActive={activeView === 'announcements'}
+                    onClick={() => setActiveView('announcements')}
                     tooltip={{
-                        children: 'Team',
+                        children: 'Announcements',
                     }}
                 >
-                  <Users />
-                   <span>Team</span>
+                  <Rss />
+                   <span>Announcements</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -170,226 +176,236 @@ export default function ChatPage() {
           </SidebarFooter>
         </Sidebar>
 
-        <div className="w-80 border-r p-4 flex-col flex">
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">Chats</h1>
-                <Button variant="ghost" size="icon">
-                    <Search className="size-5"/>
-                </Button>
-            </div>
-            <SidebarGroup>
-                <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
-                 <SidebarMenu>
-                    {sampleUsers.map(user => (
-                        <SidebarMenuItem key={user.id}>
-                            <SidebarMenuButton size="lg" isActive={activeConversation === user.id} onClick={() => { setActiveConversation(user.id); setConversationType('dm'); }}>
-                                <Avatar className="size-8">
-                                    <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.name} />
-                                    <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex flex-col items-start">
-                                    <span>{user.name}</span>
-                                    <span className="text-xs text-muted-foreground">{user.status}</span>
-                                </div>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    ))}
-                </SidebarMenu>
-            </SidebarGroup>
-             <SidebarGroup>
-                <SidebarGroupLabel>Channels</SidebarGroupLabel>
-                 <SidebarMenu>
-                     {sampleChannels.map(channel => (
-                        <SidebarMenuItem key={channel.id}>
-                            <SidebarMenuButton size="lg" isActive={activeConversation === channel.id} onClick={() => { setActiveConversation(channel.id); setConversationType('channel'); }}>
-                                <div className="p-2 bg-muted rounded-md mr-2">
-                                    <MessageSquare className="size-4"/>
-                                </div>
-                               <div className="flex flex-col items-start">
-                                    <span>{channel.name}</span>
-                                    <span className="text-xs text-muted-foreground">{channel.status}</span>
-                                </div>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    ))}
-                 </SidebarMenu>
-            </SidebarGroup>
-        </div>
-
-        <SidebarInset className="flex-grow flex flex-col">
-           <div className="flex-grow flex flex-col">
-            <header className="p-4 border-b flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Avatar className="size-9">
-                        <AvatarImage src={conversationType === 'dm' ? 'https://placehold.co/40x40.png' : ''} />
-                        <AvatarFallback>{conversationType === 'channel' ? '#' : getActiveConversationName().charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <h2 className="font-bold text-lg">{getActiveConversationName()}</h2>
-                        <p className="text-sm text-muted-foreground">3 members</p>
-                    </div>
-                </div>
-                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={handleSummarize} disabled={isSummarizing}>
-                        {isSummarizing ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <FileText className="mr-2 h-4 w-4" />
-                        )}
-                        Summarize
-                    </Button>
+        {activeView === 'messages' && (
+        <>
+            <div className="w-80 border-r p-4 flex-col flex">
+                <div className="flex justify-between items-center mb-4">
+                    <h1 className="text-2xl font-bold">Chats</h1>
                     <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="size-5"/>
+                        <Search className="size-5"/>
                     </Button>
                 </div>
-            </header>
-            <main className="flex-grow p-4 space-y-4 overflow-y-auto">
-                 {/* Chat messages will go here */}
-                <div className="flex items-start gap-3">
-                    <Avatar className="size-9">
-                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Charlie" />
-                        <AvatarFallback>C</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                            <span className="font-bold">Charlie</span>
-                            <span className="text-xs text-muted-foreground">3:45 PM</span>
-                        </div>
-                        <div className="p-3 bg-secondary rounded-lg mt-1">
-                            <p>Project stand-up in 15 minutes in the Focus Zone!</p>
-                        </div>
-                    </div>
-                </div>
-                 <div className="flex items-start gap-3">
-                    <Avatar className="size-9">
-                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="You" />
-                        <AvatarFallback>Y</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                            <span className="font-bold">You</span>
-                            <span className="text-xs text-muted-foreground">3:46 PM</span>
-                        </div>
-                        <div className="p-3 bg-primary text-primary-foreground rounded-lg mt-1">
-                            <p>On my way!</p>
-                        </div>
-                    </div>
-                </div>
-                 <div className="flex items-start gap-3">
-                    <Avatar className="size-9">
-                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="female avatar" alt="Alice" />
-                        <AvatarFallback>A</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                            <span className="font-bold">Alice</span>
-                            <span className="text-xs text-muted-foreground">3:47 PM</span>
-                        </div>
-                        <div className="p-3 bg-secondary rounded-lg mt-1">
-                            <p>I might be a few minutes late, wrapping something up.</p>
-                        </div>
-                    </div>
-                </div>
-                 <div className="flex items-start gap-3">
-                    <Avatar className="size-9">
-                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="You" />
-                        <AvatarFallback>Y</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                            <span className="font-bold">You</span>
-                            <span className="text-xs text-muted-foreground">3:47 PM</span>
-                        </div>
-                        <div className="p-3 bg-primary text-primary-foreground rounded-lg mt-1">
-                            <p>No problem, see you there.</p>
+                <SidebarGroup>
+                    <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
+                    <SidebarMenu>
+                        {sampleUsers.map(user => (
+                            <SidebarMenuItem key={user.id}>
+                                <SidebarMenuButton size="lg" isActive={activeConversation === user.id} onClick={() => { setActiveConversation(user.id); setConversationType('dm'); }}>
+                                    <Avatar className="size-8">
+                                        <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.name} />
+                                        <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex flex-col items-start">
+                                        <span>{user.name}</span>
+                                        <span className="text-xs text-muted-foreground">{user.status}</span>
+                                    </div>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        ))}
+                    </SidebarMenu>
+                </SidebarGroup>
+                <SidebarGroup>
+                    <SidebarGroupLabel>Channels</SidebarGroupLabel>
+                    <SidebarMenu>
+                        {sampleChannels.map(channel => (
+                            <SidebarMenuItem key={channel.id}>
+                                <SidebarMenuButton size="lg" isActive={activeConversation === channel.id} onClick={() => { setActiveConversation(channel.id); setConversationType('channel'); }}>
+                                    <div className="p-2 bg-muted rounded-md mr-2">
+                                        <MessageSquare className="size-4"/>
+                                    </div>
+                                <div className="flex flex-col items-start">
+                                        <span>{channel.name}</span>
+                                        <span className="text-xs text-muted-foreground">{channel.status}</span>
+                                    </div>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        ))}
+                    </SidebarMenu>
+                </SidebarGroup>
+            </div>
+
+            <SidebarInset className="flex-grow flex flex-col">
+            <div className="flex-grow flex flex-col">
+                <header className="p-4 border-b flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Avatar className="size-9">
+                            <AvatarImage src={conversationType === 'dm' ? 'https://placehold.co/40x40.png' : ''} />
+                            <AvatarFallback>{conversationType === 'channel' ? '#' : getActiveConversationName().charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <h2 className="font-bold text-lg">{getActiveConversationName()}</h2>
+                            <p className="text-sm text-muted-foreground">3 members</p>
                         </div>
                     </div>
-                </div>
-                 <div className="flex items-start gap-3">
-                    <Avatar className="size-9">
-                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Bob" />
-                        <AvatarFallback>B</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                            <span className="font-bold">Bob</span>
-                            <span className="text-xs text-muted-foreground">3:48 PM</span>
-                        </div>
-                        <div className="p-3 bg-secondary rounded-lg mt-1">
-                            <p>Should I bring my laptop?</p>
-                        </div>
-                    </div>
-                </div>
-                 <div className="flex items-start gap-3">
-                    <Avatar className="size-9">
-                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Charlie" />
-                        <AvatarFallback>C</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                            <span className="font-bold">Charlie</span>
-                            <span className="text-xs text-muted-foreground">3:49 PM</span>
-                        </div>
-                        <div className="p-3 bg-secondary rounded-lg mt-1">
-                            <p>Yes, we'll be reviewing the latest designs.</p>
-                        </div>
-                        <div className="p-2 bg-secondary rounded-lg mt-2 w-fit">
-                           <Image src="https://placehold.co/300x200.png" width={300} height={200} alt="Latest design mockup" data-ai-hint="design mockup" className="rounded-md" />
-                           <p className="text-xs text-muted-foreground mt-1">latest_designs.png</p>
-                        </div>
-                    </div>
-                </div>
-            </main>
-            <footer className="p-4 border-t">
-                <div className="relative">
-                    <Input 
-                        placeholder={`Message ${getActiveConversationName()}`} 
-                        className="w-full pr-24"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                // handleSendMessage(message);
-                                setMessage('');
-                            }
-                        }}
-                    />
-                    <div className="absolute top-1/2 right-2 -translate-y-1/2 flex items-center gap-1">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                    <Smile className="size-5" />
-                                    <span className="sr-only">Add emoji</span>
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-2">
-                                <div className="grid grid-cols-4 gap-2">
-                                    {emojis.map(emoji => (
-                                        <Button 
-                                            key={emoji} 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="text-xl"
-                                            onClick={() => setMessage(prev => prev + emoji)}
-                                        >
-                                            {emoji}
-                                        </Button>
-                                    ))}
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                        
-                        <input type="file" ref={fileInputRef} onChange={handleAttachment} className="hidden" />
-                        <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
-                            <Paperclip className="size-5" />
-                            <span className="sr-only">Attach file</span>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={handleSummarize} disabled={isSummarizing}>
+                            {isSummarizing ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <FileText className="mr-2 h-4 w-4" />
+                            )}
+                            Summarize
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="size-5"/>
                         </Button>
                     </div>
-                </div>
-            </footer>
-        </div>
-        </SidebarInset>
+                </header>
+                <main className="flex-grow p-4 space-y-4 overflow-y-auto">
+                    {/* Chat messages will go here */}
+                    <div className="flex items-start gap-3">
+                        <Avatar className="size-9">
+                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Charlie" />
+                            <AvatarFallback>C</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <div className="flex items-baseline gap-2">
+                                <span className="font-bold">Charlie</span>
+                                <span className="text-xs text-muted-foreground">3:45 PM</span>
+                            </div>
+                            <div className="p-3 bg-secondary rounded-lg mt-1">
+                                <p>Project stand-up in 15 minutes in the Focus Zone!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <Avatar className="size-9">
+                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="You" />
+                            <AvatarFallback>Y</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <div className="flex items-baseline gap-2">
+                                <span className="font-bold">You</span>
+                                <span className="text-xs text-muted-foreground">3:46 PM</span>
+                            </div>
+                            <div className="p-3 bg-primary text-primary-foreground rounded-lg mt-1">
+                                <p>On my way!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <Avatar className="size-9">
+                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="female avatar" alt="Alice" />
+                            <AvatarFallback>A</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <div className="flex items-baseline gap-2">
+                                <span className="font-bold">Alice</span>
+                                <span className="text-xs text-muted-foreground">3:47 PM</span>
+                            </div>
+                            <div className="p-3 bg-secondary rounded-lg mt-1">
+                                <p>I might be a few minutes late, wrapping something up.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <Avatar className="size-9">
+                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="You" />
+                            <AvatarFallback>Y</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <div className="flex items-baseline gap-2">
+                                <span className="font-bold">You</span>
+                                <span className="text-xs text-muted-foreground">3:47 PM</span>
+                            </div>
+                            <div className="p-3 bg-primary text-primary-foreground rounded-lg mt-1">
+                                <p>No problem, see you there.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <Avatar className="size-9">
+                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Bob" />
+                            <AvatarFallback>B</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <div className="flex items-baseline gap-2">
+                                <span className="font-bold">Bob</span>
+                                <span className="text-xs text-muted-foreground">3:48 PM</span>
+                            </div>
+                            <div className="p-3 bg-secondary rounded-lg mt-1">
+                                <p>Should I bring my laptop?</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <Avatar className="size-9">
+                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Charlie" />
+                            <AvatarFallback>C</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <div className="flex items-baseline gap-2">
+                                <span className="font-bold">Charlie</span>
+                                <span className="text-xs text-muted-foreground">3:49 PM</span>
+                            </div>
+                            <div className="p-3 bg-secondary rounded-lg mt-1">
+                                <p>Yes, we'll be reviewing the latest designs.</p>
+                            </div>
+                            <div className="p-2 bg-secondary rounded-lg mt-2 w-fit">
+                            <Image src="https://placehold.co/300x200.png" width={300} height={200} alt="Latest design mockup" data-ai-hint="design mockup" className="rounded-md" />
+                            <p className="text-xs text-muted-foreground mt-1">latest_designs.png</p>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                <footer className="p-4 border-t">
+                    <div className="relative">
+                        <Input 
+                            placeholder={`Message ${getActiveConversationName()}`} 
+                            className="w-full pr-24"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    // handleSendMessage(message);
+                                    setMessage('');
+                                }
+                            }}
+                        />
+                        <div className="absolute top-1/2 right-2 -translate-y-1/2 flex items-center gap-1">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <Smile className="size-5" />
+                                        <span className="sr-only">Add emoji</span>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-2">
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {emojis.map(emoji => (
+                                            <Button 
+                                                key={emoji} 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="text-xl"
+                                                onClick={() => setMessage(prev => prev + emoji)}
+                                            >
+                                                {emoji}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                            
+                            <input type="file" ref={fileInputRef} onChange={handleAttachment} className="hidden" />
+                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
+                                <Paperclip className="size-5" />
+                                <span className="sr-only">Attach file</span>
+                            </Button>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+            </SidebarInset>
+        </>
+        )}
+
+        {activeView === 'announcements' && (
+            <SidebarInset>
+                <Announcements />
+            </SidebarInset>
+        )}
         
         <AlertDialog open={isSummaryDialogOpen} onOpenChange={setIsSummaryDialogOpen}>
             <AlertDialogContent>
@@ -414,7 +430,3 @@ export default function ChatPage() {
     </SidebarProvider>
   );
 }
-
-    
-
-    
