@@ -7,8 +7,8 @@ import {
   Draggable,
   type DropResult,
 } from '@hello-pangea/dnd';
-import { GripVertical, Plus, Trash2, Calendar, Flag } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import { GripVertical, Plus, Trash2, Calendar, Flag, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,8 +23,30 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { kanbanStore, type KanbanData, type Task } from '@/lib/kanbanStore';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
+// Interfaces to match Supabase schema
+interface Task {
+  id: string;
+  content: string;
+  priority: 'Low' | 'Medium' | 'High';
+  due_date: string;
+  assignee_id: string | null;
+  // TODO: Add assignee details from a join
+}
+
+interface Column {
+  id: string;
+  title: string;
+  taskIds: string[];
+}
+
+interface KanbanData {
+  tasks: Record<string, Task>;
+  columns: Record<string, Column>;
+  columnOrder: string[];
+}
 
 const priorityColors: Record<Task['priority'], string> = {
     Low: 'bg-blue-500 hover:bg-blue-600',
@@ -37,36 +59,137 @@ export default function KanbanPage() {
   const [newTaskContent, setNewTaskContent] = useState('');
   const [selectedColumn, setSelectedColumn] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchKanbanData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const response = await fetch('/api/kanban/tasks');
+        if (!response.ok) {
+            throw new Error('Failed to fetch Kanban data');
+        }
+        const fetchedData = await response.json();
+        setData(fetchedData);
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Error loading board',
+            description: error.message,
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    // Initial data load
-    setData(kanbanStore.getData());
+    fetchKanbanData();
+  }, [fetchKanbanData]);
 
-    // Subscribe to updates
-    const unsubscribe = kanbanStore.subscribe(setData);
-    return () => unsubscribe();
-  }, []);
 
-  const onDragEnd = (result: DropResult) => {
-    kanbanStore.moveTask(result);
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+    if (!data) return;
+
+    // Optimistic UI update
+    const startColumn = data.columns[source.droppableId];
+    const endColumn = data.columns[destination.droppableId];
+    
+    let updatedData = { ...data };
+
+    if (startColumn === endColumn) {
+        const newTaskIds = Array.from(startColumn.taskIds);
+        newTaskIds.splice(source.index, 1);
+        newTaskIds.splice(destination.index, 0, draggableId);
+
+        const newColumn = { ...startColumn, taskIds: newTaskIds };
+        updatedData.columns[newColumn.id] = newColumn;
+    } else {
+        const startTaskIds = Array.from(startColumn.taskIds);
+        startTaskIds.splice(source.index, 1);
+        const newStartColumn = { ...startColumn, taskIds: startTaskIds };
+
+        const endTaskIds = Array.from(endColumn.taskIds);
+        endTaskIds.splice(destination.index, 0, draggableId);
+        const newEndColumn = { ...endColumn, taskIds: endTaskIds };
+        
+        updatedData.columns[newStartColumn.id] = newStartColumn;
+        updatedData.columns[newEndColumn.id] = newEndColumn;
+    }
+    setData(updatedData);
+
+    // API call to update backend
+    try {
+        const response = await fetch('/api/kanban/tasks', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskId: draggableId, newColumnId: destination.droppableId, newIndex: destination.index })
+        });
+        if (!response.ok) throw new Error('Failed to update task position.');
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update failed', description: error.message });
+        // Revert UI on failure
+        fetchKanbanData(); 
+    }
   };
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (!newTaskContent.trim() || !selectedColumn) return;
-    kanbanStore.addTask(selectedColumn, newTaskContent);
-    setNewTaskContent('');
-    setSelectedColumn('');
-    setIsModalOpen(false);
+    
+    try {
+        const response = await fetch('/api/kanban/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: newTaskContent, columnId: selectedColumn }),
+        });
+        if (!response.ok) throw new Error('Failed to add task.');
+        
+        toast({ title: 'Task Added', description: `"${newTaskContent}" has been added.`});
+        setNewTaskContent('');
+        setSelectedColumn('');
+        setIsModalOpen(false);
+        fetchKanbanData(); // Refresh data
+    } catch (error: any) {
+         toast({ variant: 'destructive', title: 'Failed to add task', description: error.message });
+    }
   };
   
-  const handleDeleteTask = (taskId: string, columnId: string) => {
-    kanbanStore.deleteTask(taskId, columnId);
+  const handleDeleteTask = async (taskId: string, columnId: string) => {
+    // Optimistic UI update
+    const originalData = data;
+    if(data) {
+        const newTasks = { ...data.tasks };
+        delete newTasks[taskId];
+        const column = data.columns[columnId];
+        const newTaskIds = column.taskIds.filter(id => id !== taskId);
+        const updatedData = { ...data, tasks: newTasks, columns: { ...data.columns, [columnId]: { ...column, taskIds: newTaskIds }}};
+        setData(updatedData);
+    }
+    
+    try {
+         const response = await fetch(`/api/kanban/tasks?taskId=${taskId}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Failed to delete task.');
+        toast({ title: "Task Deleted" });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Failed to delete task', description: error.message });
+        setData(originalData); // Revert on failure
+    }
   };
 
-  if (!data) {
+
+  if (isLoading || !data) {
     return (
-        <div className="flex items-center justify-center h-screen">
-            <p>Loading Kanban board...</p>
+        <div className="flex items-center justify-center h-screen bg-background">
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+                <p className="text-muted-foreground">Loading Kanban board...</p>
+            </div>
         </div>
     );
   }
@@ -158,18 +281,18 @@ export default function KanbanPage() {
                                             </Badge>
                                             <div className="flex items-center gap-1">
                                                 <Calendar className="h-4 w-4" />
-                                                <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                                                <span>{new Date(task.due_date).toLocaleDateString()}</span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Tooltip>
                                                 <TooltipTrigger>
                                                     <Avatar className="h-6 w-6">
-                                                        <AvatarFallback>{task.assignee.avatar}</AvatarFallback>
+                                                        <AvatarFallback>{task.assignee_id ? 'A' : '?'}</AvatarFallback>
                                                     </Avatar>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
-                                                    <p>Assigned to {task.assignee.name}</p>
+                                                    <p>Assigned to {task.assignee_id || 'Unassigned'}</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                             <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteTask(task.id, column.id)}>

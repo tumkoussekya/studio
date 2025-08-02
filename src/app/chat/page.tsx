@@ -20,7 +20,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   Search,
-  Users,
   MessageSquare,
   Settings,
   MoreHorizontal,
@@ -45,28 +44,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Image from 'next/image';
 import Announcements from '@/components/chat/Announcements';
+import { Skeleton } from '@/components/ui/skeleton';
 
-
-const sampleUsers = [
-    { id: 'alice', name: 'Alice', status: 'Online' },
-    { id: 'bob', name: 'Bob', status: 'In a meeting' },
-    { id: 'charlie', name: 'Charlie', status: 'Focusing... 🧘‍♂️' },
-    { id: 'david', name: 'David', name: 'David', status: 'Away' },
-];
+interface ChatUser {
+    id: string;
+    email: string;
+    role: string;
+}
 
 const sampleChannels = [
     { id: 'general', name: '#general', status: 'Charlie: See you there!' },
     { id: 'design-team', name: '#design-team', status: 'Bob: Latest mockups are up.' },
     { id: 'project-phoenix', name: '#project-phoenix', status: 'Alice: We hit our milestone!' },
-];
-
-const sampleMessages: ChatMessage[] = [
-    { author: 'Charlie', text: 'Project stand-up in 15 minutes in the Focus Zone!' },
-    { author: 'You', text: 'On my way!' },
-    { author: 'Alice', text: 'I might be a few minutes late, wrapping something up.' },
-    { author: 'You', text: 'No problem, see you there.' },
-    { author: 'Bob', text: "Should I bring my laptop?"},
-    { author: 'Charlie', text: "Yes, we'll be reviewing the latest designs."}
 ];
 
 const emojis = ['😀', '😂', '👍', '❤️', '🙏', '🎉', '🔥', '🚀'];
@@ -76,6 +65,8 @@ export default function ChatPage() {
   const [activeView, setActiveView] = React.useState('messages');
   const [activeConversation, setActiveConversation] = React.useState('general');
   const [conversationType, setConversationType] = React.useState<'channel' | 'dm'>('channel');
+  const [users, setUsers] = React.useState<ChatUser[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = React.useState(true);
   const { toast } = useToast();
   const [isSummarizing, setIsSummarizing] = React.useState(false);
   const [summary, setSummary] = React.useState('');
@@ -83,10 +74,38 @@ export default function ChatPage() {
   const [message, setMessage] = React.useState('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Hardcoded messages to be replaced by Ably history
+  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+
+
+  React.useEffect(() => {
+    async function fetchUsers() {
+        setIsLoadingUsers(true);
+        try {
+            const response = await fetch('/api/users');
+            if (!response.ok) throw new Error('Failed to fetch users');
+            const data = await response.json();
+            setUsers(data);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load user list.'});
+        } finally {
+            setIsLoadingUsers(false);
+        }
+    }
+    fetchUsers();
+  }, [toast]);
+
+
   const handleSummarize = async () => {
     setIsSummarizing(true);
+    if (messages.length === 0) {
+        toast({ title: "Not enough messages", description: "There's nothing to summarize yet."});
+        setIsSummarizing(false);
+        return;
+    }
+
     try {
-        const result = await summarizeChat({ messages: sampleMessages });
+        const result = await summarizeChat({ messages: messages });
         setSummary(result.summary);
         setIsSummaryDialogOpen(true);
     } catch (error) {
@@ -106,15 +125,13 @@ export default function ChatPage() {
         const channel = sampleChannels.find(c => c.id === activeConversation);
         return channel?.name || 'Chat';
     }
-    const user = sampleUsers.find(u => u.id === activeConversation);
-    return user?.name || 'Chat';
+    const user = users.find(u => u.id === activeConversation);
+    return user?.email || 'Chat';
   }
   
   const handleAttachment = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
         const file = e.target.files[0];
-        // In a real app, you'd upload this file and get a URL.
-        // For this demo, we'll just show a toast.
         toast({
             title: "Attachment Selected",
             description: `${file.name} is ready to be sent. (Feature not fully implemented)`,
@@ -199,20 +216,24 @@ export default function ChatPage() {
                     <SidebarGroup>
                         <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
                         <SidebarMenu>
-                            {sampleUsers.map(user => (
-                                <SidebarMenuItem key={user.id}>
-                                    <SidebarMenuButton size="lg" isActive={activeConversation === user.id} onClick={() => { setActiveConversation(user.id); setConversationType('dm'); }}>
-                                        <Avatar className="size-8">
-                                            <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.name} />
-                                            <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col items-start">
-                                            <span>{user.name}</span>
-                                            <span className="text-xs text-muted-foreground">{user.status}</span>
-                                        </div>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
+                            {isLoadingUsers ? (
+                                Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)
+                            ) : (
+                                users.map(user => (
+                                    <SidebarMenuItem key={user.id}>
+                                        <SidebarMenuButton size="lg" isActive={activeConversation === user.id} onClick={() => { setActiveConversation(user.id); setConversationType('dm'); }}>
+                                            <Avatar className="size-8">
+                                                <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.email} />
+                                                <AvatarFallback>{user.email.charAt(0).toUpperCase()}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex flex-col items-start">
+                                                <span>{user.email}</span>
+                                                <span className="text-xs text-muted-foreground">{user.role}</span>
+                                            </div>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))
+                            )}
                         </SidebarMenu>
                     </SidebarGroup>
                     <SidebarGroup>
@@ -247,7 +268,7 @@ export default function ChatPage() {
                         </Avatar>
                         <div>
                             <h2 className="font-bold text-lg">{getActiveConversationName()}</h2>
-                            <p className="text-sm text-muted-foreground">3 members</p>
+                            <p className="text-sm text-muted-foreground">Real-time chat enabled</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -265,101 +286,28 @@ export default function ChatPage() {
                     </div>
                 </header>
                 <main className="flex-grow p-4 space-y-4 overflow-y-auto">
-                    {/* Chat messages will go here */}
-                    <div className="flex items-start gap-3">
-                        <Avatar className="size-9">
-                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Charlie" />
-                            <AvatarFallback>C</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                            <div className="flex items-baseline gap-2">
-                                <span className="font-bold">Charlie</span>
-                                <span className="text-xs text-muted-foreground">3:45 PM</span>
-                            </div>
-                            <div className="p-3 bg-secondary rounded-lg mt-1">
-                                <p>Project stand-up in 15 minutes in the Focus Zone!</p>
+                    {messages.length === 0 && (
+                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
+                    )}
+                    {messages.map((msg, index) => (
+                         <div key={index} className="flex items-start gap-3">
+                            <Avatar className="size-9">
+                                <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="avatar" alt={msg.author} />
+                                <AvatarFallback>{msg.author.charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                                <div className="flex items-baseline gap-2">
+                                    <span className="font-bold">{msg.author}</span>
+                                    <span className="text-xs text-muted-foreground">{new Date().toLocaleTimeString()}</span>
+                                </div>
+                                <div className={`p-3 rounded-lg mt-1 ${msg.author === 'You' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
+                                    <p>{msg.text}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <Avatar className="size-9">
-                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="You" />
-                            <AvatarFallback>Y</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                            <div className="flex items-baseline gap-2">
-                                <span className="font-bold">You</span>
-                                <span className="text-xs text-muted-foreground">3:46 PM</span>
-                            </div>
-                            <div className="p-3 bg-primary text-primary-foreground rounded-lg mt-1">
-                                <p>On my way!</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <Avatar className="size-9">
-                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="female avatar" alt="Alice" />
-                            <AvatarFallback>A</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                            <div className="flex items-baseline gap-2">
-                                <span className="font-bold">Alice</span>
-                                <span className="text-xs text-muted-foreground">3:47 PM</span>
-                            </div>
-                            <div className="p-3 bg-secondary rounded-lg mt-1">
-                                <p>I might be a few minutes late, wrapping something up.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <Avatar className="size-9">
-                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="You" />
-                            <AvatarFallback>Y</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                            <div className="flex items-baseline gap-2">
-                                <span className="font-bold">You</span>
-                                <span className="text-xs text-muted-foreground">3:47 PM</span>
-                            </div>
-                            <div className="p-3 bg-primary text-primary-foreground rounded-lg mt-1">
-                                <p>No problem, see you there.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <Avatar className="size-9">
-                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Bob" />
-                            <AvatarFallback>B</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                            <div className="flex items-baseline gap-2">
-                                <span className="font-bold">Bob</span>
-                                <span className="text-xs text-muted-foreground">3:48 PM</span>
-                            </div>
-                            <div className="p-3 bg-secondary rounded-lg mt-1">
-                                <p>Should I bring my laptop?</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <Avatar className="size-9">
-                            <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Charlie" />
-                            <AvatarFallback>C</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                            <div className="flex items-baseline gap-2">
-                                <span className="font-bold">Charlie</span>
-                                <span className="text-xs text-muted-foreground">3:49 PM</span>
-                            </div>
-                            <div className="p-3 bg-secondary rounded-lg mt-1">
-                                <p>Yes, we'll be reviewing the latest designs.</p>
-                            </div>
-                            <div className="p-2 bg-secondary rounded-lg mt-2 w-fit">
-                            <Image src="https://placehold.co/300x200.png" width={300} height={200} alt="Latest design mockup" data-ai-hint="design mockup" className="rounded-md" />
-                            <p className="text-xs text-muted-foreground mt-1">latest_designs.png</p>
-                            </div>
-                        </div>
-                    </div>
+                    ))}
                 </main>
                 <footer className="p-4 border-t">
                     <div className="relative">
@@ -371,7 +319,7 @@ export default function ChatPage() {
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
-                                    // handleSendMessage(message);
+                                    // handleSendMessage(message); // This will be wired up with Ably later
                                     setMessage('');
                                 }
                             }}
