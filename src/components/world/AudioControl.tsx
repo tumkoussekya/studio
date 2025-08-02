@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -25,12 +26,11 @@ export default function AudioControl() {
     const startAudio = async () => {
         if (Tone.context.state !== 'running') {
             try {
-                await Tone.start();
-                setAudioState('running');
-                console.log('Audio context started');
+                // This will be caught by the Phaser scene
                 window.dispatchEvent(new Event('start-audio'));
+                // We don't set state directly, we let the useEffect poll for the actual context state
             } catch (e) {
-                console.error("Could not start audio context", e);
+                console.error("Could not dispatch start-audio event", e);
             }
         }
     };

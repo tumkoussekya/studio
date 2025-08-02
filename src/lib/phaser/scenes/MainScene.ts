@@ -1,10 +1,13 @@
 
 import Phaser from 'phaser';
+import * as Tone from 'tone';
 import type ChatService from '@/services/ChatService';
 
 interface PlayerData {
   avatar: Phaser.GameObjects.Shape;
   nameTag: Phaser.GameObjects.Text;
+  panner?: Tone.Panner3D;
+  playerNode?: Tone.Player;
 }
 
 export class MainScene extends Phaser.Scene {
@@ -19,10 +22,15 @@ export class MainScene extends Phaser.Scene {
   private chatService!: typeof ChatService;
   private myClientId!: string;
   private myEmail!: string;
+  private isAudioReady = false;
 
 
   constructor() {
     super({ key: 'MainScene' });
+  }
+  
+  preload() {
+    this.load.audio('synth', '/assets/synth.mp3');
   }
 
   init(data: { startX: number, startY: number, email: string, clientId: string, chatService: typeof ChatService }) {
@@ -31,6 +39,28 @@ export class MainScene extends Phaser.Scene {
     this.myEmail = data.email;
     this.myClientId = data.clientId;
     this.chatService = data.chatService;
+
+    window.addEventListener('start-audio', this.initAudio, { once: true });
+  }
+
+  private initAudio = async () => {
+     if (this.isAudioReady) return;
+    
+    await Tone.start();
+    
+    // Set listener position
+    const { x, y } = this.player.body.position;
+    Tone.Listener.positionX.value = x;
+    Tone.Listener.positionY.value = y;
+    Tone.Listener.positionZ.value = 5; // Ears are slightly above the ground
+    
+    // Set up audio for existing players
+    this.otherPlayers.forEach((playerData, clientId) => {
+        this.setupPlayerAudio(playerData);
+    });
+    
+    this.isAudioReady = true;
+    console.log('Audio engine ready and attached to players.');
   }
 
   private playerStartX = 200;
@@ -149,15 +179,39 @@ export class MainScene extends Phaser.Scene {
       if (onNearCallback) onNearCallback();
     }
   }
+  
+  private setupPlayerAudio(playerData: PlayerData) {
+    if (!this.isAudioReady || playerData.panner) return;
+
+    const panner = new Tone.Panner3D({
+        panningModel: 'HRTF',
+        distanceModel: 'inverse',
+        refDistance: 20,
+        maxDistance: 10000,
+        rolloffFactor: 2.5,
+        coneInnerAngle: 360,
+        coneOuterAngle: 360,
+        coneOuterGain: 0,
+    }).toDestination();
+
+    const playerNode = new Tone.Player({
+        url: this.cache.audio.get('synth'),
+        loop: true,
+        autostart: true,
+        fadeOut: 0.1,
+    }).connect(panner);
+
+    playerData.panner = panner;
+    playerData.playerNode = playerNode;
+  }
 
   public updatePlayer(clientId: string, x: number, y: number, email: string) {
-    if (this.otherPlayers.has(clientId)) {
-      const playerData = this.otherPlayers.get(clientId)!;
-      // Smoothly move the player to the new position
+    let playerData = this.otherPlayers.get(clientId);
+    
+    if (playerData) {
       this.physics.moveTo(playerData.avatar, x + 10, y + 10, undefined, 100);
       playerData.nameTag.setPosition(x, y - 15);
     } else {
-      // Create new player avatar
       const otherPlayerColor = 0x38bdf8;
       const avatar = this.add.circle(x + 10, y + 10, 10, otherPlayerColor);
       this.physics.add.existing(avatar);
@@ -170,7 +224,9 @@ export class MainScene extends Phaser.Scene {
         padding: { x:2, y: 1 }
       }).setOrigin(0.5);
 
-      this.otherPlayers.set(clientId, { avatar, nameTag });
+      const newPlayerData = { avatar, nameTag };
+      this.otherPlayers.set(clientId, newPlayerData);
+      this.setupPlayerAudio(newPlayerData);
     }
   }
 
@@ -179,37 +235,56 @@ export class MainScene extends Phaser.Scene {
           const playerData = this.otherPlayers.get(clientId)!;
           playerData.avatar.destroy();
           playerData.nameTag.destroy();
+          
+          if(playerData.playerNode) {
+              playerData.playerNode.stop();
+              playerData.playerNode.dispose();
+          }
+          if(playerData.panner) {
+              playerData.panner.dispose();
+          }
+          
           this.otherPlayers.delete(clientId);
       }
   }
 
   update() {
     const speed = 200;
-    (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0);
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+    body.setVelocity(0);
 
     if (this.cursors.left.isDown || this.wasd.left.isDown) {
-      (this.player.body as Phaser.Physics.Arcade.Body).setVelocityX(-speed);
+      body.setVelocityX(-speed);
     } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
-      (this.player.body as Phaser.Physics.Arcade.Body).setVelocityX(speed);
+      body.setVelocityX(speed);
     }
 
     if (this.cursors.up.isDown || this.wasd.up.isDown) {
-      (this.player.body as Phaser.Physics.Arcade.Body).setVelocityY(-speed);
+      body.setVelocityY(-speed);
     } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
-      (this.player.body as Phaser.Physics.Arcade.Body).setVelocityY(speed);
+      body.setVelocityY(speed);
     }
 
-    (this.player.body as Phaser.Physics.Arcade.Body).velocity.normalize().scale(speed);
+    body.velocity.normalize().scale(speed);
 
-    // Stop remote player avatars when they reach their destination
+    if (this.isAudioReady) {
+        Tone.Listener.positionX.value = body.position.x;
+        Tone.Listener.positionY.value = body.position.y;
+    }
+
     this.otherPlayers.forEach(playerData => {
-        const body = playerData.avatar.body as Phaser.Physics.Arcade.Body;
-        const distance = Phaser.Math.Distance.Between(body.x, body.y, body.center.x, body.center.y);
+        const remoteBody = playerData.avatar.body as Phaser.Physics.Arcade.Body;
+        const distance = Phaser.Math.Distance.Between(remoteBody.x, remoteBody.y, remoteBody.center.x, remoteBody.center.y);
+        
         if (distance < 4) {
-            body.setVelocity(0);
+            remoteBody.setVelocity(0);
         }
-        // Also update nametag position to follow avatar
-        playerData.nameTag.setPosition(body.x, body.y - 20);
+        playerData.nameTag.setPosition(remoteBody.x, remoteBody.y - 20);
+
+        if (this.isAudioReady && playerData.panner) {
+            playerData.panner.positionX.value = remoteBody.position.x;
+            playerData.panner.positionY.value = remoteBody.position.y;
+        }
     });
 
     const isOverlapping = this.physics.overlap(this.player, this.nearZone);
@@ -219,4 +294,17 @@ export class MainScene extends Phaser.Scene {
       if (onFarCallback) onFarCallback();
     }
   }
+  
+    destroy() {
+        window.removeEventListener('start-audio', this.initAudio);
+        this.otherPlayers.forEach(p => {
+            if (p.playerNode) {
+                p.playerNode.stop();
+                p.playerNode.dispose();
+            }
+            if (p.panner) p.panner.dispose();
+        });
+        this.otherPlayers.clear();
+        this.isAudioReady = false;
+    }
 }
