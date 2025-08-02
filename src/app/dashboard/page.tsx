@@ -24,8 +24,6 @@ function getUser(): (User & {userId: string}) | null {
 export default function DashboardPage() {
     const user = getUser();
     const isAdmin = user?.role === 'Admin';
-    const isProjectManager = user?.role === 'ProjectManager';
-
 
     return (
         <div className="flex flex-col min-h-screen bg-background">
@@ -60,7 +58,7 @@ export default function DashboardPage() {
                            </Link>
                         </CardContent>
                     </Card>
-                    {(isAdmin || isProjectManager) && (
+                    {isAdmin && (
                         <Card className="hover:shadow-lg transition-shadow">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-3">

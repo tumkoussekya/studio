@@ -18,7 +18,7 @@ const users: User[] = [
     passwordHash: '$2a$10$V8.v4bH/wR4Fv.K5f.gS9.7Yj7.F1q.Y1q.N3.N3.L1gS9.N3.S9O',
     lastX: 250,
     lastY: 250,
-    role: 'ProjectManager'
+    role: 'TeamMember'
   },
     {
     id: 'default-user-3',

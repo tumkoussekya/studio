@@ -73,10 +73,8 @@ export default function AdminPage() {
     switch (role) {
       case 'Admin':
         return 'default';
-      case 'ProjectManager':
-        return 'secondary';
       case 'TeamMember':
-        return 'outline';
+        return 'secondary';
       default:
         return 'outline';
     }

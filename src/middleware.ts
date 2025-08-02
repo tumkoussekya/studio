@@ -47,13 +47,8 @@ export function middleware(request: NextRequest) {
 
       // --- Role-based access control for protected routes ---
       // Admin-only routes
-      if ((pathname.startsWith('/admin') || pathname.startsWith('/analytics')) && userRole !== 'Admin') {
+      if ((pathname.startsWith('/admin') || pathname.startsWith('/analytics') || pathname.startsWith('/kanban')) && userRole !== 'Admin') {
           return NextResponse.redirect(new URL('/dashboard?error=unauthorized', request.url));
-      }
-
-      // Project Manager and Admin routes
-      if (pathname.startsWith('/kanban') && userRole !== 'Admin' && userRole !== 'ProjectManager') {
-        return NextResponse.redirect(new URL('/dashboard?error=unauthorized', request.url));
       }
 
     } catch (error) {
