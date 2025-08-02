@@ -18,7 +18,7 @@ export default function AlexChat() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<AlexMessage[]>([
-    { role: 'model', content: "Hello there! What can I help you with today?" }
+    { role: 'model', content: "Hello there! I'm Alex. You can ask me to create tasks for your Kanban board." }
   ]);
   const [inputValue, setInputValue] = useState('');
   const scrollViewportRef = useRef<HTMLDivElement>(null);
@@ -90,7 +90,7 @@ export default function AlexChat() {
         <Input
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Ask Alex something..."
+          placeholder="e.g. 'Add a high priority task'"
           className="flex-grow h-9"
           disabled={isLoading}
         />

@@ -100,24 +100,34 @@ export class MainScene extends Phaser.Scene {
 
     // World objects
     const walls = this.physics.add.staticGroup();
-    walls.add(this.add.rectangle(400, 50, 700, 20, wallColor).setOrigin(0.5));
-    walls.add(this.add.rectangle(400, 550, 700, 20, wallColor).setOrigin(0.5));
-    walls.add(this.add.rectangle(50, 300, 20, 420, wallColor).setOrigin(0.5));
-    walls.add(this.add.rectangle(750, 300, 20, 420, wallColor).setOrigin(0.5));
-    walls.add(this.add.rectangle(400, 650, 700, 20, wallColor).setOrigin(0.5));
-    walls.add(this.add.rectangle(400, 1150, 700, 20, wallColor).setOrigin(0.5));
-    walls.add(this.add.rectangle(50, 900, 20, 500, wallColor).setOrigin(0.5));
-    walls.add(this.add.rectangle(750, 900, 20, 500, wallColor).setOrigin(0.5));
+    // Lounge Walls
+    walls.add(this.add.rectangle(225, 50, 350, 20, wallColor).setOrigin(0.5)); // Top
+    walls.add(this.add.rectangle(225, 350, 350, 20, wallColor).setOrigin(0.5)); // Bottom
+    walls.add(this.add.rectangle(50, 200, 20, 300, wallColor).setOrigin(0.5)); // Left
+    walls.add(this.add.rectangle(400, 200, 20, 300, wallColor).setOrigin(0.5)); // Right
     
+    // Focus Zone Walls
+    walls.add(this.add.rectangle(575, 250, 350, 20, wallColor).setOrigin(0.5)); // Top
+    walls.add(this.add.rectangle(575, 550, 350, 20, wallColor).setOrigin(0.5)); // Bottom
+    walls.add(this.add.rectangle(750, 400, 20, 300, wallColor).setOrigin(0.5)); // Right
+    
+    // Coffee Room Walls
+    walls.add(this.add.rectangle(400, 650, 700, 20, wallColor).setOrigin(0.5)); // Top
+    walls.add(this.add.rectangle(400, 1150, 700, 20, wallColor).setOrigin(0.5)); // Bottom
+    walls.add(this.add.rectangle(50, 900, 20, 500, wallColor).setOrigin(0.5)); // Left
+    walls.add(this.add.rectangle(750, 900, 20, 500, wallColor).setOrigin(0.5)); // Right
+    
+
     // Player
     this.player = this.add.circle(this.playerStartX, this.playerStartY, 10, playerColor);
     this.physics.add.existing(this.player);
     this.player.body.setCollideWorldBounds(true);
     
-    // NPC
+    // NPC - Alex
     this.npc = this.add.circle(600, 400, 10, npcColor);
     this.physics.add.existing(this.npc);
     this.npc.body.setImmovable(true);
+    this.add.text(585, 370, 'Alex', { font: '14px VT323', color: textColor });
 
     this.nearZone = this.add.zone(this.npc.body.x + 10, this.npc.body.y + 10, 150, 150);
     this.physics.world.enable(this.nearZone);
@@ -126,19 +136,22 @@ export class MainScene extends Phaser.Scene {
     (this.nearZone.body as Phaser.Physics.Arcade.Body).setCircle(75);
 
     // --- Portals ---
+    const toFocusZonePortal = this.add.rectangle(350, 320, 10, 80, portalColor);
+    this.physics.add.existing(toFocusZonePortal, true);
+    this.physics.add.overlap(this.player, toFocusZonePortal, () => {
+        (this.player.body as Phaser.Physics.Arcade.Body).setPosition(430, 400);
+    });
+    this.add.text(320, 360, 'To Focus', { font: '16px VT323', color: '#ffffff' }).setAngle(-90);
+
     const toCoffeeRoomPortal = this.add.rectangle(225, 520, 100, 10, portalColor);
-    this.physics.add.existing(toCoffeeRoomPortal);
-    (toCoffeeRoomPortal.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
-    (toCoffeeRoomPortal.body as Phaser.Physics.Arcade.Body).setImmovable(true);
+    this.physics.add.existing(toCoffeeRoomPortal, true);
     this.physics.add.overlap(this.player, toCoffeeRoomPortal, () => {
         (this.player.body as Phaser.Physics.Arcade.Body).setPosition(375, 680);
     });
     this.add.text(180, 500, 'To Coffee Room', { font: '16px VT323', color: '#ffffff' });
 
     const toLoungePortal = this.add.rectangle(400, 680, 100, 10, portalColor);
-    this.physics.add.existing(toLoungePortal);
-    (toLoungePortal.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
-    (toLoungePortal.body as Phaser.Physics.Arcade.Body).setImmovable(true);
+    this.physics.add.existing(toLoungePortal, true);
     this.physics.add.overlap(this.player, toLoungePortal, () => {
         (this.player.body as Phaser.Physics.Arcade.Body).setPosition(200, 480);
     });
@@ -220,7 +233,7 @@ export class MainScene extends Phaser.Scene {
     
     if (playerData) {
       this.physics.moveTo(playerData.avatar, x + 10, y + 10, undefined, 100);
-      playerData.nameTag.setPosition(x, y - 15);
+      playerData.nameTag.setPosition(x + 10, y - 15);
     } else {
       const otherPlayerColor = 0x38bdf8;
       const avatar = this.add.circle(x + 10, y + 10, 10, otherPlayerColor);

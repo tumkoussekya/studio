@@ -40,7 +40,7 @@ export default function ConversationStarter() {
     return (
         <Card className="bg-secondary/50 border-dashed h-[188px]">
             <CardHeader>
-                <CardTitle className="text-lg">You're near Alex!</CardTitle>
+                <CardTitle className="text-lg">You're near another player!</CardTitle>
                 <CardDescription>Break the ice with a little help from AI.</CardDescription>
             </CardHeader>
             <CardContent>

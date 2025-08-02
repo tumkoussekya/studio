@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useState, useRef } from 'react';
 import type * as Ably from 'ably';
 
 import Chat, { type Message } from '@/components/world/Chat';
-import ConversationStarter from '@/components/world/ConversationStarter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { realtimeService, type PresenceData, type PlayerUpdateData } from '@/services/RealtimeService';
@@ -24,7 +23,7 @@ const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer
 });
 
 export default function WorldPage() {
-  const [isNear, setIsNear] = useState(false);
+  const [isNearAlex, setIsNearAlex] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { author: 'System', text: 'Welcome to Pixel Space! Use WASD or arrow keys to move.' },
   ]);
@@ -119,11 +118,11 @@ export default function WorldPage() {
 
 
   const handlePlayerNear = useCallback(() => {
-    setIsNear(true);
+    setIsNearAlex(true);
   }, []);
 
   const handlePlayerFar = useCallback(() => {
-    setIsNear(false);
+    setIsNearAlex(false);
   }, []);
 
   const handleSendMessage = useCallback((text: string) => {
@@ -150,9 +149,9 @@ export default function WorldPage() {
             <Separator />
             <CardContent className="p-0 flex-grow flex flex-col min-h-0">
                 <div className="p-4">
-                  {isNear ? <AlexChat /> : (
+                  {isNearAlex ? <AlexChat /> : (
                      <div className="h-[188px] flex items-center justify-center text-center text-muted-foreground p-8">
-                        <p>Move your avatar closer to Alex to start a conversation!</p>
+                        <p>Move your avatar closer to Alex in the "Focus Zone" to start a conversation!</p>
                     </div>
                   )}
                 </div>
