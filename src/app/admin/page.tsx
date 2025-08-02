@@ -29,6 +29,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type UserData = Omit<User, 'passwordHash'>;
 
@@ -61,10 +62,10 @@ export default function AdminPage() {
     fetchUsers();
   }, [toast]);
 
-  const handleResetPassword = (email: string) => {
+  const handleAction = (action: string, email: string) => {
     toast({
-      title: 'Password Reset',
-      description: `A password reset link would be sent to ${email}. (Feature not fully implemented)`,
+      title: `${action}`,
+      description: `This action for ${email} is a placeholder. A full implementation would require a database connection.`,
     });
   };
 
@@ -97,7 +98,7 @@ export default function AdminPage() {
                 View and manage all users in the system.
               </CardDescription>
             </div>
-            <Button>
+            <Button onClick={() => handleAction('Invite User', '')}>
               <UserPlus className="mr-2 h-4 w-4" />
               Invite User
             </Button>
@@ -117,10 +118,10 @@ export default function AdminPage() {
                 {isLoading ? (
                   Array.from({ length: 3 }).map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell className="h-12 animate-pulse bg-muted/50 rounded-md"></TableCell>
-                      <TableCell className="hidden md:table-cell animate-pulse bg-muted/50 rounded-md"></TableCell>
-                      <TableCell className="hidden lg:table-cell animate-pulse bg-muted/50 rounded-md"></TableCell>
-                      <TableCell className="animate-pulse bg-muted/50 rounded-md"></TableCell>
+                      <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                      <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
+                      <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                     </TableRow>
                   ))
                 ) : users.length > 0 ? (
@@ -145,11 +146,11 @@ export default function AdminPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Edit Role</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleResetPassword(user.email)}>
+                            <DropdownMenuItem onClick={() => handleAction('Edit Role', user.email)}>Edit Role</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleAction('Reset Password', user.email)}>
                               Reset Password
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleAction('Delete User', user.email)}>
                               Delete User
                             </DropdownMenuItem>
                           </DropdownMenuContent>
