@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { useState } from 'react';
 
 const formSchema = z
   .object({
@@ -42,6 +44,7 @@ const formSchema = z
 export function SignUpForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,13 +56,34 @@ export function SignUpForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // This is a placeholder for real sign-up logic.
-    console.log('Sign-up attempt with:', values);
-    toast({
-      title: 'Sign-up Successful',
-      description: "Your account has been created. You're being redirected.",
-    });
-    router.push('/world');
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: values.email, password: values.password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Something went wrong');
+      }
+
+      toast({
+        title: 'Sign-up Successful',
+        description: "Your account has been created. Please log in.",
+      });
+      router.push('/login');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Sign-up Failed',
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -80,7 +104,7 @@ export function SignUpForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="m@example.com" {...field} />
+                    <Input placeholder="m@example.com" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -93,7 +117,7 @@ export function SignUpForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <Input type="password" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -106,7 +130,7 @@ export function SignUpForm() {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <Input type="password" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -114,8 +138,8 @@ export function SignUpForm() {
             />
           </CardContent>
           <CardFooter className="flex flex-col">
-            <Button className="w-full" type="submit">
-              <UserPlus className="mr-2 h-4 w-4" /> Sign Up
+            <Button className="w-full" type="submit" disabled={isLoading}>
+              {isLoading ? 'Signing up...' : <><UserPlus className="mr-2 h-4 w-4" /> Sign Up</>}
             </Button>
             <div className="mt-4 text-center text-sm">
               Already have an account?{' '}

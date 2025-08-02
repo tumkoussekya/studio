@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { chatService } from '@/services/ChatService';
 import { useToast } from '@/hooks/use-toast';
+import LogoutButton from '@/components/world/LogoutButton';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -72,8 +73,13 @@ export default function WorldPage() {
       <aside className="w-full md:w-80 lg:w-96 border-l bg-card p-4 flex flex-col gap-4 order-1 md:order-2 shrink-0">
         <Card className="h-full flex flex-col shadow-none border-none">
             <CardHeader>
-                <CardTitle>Pixel Space</CardTitle>
-                <CardDescription>Your virtual commons room.</CardDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Pixel Space</CardTitle>
+                    <CardDescription>Your virtual commons room.</CardDescription>
+                  </div>
+                  <LogoutButton />
+                </div>
                 <AudioControl />
             </CardHeader>
             <Separator />
