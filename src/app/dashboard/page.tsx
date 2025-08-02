@@ -8,6 +8,7 @@ import LogoutButton from '@/components/world/LogoutButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import TourGuide from '@/components/TourGuide';
 
 async function getUserData() {
     const supabase = createClient();
@@ -43,20 +44,21 @@ export default async function DashboardPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-background">
+             <TourGuide isAdmin={isAdmin} />
             <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
-                 <div className="flex items-center gap-4">
+                <h1 id="tour-logo" className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
+                 <div id="tour-header-buttons" className="flex items-center gap-4">
                     <ThemeToggle />
                     {user && <LogoutButton />}
                  </div>
             </header>
             <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-8">
+                <div id="tour-welcome" className="mb-8">
                     <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user?.email || 'Explorer'}!</h2>
                     <p className="text-muted-foreground">What would you like to do today?</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+                    <Card id="tour-world" className="hover:shadow-lg transition-all hover:-translate-y-1">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                 <Users className="text-accent" />
@@ -74,7 +76,7 @@ export default async function DashboardPage() {
                            </Link>
                         </CardContent>
                     </Card>
-                     <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+                     <Card id="tour-chat" className="hover:shadow-lg transition-all hover:-translate-y-1">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                <MessageSquare className="text-accent" />
@@ -184,7 +186,7 @@ export default async function DashboardPage() {
                                     </Link>
                                 </CardContent>
                             </Card>
-                            <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+                            <Card id="tour-admin" className="hover:shadow-lg transition-all hover:-translate-y-1">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-3">
                                     <Shield className="text-accent" />
