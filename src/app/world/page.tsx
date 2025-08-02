@@ -3,12 +3,13 @@
 
 import dynamic from 'next/dynamic';
 import React, { useCallback, useEffect, useState } from 'react';
+import type * as Ably from 'ably';
 
 import Chat, { type Message } from '@/components/world/Chat';
 import ConversationStarter from '@/components/world/ConversationStarter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { chatService } from '@/services/ChatService';
+import { chatService, type PresenceData } from '@/services/ChatService';
 import { useToast } from '@/hooks/use-toast';
 import LogoutButton from '@/components/world/LogoutButton';
 import UserList from '@/components/world/UserList';
@@ -29,42 +30,56 @@ export default function WorldPage() {
 
   useEffect(() => {
     const token = getCookie('token') as string;
+    let userEmail = '';
     if (token) {
         try {
-            // In a real app, you'd decode the token safely or get user info from a context
             const payload = JSON.parse(atob(token.split('.')[1]));
-            setCurrentUserEmail(payload.email);
+            userEmail = payload.email;
+            setCurrentUserEmail(userEmail);
 
-            chatService.connect(
-              (process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080') + `?token=${token}`,
-              () => {
-                toast({ title: 'Chat Connected', description: 'You can now chat with other players.' });
-                setMessages((prev) => [...prev, { author: 'System', text: 'Chat connected.' }]);
-              },
-              () => {
-                toast({ variant: 'destructive', title: 'Chat Disconnected', description: 'Attempting to reconnect...' });
-                setMessages((prev) => [...prev, { author: 'System', text: 'Chat disconnected.' }]);
-              }
-            );
+            // Connect to the chat service and enter presence
+            chatService.enterPresence({ email: userEmail });
+            
         } catch (e) {
-            console.error("Failed to decode token or connect:", e);
+            console.error("Failed to decode token or connect to chat:", e);
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not verify your session.' });
+            return;
         }
     }
 
-
-    chatService.onMessage((author, text) => {
-        const messageAuthor = author === currentUserEmail ? 'You' : author;
-        setMessages((prev) => [...prev, { author: messageAuthor, text }]);
+    // --- Register all event handlers ---
+    chatService.onMessage((message: Ably.Types.Message) => {
+        const authorEmail = (message.data.author || message.clientId);
+        const author = authorEmail === userEmail ? 'You' : authorEmail;
+        setMessages((prev) => [...prev, { author, text: message.data.text }]);
     });
-
-    chatService.onUserList((users) => {
+    
+    chatService.onInitialUsers((users: string[]) => {
         setOnlineUsers(users);
     });
+
+    chatService.onUserJoined((member: Ably.Types.PresenceMessage) => {
+        const joinedEmail = (member.data as PresenceData).email;
+        if(joinedEmail === userEmail) return; // Don't announce self
+        
+        setOnlineUsers((prev) => [...new Set([...prev, joinedEmail])]);
+        toast({ title: 'User Joined', description: `${joinedEmail} has entered the space.` });
+    });
+    
+    chatService.onUserLeft((member: Ably.Types.PresenceMessage) => {
+        const leftEmail = (member.data as PresenceData).email;
+        setOnlineUsers((prev) => prev.filter(email => email !== leftEmail));
+        toast({ title: 'User Left', description: `${leftEmail} has left the space.` });
+    });
+
+    // This must be called to start listening to the events.
+    chatService.subscribeToEvents();
+
 
     return () => {
       chatService.disconnect();
     };
-  }, [toast, currentUserEmail]);
+  }, [toast]);
 
 
   const handlePlayerNear = useCallback(() => {
@@ -76,7 +91,6 @@ export default function WorldPage() {
   }, []);
 
   const handleSendMessage = useCallback((text: string) => {
-    // The message will be added to the state via the websocket echo
     chatService.sendMessage(text);
   }, []);
 
