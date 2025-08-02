@@ -52,6 +52,9 @@ export default function ProfilePage() {
     defaultValues: {
       first_name: '',
       last_name: '',
+      phone_number: '',
+      birth_date: undefined,
+      pronunciation: '',
     },
   });
 
