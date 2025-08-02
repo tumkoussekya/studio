@@ -12,8 +12,8 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const { pathname } = request.nextUrl;
 
-  const publicRoutes = ['/login', '/signup', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/careers', '/faq'];
-  const isPublicRoute = publicRoutes.includes(pathname);
+  const publicRoutes = ['/login', '/signup', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/careers', '/faq', '/blog'];
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   const isHomePage = pathname === '/';
   const isApiRoute = pathname.startsWith('/api/');
 
@@ -41,7 +41,7 @@ export function middleware(request: NextRequest) {
       const userRole = decoded.role;
 
       // If authenticated, redirect from public routes to dashboard
-      if (isPublicRoute) {
+      if (isPublicRoute && !pathname.startsWith('/blog')) { // allow authenticated users to view blog
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }
 

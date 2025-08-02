@@ -192,8 +192,8 @@ export default async function Home() {
       </main>
       <footer className="bg-secondary/30 border-t">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-sm">
-                <div className="col-span-full md:col-span-1">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 text-sm">
+                <div className="col-span-full lg:col-span-1">
                     <h3 className="font-bold text-lg text-foreground mb-2 font-headline">SyncroSpace</h3>
                     <p className="text-muted-foreground">A new dimension for team collaboration.</p>
                 </div>
@@ -210,6 +210,7 @@ export default async function Home() {
                     <h4 className="font-semibold text-foreground mb-4">Company</h4>
                     <ul className="space-y-2">
                         <li><Link href="/about" className="text-muted-foreground hover:text-primary">About Us</Link></li>
+                        <li><Link href="/blog" className="text-muted-foreground hover:text-primary">Blog</Link></li>
                         <li><Link href="/careers" className="text-muted-foreground hover:text-primary">Careers</Link></li>
                         <li><Link href="/contact" className="text-muted-foreground hover:text-primary">Contact</Link></li>
                     </ul>
