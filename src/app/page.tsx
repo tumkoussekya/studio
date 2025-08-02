@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, LogIn, MessageSquare, UserPlus, Users, Volume2 } from 'lucide-react';
+import { ArrowRight, LogIn, MessageSquare, UserPlus, Users, Volume2, KanbanSquare } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -9,6 +9,12 @@ export default function Home() {
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-primary font-headline">Pixel Space</h1>
         <nav className="flex items-center gap-2">
+            <Link href="/kanban" passHref>
+              <Button variant="ghost">
+                <KanbanSquare />
+                Kanban
+              </Button>
+            </Link>
             <Link href="/login" passHref>
                 <Button variant="outline">
                     <LogIn />
