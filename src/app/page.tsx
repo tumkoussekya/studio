@@ -200,8 +200,8 @@ export default function Home() {
                 <div>
                     <h4 className="font-semibold text-foreground mb-4">Product</h4>
                     <ul className="space-y-2">
-                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Features</Link></li>
-                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Pricing</Link></li>
+                        <li><Link href="/features" className="text-muted-foreground hover:text-primary">Features</Link></li>
+                        <li><Link href="/pricing" className="text-muted-foreground hover:text-primary">Pricing</Link></li>
                         <li><Link href="#" className="text-muted-foreground hover:text-primary">Documentation</Link></li>
                     </ul>
                 </div>

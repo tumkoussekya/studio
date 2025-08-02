@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const { pathname } = request.nextUrl;
 
-  const publicRoutes = ['/login', '/signup', '/about', '/privacy-policy', '/terms-of-service'];
+  const publicRoutes = ['/login', '/signup', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing'];
   const isPublicRoute = publicRoutes.includes(pathname);
   const isHomePage = pathname === '/';
   const isApiRoute = pathname.startsWith('/api/');
