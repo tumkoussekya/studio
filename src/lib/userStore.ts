@@ -1,9 +1,17 @@
-
 // NOTE: This is a simple in-memory store for demonstration purposes.
 // In a real application, you would use a database.
 import { User } from '@/models/User';
 
-const users: User[] = [];
+const users: User[] = [
+  {
+    id: 'default-user-1',
+    email: 'user@example.com',
+    // Pre-hashed password for "password"
+    passwordHash: '$2a$10$f.wT9/bEwL5pM9c/1qD2o.d6gq7/3y.lK8lQ.O/./k.wG.5I.5yO.',
+    lastX: 200,
+    lastY: 200,
+  }
+];
 
 export const userStore = {
   addUser: (user: User): User | null => {
