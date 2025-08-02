@@ -18,7 +18,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
-  Bell,
   Search,
   Users,
   MessageSquare,
@@ -26,6 +25,8 @@ import {
   MoreHorizontal,
   FileText,
   Loader2,
+  Smile,
+  Paperclip,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -39,6 +40,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { summarizeChat, type ChatMessage } from '@/ai/flows/summarize-chat';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import Image from 'next/image';
 
 
 const sampleUsers = [
@@ -59,6 +62,8 @@ const sampleMessages: ChatMessage[] = [
     { author: 'Charlie', text: "Yes, we'll be reviewing the latest designs."}
 ];
 
+const emojis = ['😀', '😂', '👍', '❤️', '🙏', '🎉', '🔥', '🚀'];
+
 
 export default function ChatPage() {
   const [activeConversation, setActiveConversation] = React.useState('general');
@@ -67,6 +72,8 @@ export default function ChatPage() {
   const [isSummarizing, setIsSummarizing] = React.useState(false);
   const [summary, setSummary] = React.useState('');
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = React.useState(false);
+  const [message, setMessage] = React.useState('');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleSummarize = async () => {
     setIsSummarizing(true);
@@ -94,6 +101,18 @@ export default function ChatPage() {
     const user = sampleUsers.find(u => u.id === activeConversation);
     return user?.name || 'Chat';
   }
+  
+  const handleAttachment = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        // In a real app, you'd upload this file and get a URL.
+        // For this demo, we'll just show a toast.
+        toast({
+            title: "Attachment Selected",
+            description: `${file.name} is ready to be sent. (Feature not fully implemented)`,
+        });
+    }
+  };
 
 
   return (
@@ -314,11 +333,60 @@ export default function ChatPage() {
                         <div className="p-3 bg-secondary rounded-lg mt-1">
                             <p>Yes, we'll be reviewing the latest designs.</p>
                         </div>
+                        <div className="p-2 bg-secondary rounded-lg mt-2 w-fit">
+                           <Image src="https://placehold.co/300x200.png" width={300} height={200} alt="Latest design mockup" data-ai-hint="design mockup" className="rounded-md" />
+                           <p className="text-xs text-muted-foreground mt-1">latest_designs.png</p>
+                        </div>
                     </div>
                 </div>
             </main>
             <footer className="p-4 border-t">
-                 <Input placeholder={`Message ${getActiveConversationName()}`} className="w-full"/>
+                <div className="relative">
+                    <Input 
+                        placeholder={`Message ${getActiveConversationName()}`} 
+                        className="w-full pr-24"
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                // handleSendMessage(message);
+                                setMessage('');
+                            }
+                        }}
+                    />
+                    <div className="absolute top-1/2 right-2 -translate-y-1/2 flex items-center gap-1">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <Smile className="size-5" />
+                                    <span className="sr-only">Add emoji</span>
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2">
+                                <div className="grid grid-cols-4 gap-2">
+                                    {emojis.map(emoji => (
+                                        <Button 
+                                            key={emoji} 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="text-xl"
+                                            onClick={() => setMessage(prev => prev + emoji)}
+                                        >
+                                            {emoji}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                        
+                        <input type="file" ref={fileInputRef} onChange={handleAttachment} className="hidden" />
+                        <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
+                            <Paperclip className="size-5" />
+                            <span className="sr-only">Attach file</span>
+                        </Button>
+                    </div>
+                </div>
             </footer>
         </div>
         </SidebarInset>
@@ -346,3 +414,5 @@ export default function ChatPage() {
     </SidebarProvider>
   );
 }
+
+    
