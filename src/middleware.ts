@@ -2,6 +2,7 @@
 import {NextResponse} from 'next/server';
 import type {NextRequest} from 'next/server';
 import {verify} from 'jsonwebtoken';
+import { userStore } from './lib/userStore';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -14,7 +15,12 @@ export function middleware(request: NextRequest) {
     }
 
     try {
-      verify(token, JWT_SECRET);
+      const decoded = verify(token, JWT_SECRET) as { email: string, lastX: number, lastY: number };
+      const { x, y } = request.body ? JSON.parse(request.body as any) : { x: decoded.lastX, y: decoded.lastY };
+      
+      if (request.method === 'POST') {
+        userStore.updateUserPosition(decoded.email, x, y);
+      }
       return NextResponse.next();
     } catch (error) {
       console.error('JWT Verification Error:', error);

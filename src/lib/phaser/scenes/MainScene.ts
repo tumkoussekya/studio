@@ -13,6 +13,14 @@ export class MainScene extends Phaser.Scene {
     super({ key: 'MainScene' });
   }
 
+  init(data: { startX: number, startY: number }) {
+    this.playerStartX = data.startX || 200;
+    this.playerStartY = data.startY || 200;
+  }
+
+  private playerStartX = 200;
+  private playerStartY = 200;
+
   create() {
     const wallColor = 0x6678b8; // Primary color
     const playerColor = 0xf7b733; // Accent color
@@ -21,16 +29,24 @@ export class MainScene extends Phaser.Scene {
     // World bounds
     this.physics.world.setBounds(0, 0, 800, 600);
 
+    // --- Room definitions ---
+    // Lounge
+    this.add.rectangle(225, 200, 350, 300).setStrokeStyle(2, wallColor, 0.3);
+    this.add.text(65, 65, 'Lounge', { font: '24px Inter', color: '#6678b8' });
+
+    // Focus Zone
+    this.add.rectangle(575, 400, 350, 300).setStrokeStyle(2, wallColor, 0.3);
+    this.add.text(420, 265, 'Focus Zone', { font: '24px Inter', color: '#6678b8' });
+
     // World objects
     const walls = this.physics.add.staticGroup();
     walls.add(this.add.rectangle(400, 50, 700, 20, wallColor).setOrigin(0.5));
     walls.add(this.add.rectangle(400, 550, 700, 20, wallColor).setOrigin(0.5));
     walls.add(this.add.rectangle(50, 300, 20, 420, wallColor).setOrigin(0.5));
     walls.add(this.add.rectangle(750, 300, 20, 420, wallColor).setOrigin(0.5));
-    walls.add(this.add.rectangle(400, 300, 100, 100, wallColor).setOrigin(0.5));
     
     // Player
-    this.player = this.add.circle(200, 200, 10, playerColor);
+    this.player = this.add.circle(this.playerStartX, this.playerStartY, 10, playerColor);
     this.physics.add.existing(this.player);
     this.player.body.setCollideWorldBounds(true);
     

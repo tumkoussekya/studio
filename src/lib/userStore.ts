@@ -18,4 +18,12 @@ export const userStore = {
   findByEmail: (email: string): User | undefined => {
     return users.find((user) => user.email === email);
   },
+  updateUserPosition: (email: string, x: number, y: number): void => {
+    const user = users.find((u) => u.email === user.email);
+    if (user) {
+      user.lastX = x;
+      user.lastY = y;
+      console.log(`Updated position for ${email}:`, {x, y});
+    }
+  }
 };

@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
     const passwordHash = await hash(password, 10);
     const id = Date.now().toString(); // Simple ID generation
 
-    userStore.addUser({ id, email, passwordHash });
+    // Start users in the lounge
+    userStore.addUser({ id, email, passwordHash, lastX: 200, lastY: 200 });
 
     return NextResponse.json({ message: 'User created successfully' }, { status: 201 });
   } catch (error) {
