@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield } from 'lucide-react';
+import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield, MessageSquare } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 import Link from 'next/link';
@@ -64,6 +64,24 @@ export default function DashboardPage() {
                             <Link href="/kanban">
                                 <Button className="w-full">
                                     Open Kanban <ArrowRight className="ml-2" />
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                    <Card className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3">
+                               <MessageSquare className="text-accent" />
+                                <span>Team Chat</span>
+                            </CardTitle>
+                            <CardDescription>
+                                Talk with your team in 1:1 and group conversations.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Link href="/chat">
+                                <Button className="w-full">
+                                    Open Chat <ArrowRight className="ml-2" />
                                 </Button>
                             </Link>
                         </CardContent>
