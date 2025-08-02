@@ -190,8 +190,41 @@ export default function Home() {
           </div>
         </section>
       </main>
-      <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-muted-foreground text-sm">
-        <p>&copy; {new Date().getFullYear()} SyncroSpace. All Rights Reserved.</p>
+      <footer className="bg-secondary/30 border-t">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+                <div className="col-span-2 md:col-span-1">
+                    <h3 className="font-bold text-lg text-foreground mb-2 font-headline">SyncroSpace</h3>
+                    <p className="text-muted-foreground">A new dimension for team collaboration.</p>
+                </div>
+                <div>
+                    <h4 className="font-semibold text-foreground mb-4">Product</h4>
+                    <ul className="space-y-2">
+                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Features</Link></li>
+                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Pricing</Link></li>
+                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Documentation</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-semibold text-foreground mb-4">Company</h4>
+                    <ul className="space-y-2">
+                        <li><Link href="#" className="text-muted-foreground hover:text-primary">About Us</Link></li>
+                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Careers</Link></li>
+                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Contact</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-semibold text-foreground mb-4">Legal</h4>
+                    <ul className="space-y-2">
+                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
+                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
+                    </ul>
+                </div>
+            </div>
+            <div className="mt-12 border-t pt-8 text-center text-muted-foreground">
+                <p>&copy; {new Date().getFullYear()} SyncroSpace. All Rights Reserved.</p>
+            </div>
+        </div>
       </footer>
     </div>
   );
