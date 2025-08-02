@@ -59,8 +59,12 @@ export function middleware(request: NextRequest) {
     }
   } else {
     // Not authenticated
-    if (!isPublicRoute && !isHomePage) {
-        return NextResponse.redirect(new URL('/login', request.url));
+    if (!isPublicRoute && !isHomePage && !pathname.startsWith('/meetings/')) {
+        if (pathname.startsWith('/meetings/')) {
+            // Allow anonymous users to join meetings, but they will be prompted for a name by Jitsi
+        } else {
+             return NextResponse.redirect(new URL('/login', request.url));
+        }
     }
   }
 

@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 
 interface Meeting {
   id: number;
@@ -28,14 +29,20 @@ const sampleMeetings: Meeting[] = [
 export default function MeetingsPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const { toast } = useToast();
+  const router = useRouter();
+
+  const slugify = (text: string) => {
+    return text.toString().toLowerCase()
+      .replace(/\s+/g, '-')           // Replace spaces with -
+      .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+      .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+      .replace(/^-+/, '')             // Trim - from start of text
+      .replace(/-+$/, '');            // Trim - from end of text
+  }
 
   const handleJoinMeeting = (meeting: Meeting) => {
-    toast({
-      title: `Joining: ${meeting.title}`,
-      description: "You are being redirected to the meeting room.",
-    });
-    // In a real app, you would navigate to a specific meeting URL
-    // router.push(`/meetings/${meeting.id}`);
+    const roomName = slugify(meeting.title);
+    router.push(`/meetings/${roomName}`);
   };
 
   const handleExportICS = (meeting: Meeting) => {
