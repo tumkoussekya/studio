@@ -41,7 +41,7 @@ export function middleware(request: NextRequest) {
       const userRole = decoded.role;
 
       // If authenticated, redirect from public routes to dashboard
-      if (isPublicRoute && !pathname.startsWith('/blog')) { // allow authenticated users to view blog
+      if (isPublicRoute && !pathname.startsWith('/blog') && !pathname.startsWith('/privacy-policy') && !pathname.startsWith('/terms-of-service')) { // allow authenticated users to view blog and legal pages
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }
 
