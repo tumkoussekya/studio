@@ -24,6 +24,10 @@ type HistoryHandler = (messages: Ably.Types.Message[]) => void;
 type PresenceHandler = (presenceMessage: Ably.Types.PresenceMessage) => void;
 type PlayerUpdateHandler = (message: Ably.Types.Message) => void;
 
+// In a real-world application, this key should be securely generated and shared
+// between the participants of a conversation, and not hardcoded.
+const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "super-secret-key-for-e2e-chat";
+
 class ChatService {
     private ably: Ably.Realtime;
     private channel: Ably.Types.RealtimeChannel;
@@ -40,10 +44,21 @@ class ChatService {
             authUrl: '/api/ably-token',
             authMethod: 'POST',
         });
+        
+        const channelOptions: Ably.Types.ChannelOptions = {
+            params: { rewind: '25' },
+            // NOTE: This enables End-to-End encryption.
+            // In a real application, the key should be managed securely
+            // and shared only between the intended recipients.
+            cipher: {
+                algorithm: 'aes',
+                keyLength: 256,
+                mode: 'cbc',
+                key: E2E_KEY
+            }
+        };
 
-        this.channel = this.ably.channels.get('pixel-space', {
-             params: { rewind: '25' }
-        });
+        this.channel = this.ably.channels.get('pixel-space', channelOptions);
 
         this.ably.connection.on('connected', () => {
             console.log('Ably connected!');
