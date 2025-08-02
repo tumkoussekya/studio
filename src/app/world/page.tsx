@@ -18,6 +18,7 @@ import type { MainScene } from '@/lib/phaser/scenes/MainScene';
 import { useRouter } from 'next/navigation';
 import AlexChat from '@/components/world/AlexChat';
 import ConversationStarter from '@/components/world/ConversationStarter';
+import KnockButton from '@/components/world/KnockButton';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -27,7 +28,7 @@ export default function WorldPage() {
   const [isNearAlex, setIsNearAlex] = useState(false);
   const [nearbyPlayer, setNearbyPlayer] = useState<{ clientId: string; email: string } | null>(null);
   const [messages, setMessages] = useState<Message[]>([
-    { author: 'System', text: 'Welcome to SyncroSpace! Use WASD or arrow keys to move.' },
+    { author: 'System', text: 'Welcome to SyncroSpace! Use WASD or arrow keys to move. Click on other players to "knock"!' },
   ]);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [currentUser, setCurrentUser] = useState<{ email: string, id: string } | null>(null);
@@ -154,7 +155,15 @@ export default function WorldPage() {
           return <AlexChat />;
       }
       if (nearbyPlayer) {
-          return <ConversationStarter />;
+          return <KnockButton 
+                    player={nearbyPlayer} 
+                    onKnock={(targetClientId) => {
+                        if (currentUser) {
+                           realtimeService.sendKnock(targetClientId, currentUser.email);
+                           toast({ title: `You knocked on ${nearbyPlayer.email}!`});
+                        }
+                    }}
+                 />;
       }
       return (
           <div className="h-[188px] flex items-center justify-center text-center text-muted-foreground p-8">

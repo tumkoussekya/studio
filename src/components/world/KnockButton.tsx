@@ -2,22 +2,26 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Hand } from "lucide-react";
-import React, { useState } from "react";
-import { suggestConversationStarter } from '@/ai/flows/suggest-conversation-starter';
+import { Hand, Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { suggestConversationStarter } from "@/ai/flows/suggest-conversation-starter";
+import { useToast } from "@/hooks/use-toast";
+import React, { useState } from "react";
 
-interface ConversationStarterProps {
-    nearbyPlayerEmail: string;
-    onKnock: () => void;
+
+interface KnockButtonProps {
+    player: {
+        clientId: string;
+        email: string;
+    };
+    onKnock: (targetClientId: string) => void;
 }
 
-export default function ConversationStarter({ nearbyPlayerEmail, onKnock }: ConversationStarterProps) {
+export default function KnockButton({ player, onKnock }: KnockButtonProps) {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleGenerate = async () => {
+     const handleGenerateIcebreaker = async () => {
         setIsLoading(true);
         try {
             const result = await suggestConversationStarter({
@@ -42,18 +46,19 @@ export default function ConversationStarter({ nearbyPlayerEmail, onKnock }: Conv
         }
     };
 
+
     return (
         <Card className="bg-secondary/50 border-dashed h-[188px]">
             <CardHeader>
-                <CardTitle className="text-lg">You're near {nearbyPlayerEmail}!</CardTitle>
-                <CardDescription>Break the ice, or just say hello.</CardDescription>
+                <CardTitle className="text-lg">You're near {player.email}!</CardTitle>
+                <CardDescription>Break the ice or just say hello.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
-                 <Button onClick={onKnock} variant="outline">
+                <Button onClick={() => onKnock(player.clientId)} variant="outline">
                     <Hand className="mr-2 h-4 w-4" />
                     Knock
                 </Button>
-                <Button onClick={handleGenerate} disabled={isLoading} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                <Button onClick={handleGenerateIcebreaker} disabled={isLoading} className="bg-accent text-accent-foreground hover:bg-accent/90">
                     {isLoading ? (
                         <>
                             <Sparkles className="mr-2 h-4 w-4 animate-spin" />
@@ -62,7 +67,7 @@ export default function ConversationStarter({ nearbyPlayerEmail, onKnock }: Conv
                     ) : (
                         <>
                             <Sparkles className="mr-2 h-4 w-4" />
-                            Suggest Icebreaker
+                            AI Icebreaker
                         </>
                     )}
                 </Button>

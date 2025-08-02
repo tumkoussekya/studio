@@ -239,6 +239,11 @@ export class MainScene extends Phaser.Scene {
     } else {
       const otherPlayerColor = 0x38bdf8;
       const avatar = this.add.circle(x + 10, y + 10, 10, otherPlayerColor);
+      avatar.setInteractive({ useHandCursor: true });
+      avatar.on('pointerdown', () => {
+          this.realtimeService.sendKnock(clientId, this.myEmail);
+      });
+
       this.physics.add.existing(avatar);
       (avatar.body as Phaser.Physics.Arcade.Body).setImmovable(true);
       
