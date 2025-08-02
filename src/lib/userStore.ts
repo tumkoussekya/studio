@@ -7,7 +7,7 @@ const users: User[] = [
     id: 'default-user-1',
     email: 'user@example.com',
     // Pre-hashed password for "password"
-    passwordHash: '$2a$10$f.wT9/bEwL5pM9c/1qD2o.d6gq7/3y.lK8lQ.O/./k.wG.5I.5yO.',
+    passwordHash: '$2a$10$V8.v4bH/wR4Fv.K5f.gS9.7Yj7.F1q.Y1q.N3.N3.L1gS9.N3.S9O',
     lastX: 200,
     lastY: 200,
   }
