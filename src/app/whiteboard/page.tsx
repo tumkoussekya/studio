@@ -5,17 +5,32 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent } from '@/components/ui/card';
-import { Eraser, Palette, Pen, Users } from 'lucide-react';
+import { Eraser, Palette, Pen, Users, Square } from 'lucide-react';
 import * as Ably from 'ably';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
-interface DrawingData {
-  from: { x: number; y: number };
-  to: { x: number; y: number };
+type Tool = 'pen' | 'rectangle';
+
+interface BaseDrawingData {
+  tool: Tool;
   color: string;
   brushSize: number;
 }
+interface PenData extends BaseDrawingData {
+  tool: 'pen';
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
+
+interface RectangleData extends BaseDrawingData {
+  tool: 'rectangle';
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
+
+type DrawingData = PenData | RectangleData;
 
 // Connect to Ably
 const ably = new Ably.Realtime({ authUrl: '/api/ably-token', authMethod: 'POST' });
@@ -29,6 +44,9 @@ export default function WhiteboardPage() {
   const [brushSize, setBrushSize] = useState(5);
   const [onlineUsers, setOnlineUsers] = useState(0);
   const lastPosition = useRef<{ x: number, y: number } | null>(null);
+  const [currentTool, setCurrentTool] = useState<Tool>('pen');
+  const snapshot = useRef<ImageData | null>(null);
+
 
   useEffect(() => {
     // --- Canvas Setup ---
@@ -36,14 +54,20 @@ export default function WhiteboardPage() {
     if (!canvas) return;
     
     const scale = window.devicePixelRatio;
-    canvas.width = canvas.offsetWidth * scale;
-    canvas.height = canvas.offsetHeight * scale;
+    const parent = canvas.parentElement;
+    if (parent) {
+      canvas.width = parent.offsetWidth * scale;
+      canvas.height = parent.offsetHeight * scale;
+    }
+
 
     const context = canvas.getContext('2d');
     if (!context) return;
     
     context.scale(scale, scale);
     contextRef.current = context;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
 
     // --- Ably Setup ---
     const handlePresence = () => {
@@ -61,13 +85,7 @@ export default function WhiteboardPage() {
         const data: DrawingData = message.data;
         const remoteContext = canvas.getContext('2d');
         if(remoteContext) {
-            remoteContext.beginPath();
-            remoteContext.strokeStyle = data.color;
-            remoteContext.lineWidth = data.brushSize;
-            remoteContext.moveTo(data.from.x, data.from.y);
-            remoteContext.lineTo(data.to.x, data.to.y);
-            remoteContext.stroke();
-            remoteContext.closePath();
+           drawOnCanvas(remoteContext, data);
         }
     });
 
@@ -83,6 +101,25 @@ export default function WhiteboardPage() {
 
   }, []);
 
+  const drawOnCanvas = (ctx: CanvasRenderingContext2D, data: DrawingData) => {
+      ctx.strokeStyle = data.color;
+      ctx.lineWidth = data.brushSize;
+
+      if (data.tool === 'pen') {
+          ctx.beginPath();
+          ctx.moveTo(data.from.x, data.from.y);
+          ctx.lineTo(data.to.x, data.to.y);
+          ctx.stroke();
+          ctx.closePath();
+      } else if (data.tool === 'rectangle') {
+           ctx.beginPath();
+           ctx.rect(data.from.x, data.from.y, data.to.x - data.from.x, data.to.y - data.from.y);
+           ctx.stroke();
+           ctx.closePath();
+      }
+  };
+
+
   useEffect(() => {
     if (contextRef.current) {
         contextRef.current.strokeStyle = color;
@@ -97,49 +134,82 @@ export default function WhiteboardPage() {
 
   const publishDrawData = useDebouncedCallback((data: DrawingData) => {
     channel.publish('draw', data);
-  }, 10); // Debounce to avoid flooding the channel
+  }, 10); 
 
   const startDrawing = ({ nativeEvent }: React.MouseEvent<HTMLCanvasElement>) => {
     const { offsetX, offsetY } = nativeEvent;
-    if (!contextRef.current) return;
-    contextRef.current.beginPath();
-    contextRef.current.moveTo(offsetX, offsetY);
+    const context = contextRef.current;
+    if (!context) return;
+
     setIsDrawing(true);
     lastPosition.current = { x: offsetX, y: offsetY };
+
+    if (currentTool === 'pen') {
+        context.beginPath();
+        context.moveTo(offsetX, offsetY);
+    } else if (currentTool === 'rectangle') {
+        snapshot.current = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
+    }
   };
 
-  const finishDrawing = () => {
-    if (!contextRef.current) return;
-    contextRef.current.closePath();
+  const finishDrawing = ({ nativeEvent }: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !lastPosition.current) return;
+    const { offsetX, offsetY } = nativeEvent;
+    const context = contextRef.current;
+    if (!context) return;
+
     setIsDrawing(false);
+
+    if (currentTool === 'pen') {
+        context.closePath();
+    } else if (currentTool === 'rectangle') {
+        const rectData: RectangleData = {
+            tool: 'rectangle',
+            from: lastPosition.current,
+            to: { x: offsetX, y: offsetY },
+            color,
+            brushSize
+        };
+        drawOnCanvas(context, rectData);
+        publishDrawData(rectData);
+    }
     lastPosition.current = null;
+    snapshot.current = null;
   };
 
   const draw = ({ nativeEvent }: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !lastPosition.current) return;
+    if (!isDrawing || !lastPosition.current || !contextRef.current) return;
     const { offsetX, offsetY } = nativeEvent;
-    if (!contextRef.current) return;
-
-    // Draw locally first
-    contextRef.current.lineTo(offsetX, offsetY);
-    contextRef.current.stroke();
     
-    // Then publish to others
-    publishDrawData({
-        from: lastPosition.current,
-        to: { x: offsetX, y: offsetY },
-        color,
-        brushSize
-    });
+    if (currentTool === 'pen') {
+        // Draw locally first
+        contextRef.current.lineTo(offsetX, offsetY);
+        contextRef.current.stroke();
+        
+        // Then publish to others
+        const penData: PenData = {
+            tool: 'pen',
+            from: lastPosition.current,
+            to: { x: offsetX, y: offsetY },
+            color,
+            brushSize
+        };
+        publishDrawData(penData);
 
-    lastPosition.current = { x: offsetX, y: offsetY };
+        lastPosition.current = { x: offsetX, y: offsetY };
+    } else if (currentTool === 'rectangle' && snapshot.current) {
+        contextRef.current.putImageData(snapshot.current, 0, 0);
+        contextRef.current.beginPath();
+        contextRef.current.rect(lastPosition.current.x, lastPosition.current.y, offsetX - lastPosition.current.x, offsetY - lastPosition.current.y);
+        contextRef.current.stroke();
+    }
   };
 
   const clearCanvas = (publish = true) => {
     const canvas = canvasRef.current;
     const context = contextRef.current;
     if (canvas && context) {
-      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
       if (publish) {
         channel.publish('clear', {});
       }
@@ -156,7 +226,13 @@ export default function WhiteboardPage() {
                 <span>{onlineUsers} user{onlineUsers !== 1 ? 's' : ''} online</span>
              </Badge>
             <Card className="p-2">
-                <CardContent className="flex items-center gap-6 p-0">
+                <CardContent className="flex items-center gap-4 p-0">
+                     <Button variant="ghost" size="icon" onClick={() => setCurrentTool('pen')} className={cn(currentTool === 'pen' && 'bg-accent text-accent-foreground')}>
+                        <Pen className="h-5 w-5" />
+                    </Button>
+                     <Button variant="ghost" size="icon" onClick={() => setCurrentTool('rectangle')} className={cn(currentTool === 'rectangle' && 'bg-accent text-accent-foreground')}>
+                        <Square className="h-5 w-5" />
+                    </Button>
                     <div className="flex items-center gap-2">
                         <Palette className="h-5 w-5" />
                         <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-8 h-8 bg-transparent border-none cursor-pointer" />
