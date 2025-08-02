@@ -47,7 +47,7 @@ import Announcements from '@/components/chat/Announcements';
 
 
 const sampleUsers = [
-    { id: 'alice', name: 'Alice', status: 'typing...' },
+    { id: 'alice', name: 'Alice', status: 'Online' },
     { id: 'bob', name: 'Bob', status: 'Hey, how are you?' },
 ];
 
