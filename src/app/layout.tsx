@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/ThemeProvider';
 
 export const metadata: Metadata = {
-  title: 'Pixel Space',
+  title: 'SyncroSpace',
   description: 'A new way to connect in a 2D world.',
 };
 

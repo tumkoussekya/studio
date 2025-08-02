@@ -28,7 +28,7 @@ export default function WorldPage() {
   const [isNearAlex, setIsNearAlex] = useState(false);
   const [nearbyPlayer, setNearbyPlayer] = useState<{ clientId: string; email: string } | null>(null);
   const [messages, setMessages] = useState<Message[]>([
-    { author: 'System', text: 'Welcome to Pixel Space! Use WASD or arrow keys to move.' },
+    { author: 'System', text: 'Welcome to SyncroSpace! Use WASD or arrow keys to move.' },
   ]);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [currentUser, setCurrentUser] = useState<{ email: string, id: string } | null>(null);
@@ -202,7 +202,7 @@ export default function WorldPage() {
             <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle>Pixel Space</CardTitle>
+                    <CardTitle>SyncroSpace</CardTitle>
                     <CardDescription>Your virtual commons room.</CardDescription>
                   </div>
                   <LogoutButton />
