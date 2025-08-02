@@ -2,31 +2,11 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Briefcase, MapPin } from 'lucide-react';
+import { Briefcase, MapPin, ArrowRight } from 'lucide-react';
+import { getAllJobs } from '@/lib/job-openings';
 
 export default function CareersPage() {
-    const jobOpenings = [
-        {
-            title: 'Senior Frontend Engineer',
-            location: 'Remote',
-            department: 'Engineering',
-        },
-        {
-            title: 'Product Designer',
-            location: 'Remote',
-            department: 'Design',
-        },
-        {
-            title: 'Backend Engineer (AI/ML)',
-            location: 'Remote',
-            department: 'Engineering',
-        },
-        {
-            title: 'Marketing Manager',
-            location: 'Remote',
-            department: 'Marketing',
-        },
-    ];
+    const jobOpenings = getAllJobs();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -49,8 +29,8 @@ export default function CareersPage() {
         <div className="max-w-4xl mx-auto">
             <h3 className="text-3xl font-bold font-headline mb-8 text-center">Open Positions</h3>
             <div className="space-y-6">
-                {jobOpenings.map((job, index) => (
-                    <Card key={index} className="hover:shadow-md transition-shadow">
+                {jobOpenings.map((job) => (
+                    <Card key={job.id} className="hover:shadow-md transition-shadow">
                         <CardHeader className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-center">
                             <div>
                                 <CardTitle className="text-2xl font-headline">{job.title}</CardTitle>
@@ -60,7 +40,7 @@ export default function CareersPage() {
                                 </CardDescription>
                             </div>
                             <Button asChild>
-                                <Link href="#">Apply Now</Link>
+                                <Link href={`/careers/${job.id}`}>View Details <ArrowRight className="ml-2 h-4 w-4" /></Link>
                             </Button>
                         </CardHeader>
                     </Card>
