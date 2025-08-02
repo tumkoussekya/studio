@@ -17,8 +17,7 @@ import AudioControl from '@/components/world/AudioControl';
 import type { MainScene } from '@/lib/phaser/scenes/MainScene';
 import { useRouter } from 'next/navigation';
 import AlexChat from '@/components/world/AlexChat';
-import { Button } from '@/components/ui/button';
-import { Hand } from 'lucide-react';
+import ConversationStarter from '@/components/world/ConversationStarter';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -150,34 +149,12 @@ export default function WorldPage() {
     realtimeService.sendMessage(text, { author: currentUser.email });
   }, [currentUser]);
   
-  const handleKnock = () => {
-    if (!nearbyPlayer || !currentUser) return;
-    realtimeService.sendKnock(nearbyPlayer.clientId, currentUser.email);
-    toast({
-      title: 'Knock Sent',
-      description: `You knocked on ${nearbyPlayer.email}'s virtual door.`,
-    });
-  };
-  
   const renderInteractionPanel = () => {
       if (isNearAlex) {
           return <AlexChat />;
       }
       if (nearbyPlayer) {
-          return (
-             <Card className="bg-secondary/50 border-dashed h-[188px]">
-                <CardHeader>
-                    <CardTitle className="text-lg">You're near {nearbyPlayer.email}!</CardTitle>
-                    <CardDescription>Would you like to get their attention?</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button onClick={handleKnock} className="w-full">
-                        <Hand className="mr-2 h-4 w-4" />
-                        Knock
-                    </Button>
-                </CardContent>
-            </Card>
-          );
+          return <ConversationStarter />;
       }
       return (
           <div className="h-[188px] flex items-center justify-center text-center text-muted-foreground p-8">
