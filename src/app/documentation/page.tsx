@@ -62,6 +62,7 @@ export default function DocumentationPage() {
             <section id="virtual-world" className="mb-16 scroll-mt-20">
                 <h2 className="text-3xl font-bold font-headline">Virtual World</h2>
                 <p>The heart of SyncroSpace is the 2D virtual world. Use the WASD or Arrow keys on your keyboard to move your avatar. As you get closer to other users, you'll be able to hear them through spatial audio.</p>
+                <p>Explore different rooms like the Lounge, Focus Zone, and Coffee Room. You can interact with certain objects, like the bulletin board in the lounge, to access features like announcements.</p>
             </section>
             
              <section id="chat" className="mb-16 scroll-mt-20">

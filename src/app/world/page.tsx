@@ -19,6 +19,9 @@ import { useRouter } from 'next/navigation';
 import AlexChat from '@/components/world/AlexChat';
 import ConversationStarter from '@/components/world/ConversationStarter';
 import KnockButton from '@/components/world/KnockButton';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenuItem, SidebarMenu, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
+import { MessageSquare, Rss } from 'lucide-react';
+import Announcements from '@/components/chat/Announcements';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -35,6 +38,7 @@ export default function WorldPage() {
   const { toast } = useToast();
   const sceneRef = useRef<MainScene | null>(null);
   const router = useRouter();
+  const [activeRightPanel, setActiveRightPanel] = useState('chat');
 
 
   useEffect(() => {
@@ -54,6 +58,21 @@ export default function WorldPage() {
         toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not verify your session.' });
         router.push('/login');
     }
+
+    const handleShowAnnouncements = () => {
+        setActiveRightPanel('announcements');
+        toast({
+            title: "Bulletin Board",
+            description: "Showing latest announcements.",
+        });
+    }
+
+    window.addEventListener('show-announcements', handleShowAnnouncements);
+
+    return () => {
+        window.removeEventListener('show-announcements', handleShowAnnouncements);
+    }
+
   }, [router, toast]);
 
 
@@ -173,6 +192,7 @@ export default function WorldPage() {
   }
 
   return (
+    <SidebarProvider>
     <div className="w-screen h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <div className="flex-grow relative order-2 md:order-1 h-1/2 md:h-full">
         <PhaserContainer 
@@ -183,32 +203,62 @@ export default function WorldPage() {
             onSceneReady={(scene) => sceneRef.current = scene} 
         />
       </div>
-      <aside className="w-full md:w-80 lg:w-96 border-l bg-card p-4 flex flex-col gap-4 order-1 md:order-2 shrink-0 h-1/2 md:h-full">
-        <Card className="h-full flex flex-col shadow-none border-none">
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>SyncroSpace</CardTitle>
-                    <CardDescription>Your virtual commons room.</CardDescription>
-                  </div>
-                  <LogoutButton />
+      <Sidebar collapsible="offcanvas" side="right" className="w-full md:w-80 lg:w-96 border-l bg-card p-0 flex flex-col gap-0 order-1 md:order-2 shrink-0 h-1/2 md:h-full">
+        <SidebarHeader>
+            <div className="flex justify-between items-center p-4">
+                <div>
+                <CardTitle>SyncroSpace</CardTitle>
+                <CardDescription>Your virtual commons room.</CardDescription>
                 </div>
-            </CardHeader>
-            <Separator />
-            <CardContent className="p-0 flex-grow flex flex-col min-h-0">
-                <div className="p-4">
-                  {renderInteractionPanel()}
+                <div className="flex items-center gap-2">
+                    <LogoutButton />
+                    <SidebarTrigger className="md:hidden" />
                 </div>
-                <Separator />
-                <div className="p-4">
-                  <AudioControl />
+            </div>
+            <div className="px-4">
+                <div className="p-1 bg-muted rounded-md flex items-center gap-1">
+                     <Button 
+                        variant={activeRightPanel === 'chat' ? 'primary' : 'ghost'} 
+                        className="flex-1"
+                        onClick={() => setActiveRightPanel('chat')}
+                    >
+                        <MessageSquare className="mr-2 h-4 w-4" /> Chat
+                    </Button>
+                    <Button 
+                        variant={activeRightPanel === 'announcements' ? 'primary' : 'ghost'} 
+                        className="flex-1"
+                        onClick={() => setActiveRightPanel('announcements')}
+                    >
+                       <Rss className="mr-2 h-4 w-4" /> Announcements
+                    </Button>
                 </div>
-                <Separator />
-                <UserList users={onlineUsers} />
-                <Chat messages={messages} onSendMessage={handleSendMessage} />
-            </CardContent>
-        </Card>
-      </aside>
+            </div>
+        </SidebarHeader>
+        <Separator />
+        <SidebarContent className="p-0 flex-grow flex flex-col min-h-0">
+             {activeRightPanel === 'chat' && (
+                <div className="h-full flex flex-col">
+                    <div className="p-4">
+                        {renderInteractionPanel()}
+                    </div>
+                    <Separator />
+                    <div className="p-4">
+                        <AudioControl />
+                    </div>
+                    <Separator />
+                    <UserList users={onlineUsers} />
+                    <Chat messages={messages} onSendMessage={handleSendMessage} />
+                </div>
+             )}
+             {activeRightPanel === 'announcements' && (
+                <div className="h-full flex flex-col">
+                    <Announcements />
+                </div>
+             )}
+
+        </SidebarContent>
+      </Sidebar>
     </div>
+    </SidebarProvider>
   );
 }

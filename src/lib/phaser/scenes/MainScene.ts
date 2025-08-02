@@ -83,6 +83,7 @@ export class MainScene extends Phaser.Scene {
     const otherPlayerColor = 0x38bdf8; // sky-400
     const npcColor = 0x9ca3af; // Gray-400
     const portalColor = 0x4ade80; // Green-400
+    const interactiveObjectColor = 0xfacc15; // yellow-400
     const textColor = '#e5e7eb';
     
     // World bounds
@@ -99,6 +100,15 @@ export class MainScene extends Phaser.Scene {
     this.add.text(80, 665, 'Coffee Room', { font: '24px "Press Start 2P"', color: textColor });
     this.add.circle(150, 800, 30, 0x8c5e3c).setStrokeStyle(2, 0x6f4e37);
     this.add.circle(650, 1000, 30, 0x8c5e3c).setStrokeStyle(2, 0x6f4e37);
+
+    // --- Interactive Objects ---
+    const bulletinBoard = this.add.rectangle(80, 200, 20, 100, interactiveObjectColor);
+    bulletinBoard.setInteractive({ useHandCursor: true });
+    bulletinBoard.on('pointerdown', () => {
+        window.dispatchEvent(new Event('show-announcements'));
+    });
+    this.add.text(70, 260, 'Board', { font: '14px VT323', color: textColor }).setAngle(-90);
+
 
     // World objects
     const walls = this.physics.add.staticGroup();
