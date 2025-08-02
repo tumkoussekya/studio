@@ -6,13 +6,15 @@ import React, { useEffect, useRef } from 'react';
 import { MainScene } from '@/lib/phaser/scenes/MainScene';
 import { verify } from 'jsonwebtoken';
 import { getCookie } from 'cookies-next';
+import { chatService } from '@/services/ChatService';
 
 interface PhaserContainerProps {
   onPlayerNear: () => void;
   onPlayerFar: () => void;
+  onSceneReady: (scene: MainScene) => void;
 }
 
-export default function PhaserContainer({ onPlayerNear, onPlayerFar }: PhaserContainerProps) {
+export default function PhaserContainer({ onPlayerNear, onPlayerFar, onSceneReady }: PhaserContainerProps) {
   const gameRef = useRef<Phaser.Game | null>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
 
@@ -21,20 +23,21 @@ export default function PhaserContainer({ onPlayerNear, onPlayerFar }: PhaserCon
       return;
     }
     
-    const token = getCookie('token') as string | undefined;
     let startX = 200;
     let startY = 200;
+    let email = 'Guest';
+    let clientId = chatService.getClientId(); // Get initial client ID from service
 
+    const token = getCookie('token') as string | undefined;
     if (token) {
         try {
-            // NOTE: This is NOT secure for production.
-            // The secret should never be exposed on the client.
-            // This is for demonstration purposes only.
-            const decoded = verify(token, process.env.NEXT_PUBLIC_JWT_SECRET || 'fallback-secret') as { lastX?: number, lastY?: number };
+            const decoded = verify(token, process.env.NEXT_PUBLIC_JWT_SECRET || 'fallback-secret') as { email: string, userId: string, lastX?: number, lastY?: number };
             if (decoded.lastX && decoded.lastY) {
                 startX = decoded.lastX;
                 startY = decoded.lastY;
             }
+            email = decoded.email;
+            clientId = decoded.userId;
         } catch (e) {
             console.error("Invalid token:", e);
         }
@@ -65,7 +68,8 @@ export default function PhaserContainer({ onPlayerNear, onPlayerFar }: PhaserCon
           
           const mainScene = game.scene.getScene('MainScene') as MainScene;
           if (mainScene) {
-            mainScene.scene.start(undefined, { startX, startY });
+            onSceneReady(mainScene);
+            mainScene.scene.start(undefined, { startX, startY, email, clientId, chatService });
           }
         },
       },
@@ -77,7 +81,7 @@ export default function PhaserContainer({ onPlayerNear, onPlayerFar }: PhaserCon
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [onPlayerNear, onPlayerFar]);
+  }, [onPlayerNear, onPlayerFar, onSceneReady]);
 
   return <div ref={gameContainerRef} className="w-full h-full" />;
 }

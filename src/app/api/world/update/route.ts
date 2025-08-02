@@ -7,6 +7,9 @@ import * as Ably from 'ably';
 const ABLY_API_KEY = process.env.ABLY_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 
+// This endpoint is no longer strictly necessary for broadcasting,
+// but can be kept for server-side validation or other future uses.
+// For now, we simplify and publish directly from the client via the ChatService.
 export async function POST(req: NextRequest) {
     if (!ABLY_API_KEY) {
         return NextResponse.json({ errorMessage: 'Missing ABLY_API_KEY environment variable.' }, { status: 500 });
@@ -33,8 +36,6 @@ export async function POST(req: NextRequest) {
         const ably = new Ably.Rest({ key: ABLY_API_KEY });
         const channel = ably.channels.get('pixel-space');
         
-        // We publish the update with the user's ID as the event name.
-        // This makes it easy for clients to know which player moved.
         await channel.publish('player-update', {
             x,
             y,

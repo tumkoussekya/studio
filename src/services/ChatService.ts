@@ -3,7 +3,6 @@
 
 import * as Ably from 'ably';
 
-// Define the shape of our message and presence data
 export interface MessageData {
     author: string;
     text: string;
@@ -13,7 +12,13 @@ export interface PresenceData {
     email: string;
 }
 
-// Define the event handlers the UI can register
+export interface PlayerUpdateData {
+    x: number;
+    y: number;
+    email: string;
+    clientId: string;
+}
+
 type MessageHandler = (message: Ably.Types.Message) => void;
 type HistoryHandler = (messages: Ably.Types.Message[]) => void;
 type PresenceHandler = (presenceMessage: Ably.Types.PresenceMessage) => void;
@@ -27,19 +32,17 @@ class ChatService {
     private historyHandler: HistoryHandler | null = null;
     private userJoinedHandler: PresenceHandler | null = null;
     private userLeftHandler: PresenceHandler | null = null;
-    private initialUsersHandler: ((users: string[]) => void) | null = null;
+    private initialUsersHandler: ((users: Ably.Types.PresenceMessage[]) => void) | null = null;
     private playerUpdateHandler: PlayerUpdateHandler | null = null;
 
     constructor() {
-        // Instantiate Ably with a placeholder client ID
         this.ably = new Ably.Realtime({
             authUrl: '/api/ably-token',
             authMethod: 'POST',
-            clientId: 'anonymous-' + Math.random().toString(36).substr(2, 9),
         });
 
         this.channel = this.ably.channels.get('pixel-space', {
-             params: { rewind: '25' } // Request last 25 messages on attach
+             params: { rewind: '25' }
         });
 
         this.ably.connection.on('connected', () => {
@@ -51,53 +54,48 @@ class ChatService {
         });
     }
 
-    // Subscribe to all channel events at once
+    public getClientId(): string {
+        return this.ably.auth.clientId;
+    }
+
     public subscribeToEvents(): void {
-        // Subscribe to new messages
         this.channel.subscribe('message', (message) => {
             if (this.messageHandler) {
                 this.messageHandler(message);
             }
         });
         
-        // Subscribe to player updates
         this.channel.subscribe('player-update', (message) => {
             if (this.playerUpdateHandler) {
                 this.playerUpdateHandler(message);
             }
         });
 
-        // Get message history
         this.channel.history((err, result) => {
             if (!err && result.items && this.historyHandler) {
                 this.historyHandler(result.items);
             }
         });
 
-        // Subscribe to members entering
         this.channel.presence.subscribe('enter', (member) => {
             if (this.userJoinedHandler) {
                 this.userJoinedHandler(member);
             }
         });
         
-        // Subscribe to members leaving
         this.channel.presence.subscribe('leave', (member) => {
              if (this.userLeftHandler) {
                 this.userLeftHandler(member);
             }
         });
 
-        // Get initial presence set
         this.channel.presence.get((err, members) => {
             if (!err && members && this.initialUsersHandler) {
-                const userEmails = members.map(m => (m.data as PresenceData).email);
-                this.initialUsersHandler(userEmails);
+                this.initialUsersHandler(members);
             }
         });
     }
     
-    // Register event handlers
     public onMessage(handler: MessageHandler): void {
         this.messageHandler = handler;
     }
@@ -118,21 +116,23 @@ class ChatService {
         this.userLeftHandler = handler;
     }
     
-    public onInitialUsers(handler: (users: string[]) => void): void {
+    public onInitialUsers(handler: (users: Ably.Types.PresenceMessage[]) => void): void {
         this.initialUsersHandler = handler;
     }
 
-    // Enter presence with user data
     public enterPresence(userData: PresenceData): void {
         this.channel.presence.enter(userData);
     }
     
-    // Send a message
     public sendMessage(text: string, data?: { author: string }): void {
         this.channel.publish('message', { text, ...data });
     }
+    
+    public broadcastPlayerPosition(x: number, y: number, email: string, clientId: string): void {
+        // No need to use the API endpoint anymore, we can publish directly
+        this.channel.publish('player-update', { x, y, email, clientId });
+    }
 
-    // Disconnect from Ably
     public disconnect(): void {
         this.ably.close();
     }

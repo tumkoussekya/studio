@@ -2,19 +2,20 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import type * as Ably from 'ably';
 
 import Chat, { type Message } from '@/components/world/Chat';
 import ConversationStarter from '@/components/world/ConversationStarter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { chatService, type PresenceData } from '@/services/ChatService';
+import { chatService, type PresenceData, type PlayerUpdateData } from '@/services/ChatService';
 import { useToast } from '@/hooks/use-toast';
 import LogoutButton from '@/components/world/LogoutButton';
 import UserList from '@/components/world/UserList';
 import { getCookie } from 'cookies-next';
 import AudioControl from '@/components/world/AudioControl';
+import type { MainScene } from '@/lib/phaser/scenes/MainScene';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -26,21 +27,19 @@ export default function WorldPage() {
     { author: 'System', text: 'Welcome to Pixel Space! Use WASD or arrow keys to move.' },
   ]);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-  const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
+  const [currentUser, setCurrentUser] = useState<{ email: string, id: string } | null>(null);
   const { toast } = useToast();
+  const sceneRef = useRef<MainScene | null>(null);
+
 
   useEffect(() => {
     const token = getCookie('token') as string;
-    let userEmail = '';
     if (token) {
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
-            userEmail = payload.email;
-            setCurrentUserEmail(userEmail);
-
-            // Connect to the chat service and enter presence
-            chatService.enterPresence({ email: userEmail });
-            
+            const user = { email: payload.email, id: payload.userId };
+            setCurrentUser(user);
+            chatService.enterPresence({ email: user.email });
         } catch (e) {
             console.error("Failed to decode token or connect to chat:", e);
             toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not verify your session.' });
@@ -48,20 +47,23 @@ export default function WorldPage() {
         }
     }
 
+    if (!currentUser) return;
+
     // --- Register all event handlers ---
     chatService.onMessage((message: Ably.Types.Message) => {
         const authorEmail = (message.data.author || message.clientId);
-        const author = authorEmail === userEmail ? 'You' : authorEmail;
+        const author = authorEmail === currentUser.email ? 'You' : authorEmail;
         setMessages((prev) => [...prev, { author, text: message.data.text }]);
     });
     
-    chatService.onInitialUsers((users: string[]) => {
-        setOnlineUsers(users);
+    chatService.onInitialUsers((users: Ably.Types.PresenceMessage[]) => {
+        const userEmails = users.map(u => (u.data as PresenceData).email);
+        setOnlineUsers(userEmails);
     });
 
     chatService.onUserJoined((member: Ably.Types.PresenceMessage) => {
         const joinedEmail = (member.data as PresenceData).email;
-        if(joinedEmail === userEmail) return; // Don't announce self
+        if(joinedEmail === currentUser.email) return;
         
         setOnlineUsers((prev) => [...new Set([...prev, joinedEmail])]);
         toast({ title: 'User Joined', description: `${joinedEmail} has entered the space.` });
@@ -71,15 +73,23 @@ export default function WorldPage() {
         const leftEmail = (member.data as PresenceData).email;
         setOnlineUsers((prev) => prev.filter(email => email !== leftEmail));
         toast({ title: 'User Left', description: `${leftEmail} has left the space.` });
+        sceneRef.current?.removePlayer(member.clientId);
     });
 
     chatService.onHistory((history: Ably.Types.Message[]) => {
       const pastMessages: Message[] = history.map(message => {
         const authorEmail = (message.data.author || message.clientId);
-        const author = authorEmail === userEmail ? 'You' : authorEmail;
+        const author = authorEmail === currentUser.email ? 'You' : authorEmail;
         return { author, text: message.data.text };
       });
       setMessages(prev => [...prev, ...pastMessages.reverse()]);
+    });
+    
+    chatService.onPlayerUpdate((message: Ably.Types.Message) => {
+        const data = message.data as PlayerUpdateData;
+        if (data.clientId !== currentUser.id) {
+           sceneRef.current?.updatePlayer(data.clientId, data.x, data.y, data.email);
+        }
     });
 
     // This must be called to start listening to the events.
@@ -89,7 +99,7 @@ export default function WorldPage() {
     return () => {
       chatService.disconnect();
     };
-  }, [toast, currentUserEmail]); // Depend on currentUserEmail
+  }, [toast, currentUser]);
 
 
   const handlePlayerNear = useCallback(() => {
@@ -101,13 +111,14 @@ export default function WorldPage() {
   }, []);
 
   const handleSendMessage = useCallback((text: string) => {
-    chatService.sendMessage(text, { author: currentUserEmail });
-  }, [currentUserEmail]);
+    if (!currentUser) return;
+    chatService.sendMessage(text, { author: currentUser.email });
+  }, [currentUser]);
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <div className="flex-grow relative order-2 md:order-1">
-        <PhaserContainer onPlayerNear={handlePlayerNear} onPlayerFar={handlePlayerFar} />
+        <PhaserContainer onPlayerNear={handlePlayerNear} onPlayerFar={handlePlayerFar} onSceneReady={(scene) => sceneRef.current = scene} />
       </div>
       <aside className="w-full md:w-80 lg:w-96 border-l bg-card p-4 flex flex-col gap-4 order-1 md:order-2 shrink-0">
         <Card className="h-full flex flex-col shadow-none border-none">
