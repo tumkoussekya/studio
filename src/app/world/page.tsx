@@ -1,13 +1,16 @@
+
 'use client';
 
 import dynamic from 'next/dynamic';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import Chat, { type Message } from '@/components/world/Chat';
 import ConversationStarter from '@/components/world/ConversationStarter';
 import AudioControl from '@/components/world/AudioControl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { chatService } from '@/services/ChatService';
+import { useToast } from '@/hooks/use-toast';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -18,6 +21,35 @@ export default function WorldPage() {
   const [messages, setMessages] = useState<Message[]>([
     { author: 'System', text: 'Welcome to Pixel Space! Use WASD or arrow keys to move.' },
   ]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Connect to the WebSocket server
+    chatService.connect(
+      process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080',
+      () => {
+        toast({ title: 'Chat Connected', description: 'You can now chat with other players.' });
+        setMessages((prev) => [...prev, { author: 'System', text: 'Chat connected.' }]);
+      },
+      () => {
+        toast({ variant: 'destructive', title: 'Chat Disconnected', description: 'Attempting to reconnect...' });
+        setMessages((prev) => [...prev, { author: 'System', text: 'Chat disconnected.' }]);
+      }
+    );
+
+    // Set up message handler
+    chatService.onMessage((author, text) => {
+        if (author !== 'You') {
+            setMessages((prev) => [...prev, { author, text }]);
+        }
+    });
+
+    // Disconnect on component unmount
+    return () => {
+      chatService.disconnect();
+    };
+  }, [toast]);
+
 
   const handlePlayerNear = useCallback(() => {
     setIsNear(true);
@@ -29,11 +61,7 @@ export default function WorldPage() {
 
   const handleSendMessage = useCallback((text: string) => {
     setMessages((prev) => [...prev, { author: 'You', text }]);
-    // In a real app, this would be sent to a server.
-    // We'll simulate a response for demo purposes.
-    setTimeout(() => {
-        setMessages((prev) => [...prev, { author: 'Alex', text: 'Hey there!' }]);
-    }, 1500)
+    chatService.sendMessage('You', text);
   }, []);
 
   return (
