@@ -6,6 +6,7 @@ import React, { useEffect, useRef } from 'react';
 import { MainScene } from '@/lib/phaser/scenes/MainScene';
 import { getCookie } from 'cookies-next';
 import { realtimeService } from '@/services/RealtimeService';
+import type { UserRole } from '@/models/User';
 
 interface PhaserContainerProps {
   onPlayerNearNpc: () => void;
@@ -13,9 +14,10 @@ interface PhaserContainerProps {
   onPlayerNear: (clientId: string, email: string) => void;
   onPlayerFar: () => void;
   onSceneReady: (scene: MainScene) => void;
+  userRole: UserRole;
 }
 
-export default function PhaserContainer({ onPlayerNearNpc, onPlayerFarNpc, onPlayerNear, onPlayerFar, onSceneReady }: PhaserContainerProps) {
+export default function PhaserContainer({ onPlayerNearNpc, onPlayerFarNpc, onPlayerNear, onPlayerFar, onSceneReady, userRole }: PhaserContainerProps) {
   const gameRef = useRef<Phaser.Game | null>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
 
@@ -73,7 +75,7 @@ export default function PhaserContainer({ onPlayerNearNpc, onPlayerFarNpc, onPla
           if (mainScene) {
             onSceneReady(mainScene);
             // Pass necessary data to the scene's init method
-            mainScene.scene.start(undefined, { startX, startY, email, clientId, realtimeService });
+            mainScene.scene.start(undefined, { startX, startY, email, clientId, role: userRole, realtimeService });
           }
         },
       },
@@ -85,7 +87,7 @@ export default function PhaserContainer({ onPlayerNearNpc, onPlayerFarNpc, onPla
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [onPlayerNearNpc, onPlayerFarNpc, onPlayerNear, onPlayerFar, onSceneReady]);
+  }, [onPlayerNearNpc, onPlayerFarNpc, onPlayerNear, onPlayerFar, onSceneReady, userRole]);
 
   return <div ref={gameContainerRef} className="w-full h-full" />;
 }

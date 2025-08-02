@@ -22,6 +22,7 @@ import KnockButton from '@/components/world/KnockButton';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenuItem, SidebarMenu, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { MessageSquare, Rss } from 'lucide-react';
 import Announcements from '@/components/chat/Announcements';
+import type { UserRole } from '@/models/User';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -34,7 +35,7 @@ export default function WorldPage() {
     { author: 'System', text: 'Welcome to SyncroSpace! Use WASD or arrow keys to move. Click on other players to "knock"!' },
   ]);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-  const [currentUser, setCurrentUser] = useState<{ email: string, id: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ email: string, id: string, role: UserRole } | null>(null);
   const { toast } = useToast();
   const sceneRef = useRef<MainScene | null>(null);
   const router = useRouter();
@@ -50,7 +51,7 @@ export default function WorldPage() {
     }
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        const user = { email: payload.email, id: payload.userId };
+        const user = { email: payload.email, id: payload.userId, role: payload.role };
         setCurrentUser(user);
         realtimeService.enterPresence({ email: user.email });
     } catch (e) {
@@ -195,13 +196,14 @@ export default function WorldPage() {
     <SidebarProvider>
     <div className="w-screen h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <div className="flex-grow relative order-2 md:order-1 h-1/2 md:h-full">
-        <PhaserContainer 
+       {currentUser && <PhaserContainer 
+            userRole={currentUser.role}
             onPlayerNearNpc={handlePlayerNearNpc} 
             onPlayerFarNpc={handlePlayerFarNpc}
             onPlayerNear={handlePlayerNear}
             onPlayerFar={handlePlayerFar}
             onSceneReady={(scene) => sceneRef.current = scene} 
-        />
+        />}
       </div>
       <Sidebar collapsible="offcanvas" side="right" className="w-full md:w-80 lg:w-96 border-l bg-card p-0 flex flex-col gap-0 order-1 md:order-2 shrink-0 h-1/2 md:h-full">
         <SidebarHeader>

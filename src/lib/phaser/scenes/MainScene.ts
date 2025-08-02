@@ -2,6 +2,7 @@
 import Phaser from 'phaser';
 import * as Tone from 'tone';
 import type { RealtimeService } from '@/services/RealtimeService';
+import type { UserRole } from '@/models/User';
 
 interface PlayerData {
   avatar: Phaser.GameObjects.Shape;
@@ -23,8 +24,10 @@ export class MainScene extends Phaser.Scene {
   private realtimeService!: InstanceType<typeof RealtimeService>;
   private myClientId!: string;
   private myEmail!: string;
+  private myRole!: UserRole;
   private isAudioReady = false;
   private nearbyPlayer: { clientId: string, email: string } | null = null;
+  private restrictionMessage!: Phaser.GameObjects.Text;
 
 
   constructor() {
@@ -35,11 +38,12 @@ export class MainScene extends Phaser.Scene {
     this.load.audio('synth', '/assets/synth.mp3');
   }
 
-  init(data: { startX: number, startY: number, email: string, clientId: string, realtimeService: InstanceType<typeof RealtimeService> }) {
+  init(data: { startX: number, startY: number, email: string, clientId: string, role: UserRole, realtimeService: InstanceType<typeof RealtimeService> }) {
     this.playerStartX = data.startX || 200;
     this.playerStartY = data.startY || 200;
     this.myEmail = data.email;
     this.myClientId = data.clientId;
+    this.myRole = data.role;
     this.realtimeService = data.realtimeService;
 
     window.addEventListener('start-audio', this.initAudio, { once: true });
@@ -101,6 +105,11 @@ export class MainScene extends Phaser.Scene {
     this.add.circle(150, 800, 30, 0x8c5e3c).setStrokeStyle(2, 0x6f4e37);
     this.add.circle(650, 1000, 30, 0x8c5e3c).setStrokeStyle(2, 0x6f4e37);
 
+    // --- Private Zone ---
+    this.add.rectangle(225, 525, 350, 250).setStrokeStyle(2, 0xfb923c, 0.5); // Orange border
+    this.add.text(65, 410, 'Admin Lounge', { font: '24px "Press Start 2P"', color: textColor });
+
+
     // --- Interactive Objects ---
     const bulletinBoard = this.add.rectangle(80, 200, 20, 100, interactiveObjectColor);
     bulletinBoard.setInteractive({ useHandCursor: true });
@@ -114,7 +123,6 @@ export class MainScene extends Phaser.Scene {
     const walls = this.physics.add.staticGroup();
     // Lounge Walls
     walls.add(this.add.rectangle(225, 50, 350, 20, wallColor).setOrigin(0.5)); // Top
-    walls.add(this.add.rectangle(225, 350, 350, 20, wallColor).setOrigin(0.5)); // Bottom
     walls.add(this.add.rectangle(50, 200, 20, 300, wallColor).setOrigin(0.5)); // Left
     walls.add(this.add.rectangle(400, 200, 20, 300, wallColor).setOrigin(0.5)); // Right
     
@@ -128,6 +136,12 @@ export class MainScene extends Phaser.Scene {
     walls.add(this.add.rectangle(400, 1150, 700, 20, wallColor).setOrigin(0.5)); // Bottom
     walls.add(this.add.rectangle(50, 900, 20, 500, wallColor).setOrigin(0.5)); // Left
     walls.add(this.add.rectangle(750, 900, 20, 500, wallColor).setOrigin(0.5)); // Right
+
+    // Admin Lounge Walls
+    walls.add(this.add.rectangle(225, 400, 350, 20, wallColor).setOrigin(0.5)); // Top
+    walls.add(this.add.rectangle(225, 650, 350, 20, wallColor).setOrigin(0.5)); // Bottom
+    walls.add(this.add.rectangle(50, 525, 20, 250, wallColor).setOrigin(0.5)); // Left
+    walls.add(this.add.rectangle(400, 525, 20, 250, wallColor).setOrigin(0.5)); // Right
     
 
     // Player
@@ -155,19 +169,45 @@ export class MainScene extends Phaser.Scene {
     });
     this.add.text(320, 360, 'To Focus', { font: '16px VT323', color: '#ffffff' }).setAngle(-90);
 
-    const toCoffeeRoomPortal = this.add.rectangle(225, 520, 100, 10, portalColor);
+    const toCoffeeRoomPortal = this.add.rectangle(225, 620, 100, 10, portalColor);
     this.physics.add.existing(toCoffeeRoomPortal, true);
     this.physics.add.overlap(this.player, toCoffeeRoomPortal, () => {
         (this.player.body as Phaser.Physics.Arcade.Body).setPosition(375, 680);
     });
-    this.add.text(180, 500, 'To Coffee Room', { font: '16px VT323', color: '#ffffff' });
+    this.add.text(180, 600, 'To Coffee Room', { font: '16px VT323', color: '#ffffff' });
 
-    const toLoungePortal = this.add.rectangle(400, 680, 100, 10, portalColor);
-    this.physics.add.existing(toLoungePortal, true);
-    this.physics.add.overlap(this.player, toLoungePortal, () => {
-        (this.player.body as Phaser.Physics.Arcade.Body).setPosition(200, 480);
+    const toLoungeFromCoffeePortal = this.add.rectangle(400, 680, 100, 10, portalColor);
+    this.physics.add.existing(toLoungeFromCoffeePortal, true);
+    this.physics.add.overlap(this.player, toLoungeFromCoffeePortal, () => {
+        (this.player.body as Phaser.Physics.Arcade.Body).setPosition(200, 580);
     });
     this.add.text(355, 660, 'To Lounge', { font: '16px VT323', color: '#ffffff' });
+
+    const toLoungeFromAdminPortal = this.add.rectangle(225, 430, 100, 10, portalColor);
+    this.physics.add.existing(toLoungeFromAdminPortal, true);
+    this.physics.add.overlap(this.player, toLoungeFromAdminPortal, () => {
+      (this.player.body as Phaser.Physics.Arcade.Body).setPosition(225, 320);
+    });
+    this.add.text(180, 410, 'To Lounge', { font: '16px VT323', color: '#ffffff' });
+
+
+    const toAdminLoungePortal = this.add.rectangle(225, 370, 100, 10, portalColor);
+    this.physics.add.existing(toAdminLoungePortal, true);
+    this.physics.add.overlap(this.player, toAdminLoungePortal, () => {
+        if (this.myRole === 'Admin') {
+            (this.player.body as Phaser.Physics.Arcade.Body).setPosition(225, 430);
+        } else {
+            this.showRestrictionMessage();
+        }
+    });
+    this.add.text(180, 350, 'Admin Area', { font: '16px VT323', color: '#facc15' });
+    
+    this.restrictionMessage = this.add.text(0, 0, 'Restricted Area', {
+        font: '16px VT323',
+        color: '#ef4444',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: { x: 10, y: 5 },
+    }).setOrigin(0.5).setDepth(100).setVisible(false);
 
 
     // Physics
@@ -197,6 +237,14 @@ export class MainScene extends Phaser.Scene {
       callbackScope: this,
       loop: true,
     });
+  }
+  
+  private showRestrictionMessage() {
+      const { x, y } = this.player.body.position;
+      this.restrictionMessage.setPosition(x, y - 30).setVisible(true);
+      this.time.delayedCall(2000, () => {
+        this.restrictionMessage.setVisible(false);
+      });
   }
 
   private sendPosition() {
