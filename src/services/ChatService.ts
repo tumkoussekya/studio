@@ -17,6 +17,7 @@ export interface PresenceData {
 type MessageHandler = (message: Ably.Types.Message) => void;
 type HistoryHandler = (messages: Ably.Types.Message[]) => void;
 type PresenceHandler = (presenceMessage: Ably.Types.PresenceMessage) => void;
+type PlayerUpdateHandler = (message: Ably.Types.Message) => void;
 
 class ChatService {
     private ably: Ably.Realtime;
@@ -27,6 +28,7 @@ class ChatService {
     private userJoinedHandler: PresenceHandler | null = null;
     private userLeftHandler: PresenceHandler | null = null;
     private initialUsersHandler: ((users: string[]) => void) | null = null;
+    private playerUpdateHandler: PlayerUpdateHandler | null = null;
 
     constructor() {
         // Instantiate Ably with a placeholder client ID
@@ -55,6 +57,13 @@ class ChatService {
         this.channel.subscribe('message', (message) => {
             if (this.messageHandler) {
                 this.messageHandler(message);
+            }
+        });
+        
+        // Subscribe to player updates
+        this.channel.subscribe('player-update', (message) => {
+            if (this.playerUpdateHandler) {
+                this.playerUpdateHandler(message);
             }
         });
 
@@ -91,6 +100,10 @@ class ChatService {
     // Register event handlers
     public onMessage(handler: MessageHandler): void {
         this.messageHandler = handler;
+    }
+
+    public onPlayerUpdate(handler: PlayerUpdateHandler): void {
+        this.playerUpdateHandler = handler;
     }
     
     public onHistory(handler: HistoryHandler): void {
