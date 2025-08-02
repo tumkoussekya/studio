@@ -8,7 +8,7 @@ import {
   type DropResult,
 } from '@hello-pangea/dnd';
 import { GripVertical, Plus, Trash2, UserCircle, Calendar, Flag } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,59 +23,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { kanbanStore, type KanbanData, type Task } from '@/lib/kanbanStore';
 
-interface Task {
-  id: string;
-  content: string;
-  priority: 'Low' | 'Medium' | 'High';
-  dueDate: string;
-  assignee: {
-    name: string;
-    avatar: string;
-  };
-}
-
-interface Column {
-  id: string;
-  title: string;
-  taskIds: string[];
-}
-
-interface InitialData {
-  tasks: Record<string, Task>;
-  columns: Record<string, Column>;
-  columnOrder: string[];
-}
-
-const getInitialData = (): InitialData => ({
-  tasks: {
-    'task-1': { id: 'task-1', content: 'Configure Next.js application', priority: 'High', dueDate: '2024-08-15', assignee: { name: 'Alice', avatar: 'A' } },
-    'task-2': { id: 'task-2', content: 'Set up Tailwind CSS for styling', priority: 'Medium', dueDate: '2024-08-16', assignee: { name: 'Bob', avatar: 'B' } },
-    'task-3': { id: 'task-3', content: 'Build the main layout component', priority: 'Low', dueDate: '2024-08-20', assignee: { name: 'Charlie', avatar: 'C' } },
-    'task-4': { id: 'task-4', content: 'Implement user authentication', priority: 'High', dueDate: '2024-08-22', assignee: { name: 'Alice', avatar: 'A' } },
-    'task-5': { id: 'task-5', content: 'Develop the chat feature with Ably', priority: 'Medium', dueDate: '2024-08-25', assignee: { name: 'David', avatar: 'D' } },
-    'task-6': { id: 'task-6', content: 'Integrate Phaser for the 2D world', priority: 'High', dueDate: '2024-08-18', assignee: { name: 'Bob', avatar: 'B' } },
-    'task-7': { id: 'task-7', content: 'Deploy the application to production', priority: 'High', dueDate: '2024-08-30', assignee: { name: 'Alice', avatar: 'A' } },
-  },
-  columns: {
-    'column-1': {
-      id: 'column-1',
-      title: 'To Do',
-      taskIds: ['task-1', 'task-2', 'task-3', 'task-4'],
-    },
-    'column-2': {
-      id: 'column-2',
-      title: 'In Progress',
-      taskIds: ['task-5'],
-    },
-    'column-3': {
-      id: 'column-3',
-      title: 'Done',
-      taskIds: ['task-6', 'task-7'],
-    },
-  },
-  columnOrder: ['column-1', 'column-2', 'column-3'],
-});
 
 const priorityColors: Record<Task['priority'], string> = {
     Low: 'bg-blue-500 hover:bg-blue-600',
@@ -84,132 +33,43 @@ const priorityColors: Record<Task['priority'], string> = {
 };
 
 export default function KanbanPage() {
-  const [data, setData] = useState<InitialData>(getInitialData);
+  const [data, setData] = useState<KanbanData | null>(null);
   const [newTaskContent, setNewTaskContent] = useState('');
   const [selectedColumn, setSelectedColumn] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  useEffect(() => {
+    // Initial data load
+    setData(kanbanStore.getData());
+
+    // Subscribe to updates
+    const unsubscribe = kanbanStore.subscribe(setData);
+    return () => unsubscribe();
+  }, []);
+
   const onDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-
-    if (!destination) {
-      return;
-    }
-
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-
-    const startColumn = data.columns[source.droppableId];
-    const endColumn = data.columns[destination.droppableId];
-
-    if (startColumn === endColumn) {
-      const newTaskIds = Array.from(startColumn.taskIds);
-      newTaskIds.splice(source.index, 1);
-      newTaskIds.splice(destination.index, 0, draggableId);
-
-      const newColumn = {
-        ...startColumn,
-        taskIds: newTaskIds,
-      };
-
-      setData({
-        ...data,
-        columns: {
-          ...data.columns,
-          [newColumn.id]: newColumn,
-        },
-      });
-      return;
-    }
-
-    // Moving from one list to another
-    const startTaskIds = Array.from(startColumn.taskIds);
-    startTaskIds.splice(source.index, 1);
-    const newStartColumn = {
-      ...startColumn,
-      taskIds: startTaskIds,
-    };
-
-    const endTaskIds = Array.from(endColumn.taskIds);
-    endTaskIds.splice(destination.index, 0, draggableId);
-    const newEndColumn = {
-      ...endColumn,
-      taskIds: endTaskIds,
-    };
-
-    setData({
-      ...data,
-      columns: {
-        ...data.columns,
-        [newStartColumn.id]: newStartColumn,
-        [newEndColumn.id]: newEndColumn,
-      },
-    });
+    kanbanStore.moveTask(result);
   };
 
   const handleAddTask = () => {
     if (!newTaskContent.trim() || !selectedColumn) return;
-
-    const newTaskId = `task-${Date.now()}`;
-    const newTask: Task = {
-      id: newTaskId,
-      content: newTaskContent,
-      priority: 'Medium',
-      dueDate: new Date().toISOString().split('T')[0],
-      assignee: { name: 'Unassigned', avatar: '?' }
-    };
-
-    const column = data.columns[selectedColumn];
-    const newTaskIds = Array.from(column.taskIds);
-    newTaskIds.push(newTaskId);
-
-    const newColumn = {
-      ...column,
-      taskIds: newTaskIds,
-    };
-
-    setData({
-      ...data,
-      tasks: {
-        ...data.tasks,
-        [newTaskId]: newTask,
-      },
-      columns: {
-        ...data.columns,
-        [newColumn.id]: newColumn,
-      },
-    });
-
+    kanbanStore.addTask(selectedColumn, newTaskContent);
     setNewTaskContent('');
     setSelectedColumn('');
     setIsModalOpen(false);
   };
   
-   const handleDeleteTask = (taskId: string, columnId: string) => {
-    const newTasks = { ...data.tasks };
-    delete newTasks[taskId];
-
-    const column = data.columns[columnId];
-    const newTaskIds = column.taskIds.filter(id => id !== taskId);
-
-    const newColumn = {
-      ...column,
-      taskIds: newTaskIds,
-    };
-
-    setData({
-      ...data,
-      tasks: newTasks,
-      columns: {
-        ...data.columns,
-        [column.id]: newColumn,
-      },
-    });
+  const handleDeleteTask = (taskId: string, columnId: string) => {
+    kanbanStore.deleteTask(taskId, columnId);
   };
+
+  if (!data) {
+    return (
+        <div className="flex items-center justify-center h-screen">
+            <p>Loading Kanban board...</p>
+        </div>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -222,7 +82,7 @@ export default function KanbanPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {data.columnOrder.map((columnId) => {
                 const column = data.columns[columnId];
-                const tasks = column.taskIds.map((taskId) => data.tasks[taskId]);
+                const tasks = column.taskIds.map((taskId) => data.tasks[taskId]).filter(Boolean);
 
                 return (
                   <Card key={column.id} className="bg-secondary/50">
