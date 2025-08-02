@@ -5,6 +5,7 @@
  * @fileOverview Genkit tools for interacting with the Kanban board.
  *
  * - addTask - A tool that allows the AI to add a new task to a specified column on the Kanban board.
+ * - getTasks - A tool that allows the AI to retrieve all tasks from the Kanban board.
  */
 
 import {ai} from '@/ai/genkit';
@@ -41,4 +42,28 @@ export const addTask = ai.defineTool(
       };
     }
   }
+);
+
+export const getTasks = ai.defineTool(
+    {
+        name: 'getTasks',
+        description: 'Retrieves all tasks from all columns on the Kanban board.',
+        inputSchema: z.object({}),
+        outputSchema: z.any(),
+    },
+    async () => {
+        try {
+            const data = kanbanStore.getData();
+            // We only need to return the tasks, not the full board structure
+            return {
+                tasks: Object.values(data.tasks),
+                columns: data.columns,
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                message: `Failed to get tasks: ${error.message}`,
+            };
+        }
+    }
 );

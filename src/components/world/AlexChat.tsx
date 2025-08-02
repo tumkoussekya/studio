@@ -18,16 +18,15 @@ export default function AlexChat() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<AlexMessage[]>([
-    { role: 'model', content: "Hello there! I'm Alex. You can ask me to create tasks for your Kanban board." }
+    { role: 'model', content: "Hello there! I'm Alex. You can ask me to create tasks for your Kanban board or suggest what to do next." }
   ]);
   const [inputValue, setInputValue] = useState('');
   const scrollViewportRef = useRef<HTMLDivElement>(null);
+  
+  const handleSendMessage = async (messageText: string) => {
+    if (!messageText.trim() || isLoading) return;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
-
-    const userMessage: AlexMessage = { role: 'user', content: inputValue.trim() };
+    const userMessage: AlexMessage = { role: 'user', content: messageText.trim() };
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
@@ -54,7 +53,17 @@ export default function AlexChat() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSendMessage(inputValue);
   };
+  
+  const handleSuggestionClick = () => {
+    handleSendMessage("What should I do next?");
+  }
 
   useEffect(() => {
     if (scrollViewportRef.current) {
@@ -86,6 +95,11 @@ export default function AlexChat() {
           )}
         </div>
       </ScrollArea>
+       <div className="p-2 border-t">
+          <Button variant="outline" size="sm" className="w-full" onClick={handleSuggestionClick} disabled={isLoading}>
+              What should I do next?
+          </Button>
+      </div>
       <form onSubmit={handleSubmit} className="p-2 flex items-center gap-2 border-t">
         <Input
           value={inputValue}
