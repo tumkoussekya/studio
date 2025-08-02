@@ -40,7 +40,7 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground">What would you like to do today?</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card className="hover:shadow-lg transition-shadow">
+                    <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                 <Users className="text-accent" />
@@ -58,7 +58,7 @@ export default function DashboardPage() {
                            </Link>
                         </CardContent>
                     </Card>
-                     <Card className="hover:shadow-lg transition-shadow">
+                     <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                <MessageSquare className="text-accent" />
@@ -76,7 +76,7 @@ export default function DashboardPage() {
                             </Link>
                         </CardContent>
                     </Card>
-                     <Card className="hover:shadow-lg transition-shadow">
+                     <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                <Video className="text-accent" />
@@ -94,7 +94,7 @@ export default function DashboardPage() {
                             </Link>
                         </CardContent>
                     </Card>
-                     <Card className="hover:shadow-lg transition-shadow">
+                     <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                <Shapes className="text-accent" />
@@ -112,7 +112,7 @@ export default function DashboardPage() {
                             </Link>
                         </CardContent>
                     </Card>
-                     <Card className="hover:shadow-lg transition-shadow">
+                     <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                <ClipboardList className="text-accent" />
@@ -132,7 +132,7 @@ export default function DashboardPage() {
                     </Card>
                     {isAdmin && (
                         <>
-                            <Card className="hover:shadow-lg transition-shadow">
+                            <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-3">
                                     <KanbanSquare className="text-accent" />
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                                     </Link>
                                 </CardContent>
                             </Card>
-                            <Card className="hover:shadow-lg transition-shadow">
+                            <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-3">
                                         <LayoutDashboard className="text-accent" />
@@ -168,7 +168,7 @@ export default function DashboardPage() {
                                     </Link>
                                 </CardContent>
                             </Card>
-                            <Card className="hover:shadow-lg transition-shadow">
+                            <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-3">
                                     <Shield className="text-accent" />
