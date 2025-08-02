@@ -48,12 +48,12 @@ export default function KnockButton({ player, onKnock }: KnockButtonProps) {
 
 
     return (
-        <Card className="bg-secondary/50 border-dashed h-[188px]">
+        <Card className="bg-secondary/50 border-dashed h-[268px] md:h-auto">
             <CardHeader>
                 <CardTitle className="text-lg">You're near {player.email}!</CardTitle>
                 <CardDescription>Break the ice or just say hello.</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Button onClick={() => onKnock(player.clientId)} variant="outline">
                     <Hand className="mr-2 h-4 w-4" />
                     Knock

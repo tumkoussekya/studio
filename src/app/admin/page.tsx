@@ -90,7 +90,7 @@ export default function AdminPage() {
       </header>
       <main className="flex-grow p-4 md:p-6 lg:p-8">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <CardTitle>User Management</CardTitle>
               <CardDescription>
@@ -103,12 +103,13 @@ export default function AdminPage() {
             </Button>
           </CardHeader>
           <CardContent>
+           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Last Position (X, Y)</TableHead>
+                  <TableHead className="hidden md:table-cell">Role</TableHead>
+                  <TableHead className="hidden lg:table-cell">Last Position (X, Y)</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -117,8 +118,8 @@ export default function AdminPage() {
                   Array.from({ length: 3 }).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell className="h-12 animate-pulse bg-muted/50 rounded-md"></TableCell>
-                      <TableCell className="animate-pulse bg-muted/50 rounded-md"></TableCell>
-                      <TableCell className="animate-pulse bg-muted/50 rounded-md"></TableCell>
+                      <TableCell className="hidden md:table-cell animate-pulse bg-muted/50 rounded-md"></TableCell>
+                      <TableCell className="hidden lg:table-cell animate-pulse bg-muted/50 rounded-md"></TableCell>
                       <TableCell className="animate-pulse bg-muted/50 rounded-md"></TableCell>
                     </TableRow>
                   ))
@@ -126,12 +127,12 @@ export default function AdminPage() {
                   users.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.email}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Badge variant={getBadgeVariant(user.role)}>
                           {user.role}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         ({user.lastX}, {user.lastY})
                       </TableCell>
                       <TableCell className="text-right">
@@ -168,6 +169,7 @@ export default function AdminPage() {
                 )}
               </TableBody>
             </Table>
+           </div>
           </CardContent>
         </Card>
       </main>

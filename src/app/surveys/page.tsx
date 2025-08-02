@@ -62,7 +62,7 @@ export default function SurveysPage() {
         <h1 className="text-2xl font-bold">Surveys & Forms</h1>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
-          Create Survey
+          <span className='hidden sm:inline'>Create Survey</span>
         </Button>
       </header>
       <main className="flex-grow p-4 md:p-6 lg:p-8 overflow-y-auto">

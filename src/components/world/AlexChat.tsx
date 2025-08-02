@@ -72,7 +72,7 @@ export default function AlexChat() {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-[188px] border rounded-lg">
+    <div className="flex flex-col h-[268px] border rounded-lg">
       <div className="p-3 border-b flex items-center gap-2">
          <Sparkles className="text-accent h-5 w-5" />
          <h3 className="text-base font-semibold">Chat with Alex</h3>

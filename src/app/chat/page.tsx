@@ -14,6 +14,7 @@ import {
   SidebarInset,
   SidebarGroup,
   SidebarGroupLabel,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -124,7 +125,7 @@ export default function ChatPage() {
         <Sidebar
           variant="sidebar"
           collapsible="icon"
-          className="border-r"
+          className="border-r hidden md:flex"
         >
           <SidebarHeader>
              <Avatar className="size-8">
@@ -178,56 +179,64 @@ export default function ChatPage() {
 
         {activeView === 'messages' && (
         <>
-            <div className="w-80 border-r p-4 flex-col flex">
-                <div className="flex justify-between items-center mb-4">
-                    <h1 className="text-2xl font-bold">Chats</h1>
-                    <Button variant="ghost" size="icon">
-                        <Search className="size-5"/>
-                    </Button>
-                </div>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
-                    <SidebarMenu>
-                        {sampleUsers.map(user => (
-                            <SidebarMenuItem key={user.id}>
-                                <SidebarMenuButton size="lg" isActive={activeConversation === user.id} onClick={() => { setActiveConversation(user.id); setConversationType('dm'); }}>
-                                    <Avatar className="size-8">
-                                        <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.name} />
-                                        <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
+            <Sidebar collapsible="offcanvas" className="w-full md:w-80 md:border-r flex-col flex shrink-0">
+                 <SidebarHeader>
+                     <div className="flex justify-between items-center mb-4 p-4 md:p-0">
+                        <h1 className="text-2xl font-bold">Chats</h1>
+                        <div className='flex gap-2'>
+                          <Button variant="ghost" size="icon">
+                              <Search className="size-5"/>
+                          </Button>
+                          <SidebarTrigger className='md:hidden' />
+                        </div>
+                    </div>
+                </SidebarHeader>
+                <SidebarContent>
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
+                        <SidebarMenu>
+                            {sampleUsers.map(user => (
+                                <SidebarMenuItem key={user.id}>
+                                    <SidebarMenuButton size="lg" isActive={activeConversation === user.id} onClick={() => { setActiveConversation(user.id); setConversationType('dm'); }}>
+                                        <Avatar className="size-8">
+                                            <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.name} />
+                                            <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col items-start">
+                                            <span>{user.name}</span>
+                                            <span className="text-xs text-muted-foreground">{user.status}</span>
+                                        </div>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
+                    </SidebarGroup>
+                    <SidebarGroup>
+                        <SidebarGroupLabel>Channels</SidebarGroupLabel>
+                        <SidebarMenu>
+                            {sampleChannels.map(channel => (
+                                <SidebarMenuItem key={channel.id}>
+                                    <SidebarMenuButton size="lg" isActive={activeConversation === channel.id} onClick={() => { setActiveConversation(channel.id); setConversationType('channel'); }}>
+                                        <div className="p-2 bg-muted rounded-md mr-2">
+                                            <MessageSquare className="size-4"/>
+                                        </div>
                                     <div className="flex flex-col items-start">
-                                        <span>{user.name}</span>
-                                        <span className="text-xs text-muted-foreground">{user.status}</span>
-                                    </div>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        ))}
-                    </SidebarMenu>
-                </SidebarGroup>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Channels</SidebarGroupLabel>
-                    <SidebarMenu>
-                        {sampleChannels.map(channel => (
-                            <SidebarMenuItem key={channel.id}>
-                                <SidebarMenuButton size="lg" isActive={activeConversation === channel.id} onClick={() => { setActiveConversation(channel.id); setConversationType('channel'); }}>
-                                    <div className="p-2 bg-muted rounded-md mr-2">
-                                        <MessageSquare className="size-4"/>
-                                    </div>
-                                <div className="flex flex-col items-start">
-                                        <span>{channel.name}</span>
-                                        <span className="text-xs text-muted-foreground">{channel.status}</span>
-                                    </div>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        ))}
-                    </SidebarMenu>
-                </SidebarGroup>
-            </div>
+                                            <span>{channel.name}</span>
+                                            <span className="text-xs text-muted-foreground">{channel.status}</span>
+                                        </div>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
+                    </SidebarGroup>
+                </SidebarContent>
+            </Sidebar>
 
             <SidebarInset className="flex-grow flex flex-col">
             <div className="flex-grow flex flex-col">
                 <header className="p-4 border-b flex items-center justify-between">
                     <div className="flex items-center gap-3">
+                        <SidebarTrigger className='md:hidden' />
                         <Avatar className="size-9">
                             <AvatarImage src={conversationType === 'dm' ? 'https://placehold.co/40x40.png' : ''} />
                             <AvatarFallback>{conversationType === 'channel' ? '#' : getActiveConversationName().charAt(0).toUpperCase()}</AvatarFallback>
@@ -244,7 +253,7 @@ export default function ChatPage() {
                             ) : (
                                 <FileText className="mr-2 h-4 w-4" />
                             )}
-                            Summarize
+                            <span className="hidden sm:inline">Summarize</span>
                         </Button>
                         <Button variant="ghost" size="icon">
                             <MoreHorizontal className="size-5"/>

@@ -28,7 +28,7 @@ export default function DocumentationPage() {
       </header>
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid md:grid-cols-[280px_1fr] gap-12">
-          <aside className="w-full md:sticky top-8 self-start">
+          <aside className="w-full md:sticky top-8 self-start hidden md:block">
             <Card>
               <CardHeader>
                 <CardTitle>Topics</CardTitle>

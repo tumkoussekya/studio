@@ -55,7 +55,7 @@ export default function AnalyticsPage() {
       <header className="p-4 border-b">
         <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
       </header>
-      <main className="flex-grow p-4 md:p-6 lg:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <main className="flex-grow p-4 md:p-6 lg:p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -114,7 +114,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2 lg:col-span-4">
+        <Card className="sm:col-span-2 lg:col-span-4">
           <CardHeader>
             <CardTitle>User Activity</CardTitle>
             <CardDescription>
@@ -148,7 +148,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
         
-         <Card className="md:col-span-2 lg:col-span-2">
+         <Card className="sm:col-span-2 lg:col-span-2">
           <CardHeader>
             <CardTitle>Feature Usage</CardTitle>
             <CardDescription>
@@ -157,7 +157,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={featureUsageData} layout="vertical" margin={{ left: 10 }}>
+                <BarChart data={featureUsageData} layout="vertical" margin={{ left: 10, right: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} width={80} />
@@ -175,7 +175,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
         
-        <Card className="md:col-span-2 lg:col-span-2">
+        <Card className="sm:col-span-2 lg:col-span-2">
             <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
                 <CardDescription>A live feed of recent user actions.</CardDescription>

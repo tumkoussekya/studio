@@ -166,7 +166,7 @@ export default function WorldPage() {
                  />;
       }
       return (
-          <div className="h-[188px] flex items-center justify-center text-center text-muted-foreground p-8">
+          <div className="h-[268px] flex items-center justify-center text-center text-muted-foreground p-8">
             <p>Move your avatar closer to Alex or another player to interact with them.</p>
         </div>
       );
@@ -174,7 +174,7 @@ export default function WorldPage() {
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-background flex flex-col md:flex-row">
-      <div className="flex-grow relative order-2 md:order-1">
+      <div className="flex-grow relative order-2 md:order-1 h-1/2 md:h-full">
         <PhaserContainer 
             onPlayerNearNpc={handlePlayerNearNpc} 
             onPlayerFarNpc={handlePlayerFarNpc}
@@ -183,7 +183,7 @@ export default function WorldPage() {
             onSceneReady={(scene) => sceneRef.current = scene} 
         />
       </div>
-      <aside className="w-full md:w-80 lg:w-96 border-l bg-card p-4 flex flex-col gap-4 order-1 md:order-2 shrink-0">
+      <aside className="w-full md:w-80 lg:w-96 border-l bg-card p-4 flex flex-col gap-4 order-1 md:order-2 shrink-0 h-1/2 md:h-full">
         <Card className="h-full flex flex-col shadow-none border-none">
             <CardHeader>
                 <div className="flex justify-between items-start">

@@ -26,7 +26,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-2 sm:gap-4">
              {isAuthenticated && (
                 <Link href="/dashboard" passHref>
                   <Button variant="ghost">
