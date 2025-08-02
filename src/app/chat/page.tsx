@@ -6,7 +6,6 @@ import {
   SidebarProvider,
   Sidebar,
   SidebarHeader,
-  SidebarTrigger,
   SidebarContent,
   SidebarMenu,
   SidebarMenuItem,
@@ -15,7 +14,6 @@ import {
   SidebarInset,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarMenuBadge,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -30,7 +28,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import Announcements from '@/components/chat/Announcements';
 import {
     AlertDialog,
     AlertDialogContent,
@@ -44,6 +41,15 @@ import { summarizeChat, type ChatMessage } from '@/ai/flows/summarize-chat';
 import { useToast } from '@/hooks/use-toast';
 
 
+const sampleUsers = [
+    { id: 'alice', name: 'Alice', status: 'typing...' },
+    { id: 'bob', name: 'Bob', status: 'Hey, how are you?' },
+];
+
+const sampleChannels = [
+    { id: 'general', name: '#general', status: 'Charlie: See you there!' }
+];
+
 const sampleMessages: ChatMessage[] = [
     { author: 'Charlie', text: 'Project stand-up in 15 minutes in the Focus Zone!' },
     { author: 'You', text: 'On my way!' },
@@ -53,11 +59,10 @@ const sampleMessages: ChatMessage[] = [
     { author: 'Charlie', text: "Yes, we'll be reviewing the latest designs."}
 ];
 
+
 export default function ChatPage() {
-  const [activeView, setActiveView] = React.useState('messages');
-  const [activeConversation, setActiveConversation] = React.useState(
-    'general'
-  );
+  const [activeConversation, setActiveConversation] = React.useState('general');
+  const [conversationType, setConversationType] = React.useState<'channel' | 'dm'>('channel');
   const { toast } = useToast();
   const [isSummarizing, setIsSummarizing] = React.useState(false);
   const [summary, setSummary] = React.useState('');
@@ -81,22 +86,127 @@ export default function ChatPage() {
     }
   };
 
-
-  const renderContent = () => {
-    if (activeView === 'announcements') {
-        return <Announcements />;
+  const getActiveConversationName = () => {
+    if (conversationType === 'channel') {
+        const channel = sampleChannels.find(c => c.id === activeConversation);
+        return channel?.name || 'Chat';
     }
-    // Default to messages view
-    return (
-         <div className="flex-grow flex flex-col">
+    const user = sampleUsers.find(u => u.id === activeConversation);
+    return user?.name || 'Chat';
+  }
+
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen bg-background text-foreground">
+        <Sidebar
+          variant="sidebar"
+          collapsible="icon"
+          className="border-r"
+        >
+          <SidebarHeader>
+             <Avatar className="size-8">
+                <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="User Avatar" />
+                <AvatarFallback>U</AvatarFallback>
+            </Avatar>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu>
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                    isActive
+                    tooltip={{
+                        children: 'Messages',
+                    }}
+                >
+                  <MessageSquare />
+                   <span>Messages</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton
+                    tooltip={{
+                        children: 'Team',
+                    }}
+                >
+                  <Users />
+                   <span>Team</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+          <SidebarFooter>
+             <SidebarMenu>
+                <SidebarMenuItem>
+                     <SidebarMenuButton
+                        tooltip={{
+                            children: 'Settings',
+                        }}
+                    >
+                      <Settings />
+                       <span>Settings</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </Sidebar>
+
+        <div className="w-80 border-r p-4 flex-col flex">
+            <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl font-bold">Chats</h1>
+                <Button variant="ghost" size="icon">
+                    <Search className="size-5"/>
+                </Button>
+            </div>
+            <SidebarGroup>
+                <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
+                 <SidebarMenu>
+                    {sampleUsers.map(user => (
+                        <SidebarMenuItem key={user.id}>
+                            <SidebarMenuButton size="lg" isActive={activeConversation === user.id} onClick={() => { setActiveConversation(user.id); setConversationType('dm'); }}>
+                                <Avatar className="size-8">
+                                    <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.name} />
+                                    <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col items-start">
+                                    <span>{user.name}</span>
+                                    <span className="text-xs text-muted-foreground">{user.status}</span>
+                                </div>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                </SidebarMenu>
+            </SidebarGroup>
+             <SidebarGroup>
+                <SidebarGroupLabel>Channels</SidebarGroupLabel>
+                 <SidebarMenu>
+                     {sampleChannels.map(channel => (
+                        <SidebarMenuItem key={channel.id}>
+                            <SidebarMenuButton size="lg" isActive={activeConversation === channel.id} onClick={() => { setActiveConversation(channel.id); setConversationType('channel'); }}>
+                                <div className="p-2 bg-muted rounded-md mr-2">
+                                    <MessageSquare className="size-4"/>
+                                </div>
+                               <div className="flex flex-col items-start">
+                                    <span>{channel.name}</span>
+                                    <span className="text-xs text-muted-foreground">{channel.status}</span>
+                                </div>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                 </SidebarMenu>
+            </SidebarGroup>
+        </div>
+
+        <SidebarInset className="flex-grow flex flex-col">
+           <div className="flex-grow flex flex-col">
             <header className="p-4 border-b flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Avatar className="size-9">
-                        <AvatarImage src={activeConversation === 'alice' ? 'https://placehold.co/40x40.png' : activeConversation === 'bob' ? 'https://placehold.co/40x40.png' : ''} />
-                        <AvatarFallback>{activeConversation === 'general' ? '#' : activeConversation.charAt(0).toUpperCase()}</AvatarFallback>
+                        <AvatarImage src={conversationType === 'dm' ? 'https://placehold.co/40x40.png' : ''} />
+                        <AvatarFallback>{conversationType === 'channel' ? '#' : getActiveConversationName().charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <h2 className="font-bold text-lg">{activeConversation === 'general' ? '#general' : activeConversation}</h2>
+                        <h2 className="font-bold text-lg">{getActiveConversationName()}</h2>
                         <p className="text-sm text-muted-foreground">3 members</p>
                     </div>
                 </div>
@@ -208,138 +318,9 @@ export default function ChatPage() {
                 </div>
             </main>
             <footer className="p-4 border-t">
-                 <Input placeholder={`Message ${activeConversation === 'general' ? '#general' : activeConversation}`} className="w-full"/>
+                 <Input placeholder={`Message ${getActiveConversationName()}`} className="w-full"/>
             </footer>
         </div>
-    );
-  };
-
-
-  return (
-    <SidebarProvider>
-      <div className="flex min-h-screen bg-background text-foreground">
-        <Sidebar
-          variant="sidebar"
-          collapsible="icon"
-          className="border-r"
-        >
-          <SidebarHeader>
-             <Avatar className="size-8">
-                <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="User Avatar" />
-                <AvatarFallback>U</AvatarFallback>
-            </Avatar>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                    onClick={() => setActiveView('announcements')}
-                    isActive={activeView === 'announcements'}
-                    tooltip={{
-                        children: 'Notifications',
-                    }}
-                >
-                  <Bell />
-                  <span>Notifications</span>
-                   <SidebarMenuBadge>3</SidebarMenuBadge>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                    onClick={() => setActiveView('messages')}
-                    isActive={activeView === 'messages'}
-                    tooltip={{
-                        children: 'Messages',
-                    }}
-                >
-                  <MessageSquare />
-                   <span>Messages</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton
-                    tooltip={{
-                        children: 'Team',
-                    }}
-                >
-                  <Users />
-                   <span>Team</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarContent>
-          <SidebarFooter>
-             <SidebarMenu>
-                <SidebarMenuItem>
-                     <SidebarMenuButton
-                        tooltip={{
-                            children: 'Settings',
-                        }}
-                    >
-                      <Settings />
-                       <span>Settings</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
-        </Sidebar>
-
-        <div className="w-80 border-r p-4 flex-col" style={{ display: activeView === 'messages' ? 'flex' : 'none' }}>
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">Chats</h1>
-                <Button variant="ghost" size="icon">
-                    <Search className="size-5"/>
-                </Button>
-            </div>
-            <SidebarGroup>
-                <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
-                 <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" isActive={activeConversation === 'alice'} onClick={() => setActiveConversation('alice')}>
-                            <Avatar className="size-8">
-                                <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="female avatar" alt="Alice" />
-                                <AvatarFallback>A</AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col items-start">
-                                <span>Alice</span>
-                                <span className="text-xs text-muted-foreground">typing...</span>
-                            </div>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" isActive={activeConversation === 'bob'} onClick={() => setActiveConversation('bob')}>
-                             <Avatar className="size-8">
-                                <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Bob" />
-                                <AvatarFallback>B</AvatarFallback>
-                            </Avatar>
-                           <div className="flex flex-col items-start">
-                                <span>Bob</span>
-                                <span className="text-xs text-muted-foreground">Hey, how are you?</span>
-                            </div>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarGroup>
-             <SidebarGroup>
-                <SidebarGroupLabel>Channels</SidebarGroupLabel>
-                 <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" isActive={activeConversation === 'general'} onClick={() => setActiveConversation('general')}>
-                            <div className="p-2 bg-muted rounded-md mr-2">
-                                <MessageSquare className="size-4"/>
-                            </div>
-                           <div className="flex flex-col items-start">
-                                <span>#general</span>
-                                <span className="text-xs text-muted-foreground">Charlie: See you there!</span>
-                            </div>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                 </SidebarMenu>
-            </SidebarGroup>
-        </div>
-
-        <SidebarInset className="flex-grow flex flex-col">
-            {renderContent()}
         </SidebarInset>
         
         <AlertDialog open={isSummaryDialogOpen} onOpenChange={setIsSummaryDialogOpen}>
