@@ -45,6 +45,8 @@ export function SignUpForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -71,10 +73,10 @@ export function SignUpForm() {
       }
 
       toast({
-        title: 'Sign-up Successful',
-        description: "Your account has been created. Please log in.",
+        title: 'Sign-up Almost Complete!',
+        description: "We've sent a verification link to your email. Please check your inbox.",
       });
-      router.push('/login');
+      setIsSubmitted(true);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -84,6 +86,24 @@ export function SignUpForm() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  if (isSubmitted) {
+      return (
+         <Card className="w-full max-w-sm">
+            <CardHeader>
+                <CardTitle className="text-2xl">Check your inbox</CardTitle>
+                <CardDescription>
+                    We've sent a verification link to your email address. Please click the link to continue.
+                </CardDescription>
+            </CardHeader>
+            <CardFooter>
+                 <Link href="/login" className='w-full'>
+                    <Button className="w-full" variant="outline">Back to Login</Button>
+                </Link>
+            </CardFooter>
+        </Card>
+      )
   }
 
   return (

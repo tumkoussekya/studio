@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
 
-  const publicRoutes = ['/login', '/signup', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/careers', '/faq', '/blog'];
+  const publicRoutes = ['/login', '/signup', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/careers', '/faq', '/blog', '/profile'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   const isHomePage = pathname === '/';
   const isApiRoute = pathname.startsWith('/api/');
@@ -32,9 +32,20 @@ export async function middleware(request: NextRequest) {
 
   if (user) {
       const userRole = user.user_metadata?.role;
+      const profileComplete = user.user_metadata?.profile_complete;
 
-      // If authenticated, redirect from public routes to dashboard
-      if (isPublicRoute && !pathname.startsWith('/blog') && !pathname.startsWith('/privacy-policy') && !pathname.startsWith('/terms-of-service')) { // allow authenticated users to view blog and legal pages
+      // If profile is not complete, redirect to profile setup page
+      if (!profileComplete && pathname !== '/profile' && !isApiRoute && pathname !== '/api/auth/logout') {
+          return NextResponse.redirect(new URL('/profile', request.url));
+      }
+      
+      // If profile IS complete, but they try to access the setup page, redirect to dashboard
+      if (profileComplete && pathname === '/profile') {
+          return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+
+      // If authenticated, redirect from public auth routes to dashboard
+      if (pathname.startsWith('/login') || pathname.startsWith('/signup')) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }
 

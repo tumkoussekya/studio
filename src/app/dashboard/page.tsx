@@ -3,27 +3,43 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield, MessageSquare, Video, LayoutDashboard } from 'lucide-react';
 import { cookies } from 'next/headers';
-import { verify } from 'jsonwebtoken';
 import Link from 'next/link';
 import LogoutButton from '@/components/world/LogoutButton';
-import type { User } from '@/models/User';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
+async function getUserData() {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
 
-function getUser(): (User & {userId: string}) | null {
-    const token = cookies().get('token');
-    if (!token) return null;
-    try {
-        const decoded = verify(token.value, process.env.JWT_SECRET || 'fallback-secret');
-        return decoded as (User & { userId: string });
-    } catch (e) {
+    const { data: userData, error } = await supabase
+        .from('users')
+        .select('id, email, role, profile_complete')
+        .eq('id', user.id)
+        .single();
+    
+    if (error) {
+        console.error('Error fetching user data:', error);
         return null;
     }
+
+    return userData;
 }
 
-export default function DashboardPage() {
-    const user = getUser();
-    const isAdmin = user?.role === 'Admin';
+export default async function DashboardPage() {
+    const user = await getUserData();
+
+    if (!user) {
+        return redirect('/login');
+    }
+    
+    if (!user.profile_complete) {
+        redirect('/profile');
+    }
+
+    const isAdmin = user.role === 'Admin';
 
     return (
         <div className="flex flex-col min-h-screen bg-background">

@@ -14,6 +14,12 @@ export async function POST(req: NextRequest) {
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+        data: {
+            role: 'TeamMember', // Default role
+            profile_complete: false, // Custom metadata
+        }
+    }
   });
 
   if (authError) {
@@ -26,10 +32,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Insert a corresponding row into the public.users table
+  // This is now handled by a trigger in Supabase for consistency
+  // but we can leave this here as a fallback or for more complex setups.
   const { error: dbError } = await supabase
     .from('users')
     .insert([
-      { id: authData.user.id, email: authData.user.email, role: 'TeamMember', last_x: 200, last_y: 200 },
+      { id: authData.user.id, email: authData.user.email, role: 'TeamMember', last_x: 200, last_y: 200, profile_complete: false },
     ]);
 
   if (dbError) {
