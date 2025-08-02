@@ -49,11 +49,15 @@ import Announcements from '@/components/chat/Announcements';
 
 const sampleUsers = [
     { id: 'alice', name: 'Alice', status: 'Online' },
-    { id: 'bob', name: 'Bob', status: 'Hey, how are you?' },
+    { id: 'bob', name: 'Bob', status: 'In a meeting' },
+    { id: 'charlie', name: 'Charlie', status: 'Focusing... 🧘‍♂️' },
+    { id: 'david', name: 'David', name: 'David', status: 'Away' },
 ];
 
 const sampleChannels = [
-    { id: 'general', name: '#general', status: 'Charlie: See you there!' }
+    { id: 'general', name: '#general', status: 'Charlie: See you there!' },
+    { id: 'design-team', name: '#design-team', status: 'Bob: Latest mockups are up.' },
+    { id: 'project-phoenix', name: '#project-phoenix', status: 'Alice: We hit our milestone!' },
 ];
 
 const sampleMessages: ChatMessage[] = [

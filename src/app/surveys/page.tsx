@@ -1,10 +1,10 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, BarChart2, Share2, MessageSquare, CheckSquare } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Plus, BarChart2, Share2, MessageSquare, CheckSquare, FilePlus2 } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -14,6 +14,11 @@ import {
   Tooltip,
 } from 'recharts';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 const sampleSurveys = [
   {
@@ -56,14 +61,57 @@ const sampleSurveys = [
 ];
 
 export default function SurveysPage() {
+    const { toast } = useToast();
+    const [openNewSurvey, setOpenNewSurvey] = useState(false);
+
+    const handleCreateSurvey = (e: React.FormEvent) => {
+        e.preventDefault();
+        const form = e.target as HTMLFormElement;
+        const title = (form.elements.namedItem('title') as HTMLInputElement).value;
+
+        // In a real app, you would handle form submission to your backend
+        toast({
+            title: "Survey Created!",
+            description: `The survey "${title}" has been created as a draft.`,
+        });
+        setOpenNewSurvey(false);
+    }
+
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
       <header className="p-4 border-b flex justify-between items-center">
         <h1 className="text-2xl font-bold">Surveys & Forms</h1>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          <span className='hidden sm:inline'>Create Survey</span>
-        </Button>
+        <Dialog open={openNewSurvey} onOpenChange={setOpenNewSurvey}>
+            <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span className='hidden sm:inline'>Create Survey</span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Create a New Survey</DialogTitle>
+                    <DialogDescription>
+                        Fill out the details below to start creating your survey. You can add questions in the next step.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateSurvey}>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid w-full items-center gap-1.5">
+                            <Label htmlFor="title">Survey Title</Label>
+                            <Input id="title" name="title" placeholder="e.g., Quarterly Feedback" required />
+                        </div>
+                         <div className="grid w-full items-center gap-1.5">
+                            <Label htmlFor="description">Description (Optional)</Label>
+                            <Textarea id="description" name="description" placeholder="Provide a brief description for your survey." />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit">Save and Add Questions</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
       </header>
       <main className="flex-grow p-4 md:p-6 lg:p-8 overflow-y-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -97,7 +145,8 @@ export default function SurveysPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex justify-end gap-2 mt-4">
+              </CardContent>
+               <CardFooter className="flex justify-end gap-2 mt-4">
                   <Button variant="outline" size="sm">
                     <BarChart2 className="mr-2 h-4 w-4" />
                     View Results
@@ -106,17 +155,16 @@ export default function SurveysPage() {
                     <Share2 className="mr-2 h-4 w-4" />
                     Share
                   </Button>
-                </div>
-              </CardContent>
+                </CardFooter>
             </Card>
           ))}
            <Card className="flex flex-col items-center justify-center border-dashed border-2 hover:border-primary transition-colors">
               <div className="text-center p-6">
-                <CheckSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Create a new poll</h3>
-                <p className="text-sm text-muted-foreground mb-4">Quickly gather opinions from your team.</p>
-                <Button variant="outline">
-                  <Plus className="mr-2 h-4 w-4" /> New Poll
+                <FilePlus2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Create from scratch</h3>
+                <p className="text-sm text-muted-foreground mb-4">Design a detailed survey or a quick poll.</p>
+                <Button variant="outline" onClick={() => setOpenNewSurvey(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> New Survey
                 </Button>
               </div>
             </Card>
