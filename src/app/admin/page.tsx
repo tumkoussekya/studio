@@ -61,6 +61,14 @@ export default function AdminPage() {
     fetchUsers();
   }, [toast]);
 
+  const handleResetPassword = (email: string) => {
+    toast({
+      title: 'Password Reset',
+      description: `A password reset link would be sent to ${email}. (Feature not fully implemented)`,
+    });
+  };
+
+
   const getBadgeVariant = (role: User['role']) => {
     switch (role) {
       case 'Admin':
@@ -139,7 +147,9 @@ export default function AdminPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem>Edit Role</DropdownMenuItem>
-                            <DropdownMenuItem>Reset Password</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleResetPassword(user.email)}>
+                              Reset Password
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive">
                               Delete User
                             </DropdownMenuItem>
