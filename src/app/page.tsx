@@ -9,7 +9,7 @@ import { verify } from 'jsonwebtoken';
 import Image from 'next/image';
 
 async function IsAuthenticated() {
-    const token = await cookies().get('token');
+    const token = cookies().get('token');
     if (!token) return false;
     try {
         verify(token.value, process.env.JWT_SECRET || 'fallback-secret');
@@ -209,7 +209,7 @@ export default async function Home() {
                     <h4 className="font-semibold text-foreground mb-4">Company</h4>
                     <ul className="space-y-2">
                         <li><Link href="/about" className="text-muted-foreground hover:text-primary">About Us</Link></li>
-                        <li><Link href="#" className="text-muted-foreground hover:text-primary">Careers</Link></li>
+                        <li><Link href="/careers" className="text-muted-foreground hover:text-primary">Careers</Link></li>
                         <li><Link href="/contact" className="text-muted-foreground hover:text-primary">Contact</Link></li>
                     </ul>
                 </div>
