@@ -29,11 +29,77 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import Announcements from '@/components/chat/Announcements';
 
 export default function ChatPage() {
+  const [activeView, setActiveView] = React.useState('messages');
   const [activeConversation, setActiveConversation] = React.useState(
     'general'
   );
+
+  const renderContent = () => {
+    if (activeView === 'announcements') {
+        return <Announcements />;
+    }
+    // Default to messages view
+    return (
+         <div className="flex-grow flex flex-col">
+            <header className="p-4 border-b flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Avatar className="size-9">
+                        <AvatarImage src={activeConversation === 'alice' ? 'https://placehold.co/40x40.png' : activeConversation === 'bob' ? 'https://placehold.co/40x40.png' : ''} />
+                        <AvatarFallback>{activeConversation === 'general' ? '#' : activeConversation.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <h2 className="font-bold text-lg">{activeConversation === 'general' ? '#general' : activeConversation}</h2>
+                        <p className="text-sm text-muted-foreground">3 members</p>
+                    </div>
+                </div>
+                 <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="size-5"/>
+                </Button>
+            </header>
+            <main className="flex-grow p-4 space-y-4 overflow-y-auto">
+                 {/* Chat messages will go here */}
+                <div className="flex items-start gap-3">
+                    <Avatar className="size-9">
+                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Charlie" />
+                        <AvatarFallback>C</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                            <span className="font-bold">Charlie</span>
+                            <span className="text-xs text-muted-foreground">3:45 PM</span>
+                        </div>
+                        <div className="p-3 bg-secondary rounded-lg mt-1">
+                            <p>Project stand-up in 15 minutes in the Focus Zone!</p>
+                        </div>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-3">
+                    <Avatar className="size-9">
+                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="You" />
+                        <AvatarFallback>Y</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                            <span className="font-bold">You</span>
+                            <span className="text-xs text-muted-foreground">3:46 PM</span>
+                        </div>
+                        <div className="p-3 bg-primary text-primary-foreground rounded-lg mt-1">
+                            <p>On my way!</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            <footer className="p-4 border-t">
+                 <Input placeholder={`Message ${activeConversation === 'general' ? '#general' : activeConversation}`} className="w-full"/>
+            </footer>
+        </div>
+    );
+  };
+
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background text-foreground">
@@ -52,6 +118,8 @@ export default function ChatPage() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
+                    onClick={() => setActiveView('announcements')}
+                    isActive={activeView === 'announcements'}
                     tooltip={{
                         children: 'Notifications',
                     }}
@@ -63,10 +131,11 @@ export default function ChatPage() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
+                    onClick={() => setActiveView('messages')}
+                    isActive={activeView === 'messages'}
                     tooltip={{
                         children: 'Messages',
                     }}
-                    isActive={true}
                 >
                   <MessageSquare />
                    <span>Messages</span>
@@ -100,7 +169,7 @@ export default function ChatPage() {
           </SidebarFooter>
         </Sidebar>
 
-        <div className="w-80 border-r p-4 flex flex-col">
+        <div className="w-80 border-r p-4 flex-col" style={{ display: activeView === 'messages' ? 'flex' : 'none' }}>
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Chats</h1>
                 <Button variant="ghost" size="icon">
@@ -155,56 +224,7 @@ export default function ChatPage() {
         </div>
 
         <SidebarInset className="flex-grow flex flex-col">
-            <header className="p-4 border-b flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Avatar className="size-9">
-                        <AvatarFallback>#</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <h2 className="font-bold text-lg">#general</h2>
-                        <p className="text-sm text-muted-foreground">3 members</p>
-                    </div>
-                </div>
-                 <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="size-5"/>
-                </Button>
-            </header>
-            <main className="flex-grow p-4 space-y-4 overflow-y-auto">
-                 {/* Chat messages will go here */}
-                <div className="flex items-start gap-3">
-                    <Avatar className="size-9">
-                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Charlie" />
-                        <AvatarFallback>C</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                            <span className="font-bold">Charlie</span>
-                            <span className="text-xs text-muted-foreground">3:45 PM</span>
-                        </div>
-                        <div className="p-3 bg-secondary rounded-lg mt-1">
-                            <p>Project stand-up in 15 minutes in the Focus Zone!</p>
-                        </div>
-                    </div>
-                </div>
-                 <div className="flex items-start gap-3">
-                    <Avatar className="size-9">
-                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="You" />
-                        <AvatarFallback>Y</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                            <span className="font-bold">You</span>
-                            <span className="text-xs text-muted-foreground">3:46 PM</span>
-                        </div>
-                        <div className="p-3 bg-primary text-primary-foreground rounded-lg mt-1">
-                            <p>On my way!</p>
-                        </div>
-                    </div>
-                </div>
-            </main>
-            <footer className="p-4 border-t">
-                 <Input placeholder="Message #general" className="w-full"/>
-            </footer>
+            {renderContent()}
         </SidebarInset>
       </div>
     </SidebarProvider>
