@@ -14,36 +14,19 @@ export function middleware(request: NextRequest) {
 
   const publicRoutes = ['/login', '/signup'];
   const isPublicRoute = publicRoutes.includes(pathname);
+  const isHomePage = pathname === '/';
 
-  // --- Handle authenticated users trying to access public routes ---
-  if (token && isPublicRoute) {
+  if (token) {
     try {
-      verify(token, JWT_SECRET);
-      // If token is valid, redirect them away from login/signup
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    } catch (error) {
-      // If token is invalid, it will be cleared, let them proceed
-      const response = NextResponse.next();
-      response.cookies.delete('token');
-      return response;
-    }
-  }
-
-  // --- Handle unauthenticated users trying to access protected routes ---
-  if (!token && !isPublicRoute) {
-    // allow access to the public home page
-    if (pathname === '/') {
-        return NextResponse.next();
-    }
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-  
-  // --- Handle role-based access for authenticated users ---
-  if (token && !isPublicRoute) {
-     try {
       const decoded = verify(token, JWT_SECRET) as DecodedToken;
       const userRole = decoded.role;
 
+      // If authenticated, redirect from public routes to dashboard
+      if (isPublicRoute) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+
+      // --- Role-based access control for protected routes ---
       // Admin-only routes
       if (pathname.startsWith('/admin') && userRole !== 'Admin') {
           return NextResponse.redirect(new URL('/dashboard?error=unauthorized', request.url));
@@ -53,16 +36,17 @@ export function middleware(request: NextRequest) {
       if (pathname.startsWith('/kanban') && userRole !== 'Admin' && userRole !== 'ProjectManager') {
         return NextResponse.redirect(new URL('/dashboard?error=unauthorized', request.url));
       }
-      
-      // If all checks pass, allow the request
-      return NextResponse.next();
 
     } catch (error) {
-      console.error('JWT Verification Error:', error);
-      // If token is invalid, redirect to login and clear the cookie
+      // Invalid token, clear it and redirect to login
       const response = NextResponse.redirect(new URL('/login', request.url));
       response.cookies.delete('token');
       return response;
+    }
+  } else {
+    // Not authenticated
+    if (!isPublicRoute && !isHomePage) {
+        return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 

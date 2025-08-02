@@ -150,6 +150,6 @@ export function SignUpForm() {
           </CardFooter>
         </form>
       </Form>
-    </Card>
+    </card>
   );
 }
