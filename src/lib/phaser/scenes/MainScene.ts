@@ -1,7 +1,7 @@
 
 import Phaser from 'phaser';
 import * as Tone from 'tone';
-import type ChatService from '@/services/ChatService';
+import type { RealtimeService } from '@/services/RealtimeService';
 
 interface PlayerData {
   avatar: Phaser.GameObjects.Shape;
@@ -19,7 +19,7 @@ export class MainScene extends Phaser.Scene {
   private isNear = false;
   private lastSentPosition = { x: 0, y: 0 };
   private otherPlayers: Map<string, PlayerData> = new Map();
-  private chatService!: typeof ChatService;
+  private realtimeService!: InstanceType<typeof RealtimeService>;
   private myClientId!: string;
   private myEmail!: string;
   private isAudioReady = false;
@@ -33,12 +33,12 @@ export class MainScene extends Phaser.Scene {
     this.load.audio('synth', '/assets/synth.mp3');
   }
 
-  init(data: { startX: number, startY: number, email: string, clientId: string, chatService: typeof ChatService }) {
+  init(data: { startX: number, startY: number, email: string, clientId: string, realtimeService: InstanceType<typeof RealtimeService> }) {
     this.playerStartX = data.startX || 200;
     this.playerStartY = data.startY || 200;
     this.myEmail = data.email;
     this.myClientId = data.clientId;
-    this.chatService = data.chatService;
+    this.realtimeService = data.realtimeService;
 
     window.addEventListener('start-audio', this.initAudio, { once: true });
     window.addEventListener('beforeunload', this.savePosition);
@@ -177,7 +177,7 @@ export class MainScene extends Phaser.Scene {
   private sendPosition() {
     const { x, y } = this.player.body.position;
     if (x !== this.lastSentPosition.x || y !== this.lastSentPosition.y) {
-       this.chatService.broadcastPlayerPosition(x, y, this.myEmail, this.myClientId);
+       this.realtimeService.broadcastPlayerPosition(x, y, this.myEmail, this.myClientId);
        this.lastSentPosition = { x, y };
     }
   }

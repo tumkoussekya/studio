@@ -28,7 +28,7 @@ type PlayerUpdateHandler = (message: Ably.Types.Message) => void;
 // between the participants of a conversation, and not hardcoded.
 const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "super-secret-key-for-e2e-chat";
 
-class ChatService {
+class RealtimeService {
     private ably: Ably.Realtime;
     private channel: Ably.Types.RealtimeChannel;
 
@@ -153,4 +153,5 @@ class ChatService {
     }
 }
 
-export const chatService = new ChatService();
+export const realtimeService = new RealtimeService();
+export { RealtimeService };

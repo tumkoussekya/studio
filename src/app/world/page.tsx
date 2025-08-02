@@ -9,7 +9,7 @@ import Chat, { type Message } from '@/components/world/Chat';
 import ConversationStarter from '@/components/world/ConversationStarter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { chatService, type PresenceData, type PlayerUpdateData } from '@/services/ChatService';
+import { realtimeService, type PresenceData, type PlayerUpdateData } from '@/services/RealtimeService';
 import { useToast } from '@/hooks/use-toast';
 import LogoutButton from '@/components/world/LogoutButton';
 import UserList from '@/components/world/UserList';
@@ -46,7 +46,7 @@ export default function WorldPage() {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const user = { email: payload.email, id: payload.userId };
         setCurrentUser(user);
-        chatService.enterPresence({ email: user.email });
+        realtimeService.enterPresence({ email: user.email });
     } catch (e) {
         console.error("Failed to decode token or connect to chat:", e);
         toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not verify your session.' });
@@ -101,19 +101,19 @@ export default function WorldPage() {
         }
     };
 
-    chatService.onMessage(handleNewMessage);
-    chatService.onInitialUsers(handleInitialUsers);
-    chatService.onUserJoined(handleUserJoined);
-    chatService.onUserLeft(handleUserLeft);
-    chatService.onHistory(handleHistory);
-    chatService.onPlayerUpdate(handlePlayerUpdate);
+    realtimeService.onMessage(handleNewMessage);
+    realtimeService.onInitialUsers(handleInitialUsers);
+    realtimeService.onUserJoined(handleUserJoined);
+    realtimeService.onUserLeft(handleUserLeft);
+    realtimeService.onHistory(handleHistory);
+    realtimeService.onPlayerUpdate(handlePlayerUpdate);
 
     // This must be called to start listening to the events.
-    chatService.subscribeToEvents();
+    realtimeService.subscribeToEvents();
 
     return () => {
       // It's good practice to disconnect and clean up listeners
-      chatService.disconnect();
+      realtimeService.disconnect();
     };
   }, [currentUser, toast]);
 
@@ -128,7 +128,7 @@ export default function WorldPage() {
 
   const handleSendMessage = useCallback((text: string) => {
     if (!currentUser) return;
-    chatService.sendMessage(text, { author: currentUser.email });
+    realtimeService.sendMessage(text, { author: currentUser.email });
   }, [currentUser]);
 
   return (
