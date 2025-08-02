@@ -92,7 +92,7 @@ class KanbanStore {
             id: newTaskId,
             content,
             priority,
-            dueDate: new Date().toISOString().split('T')[0],
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Due in 7 days
             assignee: { name: 'Unassigned', avatar: '?' }
         };
 
