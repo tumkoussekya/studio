@@ -11,10 +11,11 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
 
-  const publicRoutes = ['/login', '/signup', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/careers', '/faq', '/blog', '/profile'];
+  const publicRoutes = ['/login', '/signup', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/careers', '/faq', '/blog'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   const isHomePage = pathname === '/';
   const isApiRoute = pathname.startsWith('/api/');
+  const isProfileRoute = pathname === '/profile';
 
   if (isApiRoute) {
     if (pathname.startsWith('/api/admin')) {
@@ -35,12 +36,12 @@ export async function middleware(request: NextRequest) {
       const profileComplete = user.user_metadata?.profile_complete;
 
       // If profile is not complete, redirect to profile setup page
-      if (!profileComplete && pathname !== '/profile' && !isApiRoute && pathname !== '/api/auth/logout') {
+      if (!profileComplete && !isProfileRoute && !isApiRoute && pathname !== '/api/auth/logout') {
           return NextResponse.redirect(new URL('/profile', request.url));
       }
       
       // If profile IS complete, but they try to access the setup page, redirect to dashboard
-      if (profileComplete && pathname === '/profile') {
+      if (profileComplete && isProfileRoute) {
           return NextResponse.redirect(new URL('/dashboard', request.url));
       }
 
@@ -57,7 +58,7 @@ export async function middleware(request: NextRequest) {
 
   } else {
     // Not authenticated
-    if (!isPublicRoute && !isHomePage && !pathname.startsWith('/meetings/')) {
+    if (!isPublicRoute && !isHomePage && !isProfileRoute && !pathname.startsWith('/meetings/')) {
         if (pathname.startsWith('/meetings/')) {
             // Allow anonymous users to join meetings, but they will be prompted for a name by Jitsi
         } else {

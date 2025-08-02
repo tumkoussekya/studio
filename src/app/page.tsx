@@ -62,7 +62,7 @@ export default async function Home() {
           <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground mb-8">
             Step into a 2D virtual office. Boost productivity and connection with spatial chat, collaborative tools, and AI-powered features.
           </p>
-          <Link href={isAuthenticated ? "/dashboard" : "/world"}>
+          <Link href={isAuthenticated ? "/dashboard" : "/signup"}>
             <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold">
               Enter SyncroSpace <ArrowRight className="ml-2" />
             </Button>
