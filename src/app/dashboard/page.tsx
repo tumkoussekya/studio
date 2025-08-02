@@ -58,27 +58,7 @@ export default function DashboardPage() {
                            </Link>
                         </CardContent>
                     </Card>
-                    {isAdmin && (
-                        <Card className="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-3">
-                                <KanbanSquare className="text-accent" />
-                                <span>Manage Tasks</span>
-                                </CardTitle>
-                                <CardDescription>
-                                    Organize your projects and ideas on the Kanban board.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Link href="/kanban">
-                                    <Button className="w-full">
-                                        Open Kanban <ArrowRight className="ml-2" />
-                                    </Button>
-                                </Link>
-                            </CardContent>
-                        </Card>
-                    )}
-                    <Card className="hover:shadow-lg transition-shadow">
+                     <Card className="hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                <MessageSquare className="text-accent" />
@@ -152,6 +132,24 @@ export default function DashboardPage() {
                     </Card>
                     {isAdmin && (
                         <>
+                            <Card className="hover:shadow-lg transition-shadow">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-3">
+                                    <KanbanSquare className="text-accent" />
+                                    <span>Manage Tasks</span>
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Organize your projects and ideas on the Kanban board.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Link href="/kanban">
+                                        <Button className="w-full">
+                                            Open Kanban <ArrowRight className="ml-2" />
+                                        </Button>
+                                    </Link>
+                                </CardContent>
+                            </Card>
                             <Card className="hover:shadow-lg transition-shadow">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-3">
