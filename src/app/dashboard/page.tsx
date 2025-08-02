@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, KanbanSquare, Users } from 'lucide-react';
+import { ArrowRight, KanbanSquare, Users, Shapes } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 import Link from 'next/link';
@@ -31,7 +31,7 @@ export default function DashboardPage() {
                     <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user?.email || 'Explorer'}!</h2>
                     <p className="text-muted-foreground">What would you like to do today?</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
@@ -64,6 +64,24 @@ export default function DashboardPage() {
                             <Link href="/kanban">
                                 <Button className="w-full">
                                     Open Kanban <ArrowRight className="ml-2" />
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                     <Card className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3">
+                               <Shapes className="text-accent" />
+                                <span>Whiteboards</span>
+                            </CardTitle>
+                            <CardDescription>
+                                Brainstorm and collaborate in real-time on a shared canvas.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Link href="/whiteboard">
+                                <Button className="w-full">
+                                    Go to Whiteboard <ArrowRight className="ml-2" />
                                 </Button>
                             </Link>
                         </CardContent>
