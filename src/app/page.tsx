@@ -222,13 +222,6 @@ export default async function Home() {
                         <li><Link href="/terms-of-service" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
                     </ul>
                 </div>
-                 <div>
-                    <h4 className="font-semibold text-foreground mb-4">Admin</h4>
-                    <ul className="space-y-2">
-                        <li><Link href="/admin" className="text-muted-foreground hover:text-primary">Admin Panel</Link></li>
-                        <li><Link href="/analytics" className="text-muted-foreground hover:text-primary">Analytics</Link></li>
-                    </ul>
-                </div>
             </div>
             <div className="mt-12 border-t pt-8 text-center text-muted-foreground">
                 <p>&copy; {new Date().getFullYear()} SyncroSpace. All Rights Reserved.</p>
