@@ -8,6 +8,7 @@ interface PlayerData {
   nameTag: Phaser.GameObjects.Text;
   panner?: Tone.Panner3D;
   playerNode?: Tone.Player;
+  email: string;
 }
 
 export class MainScene extends Phaser.Scene {
@@ -16,13 +17,14 @@ export class MainScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: { [key: string]: Phaser.Input.Keyboard.Key };
   private nearZone!: Phaser.GameObjects.Zone;
-  private isNear = false;
+  private isNearNpc = false;
   private lastSentPosition = { x: 0, y: 0 };
   private otherPlayers: Map<string, PlayerData> = new Map();
   private realtimeService!: InstanceType<typeof RealtimeService>;
   private myClientId!: string;
   private myEmail!: string;
   private isAudioReady = false;
+  private nearbyPlayer: { clientId: string, email: string } | null = null;
 
 
   constructor() {
@@ -177,7 +179,7 @@ export class MainScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, 800, 1200);
 
     // Proximity check
-    this.physics.add.overlap(this.player, this.nearZone, this.onPlayerNear, undefined, this);
+    this.physics.add.overlap(this.player, this.nearZone, this.onPlayerNearNpc, undefined, this);
 
     this.time.addEvent({
       delay: 100,
@@ -195,10 +197,10 @@ export class MainScene extends Phaser.Scene {
     }
   }
   
-  onPlayerNear() {
-    if (!this.isNear) {
-      this.isNear = true;
-      const onNearCallback = this.game.registry.get('onPlayerNear');
+  onPlayerNearNpc() {
+    if (!this.isNearNpc) {
+      this.isNearNpc = true;
+      const onNearCallback = this.game.registry.get('onPlayerNearNpc');
       if (onNearCallback) onNearCallback();
     }
   }
@@ -247,7 +249,7 @@ export class MainScene extends Phaser.Scene {
         padding: { x:2, y: 1 }
       }).setOrigin(0.5);
 
-      const newPlayerData = { avatar, nameTag };
+      const newPlayerData = { avatar, nameTag, email };
       this.otherPlayers.set(clientId, newPlayerData);
       this.setupPlayerAudio(newPlayerData);
     }
@@ -270,6 +272,36 @@ export class MainScene extends Phaser.Scene {
           this.otherPlayers.delete(clientId);
       }
   }
+  
+  private checkPlayerProximity() {
+    const PROXIMITY_RADIUS = 75;
+    let foundNearbyPlayer = null;
+
+    for (const [clientId, otherPlayer] of this.otherPlayers.entries()) {
+        const distance = Phaser.Math.Distance.Between(
+            this.player.body.x,
+            this.player.body.y,
+            otherPlayer.avatar.body.x,
+            otherPlayer.avatar.body.y
+        );
+
+        if (distance < PROXIMITY_RADIUS) {
+            foundNearbyPlayer = { clientId, email: otherPlayer.email };
+            break;
+        }
+    }
+
+    if (foundNearbyPlayer && this.nearbyPlayer?.clientId !== foundNearbyPlayer.clientId) {
+        this.nearbyPlayer = foundNearbyPlayer;
+        const onPlayerNear = this.game.registry.get('onPlayerNear');
+        if (onPlayerNear) onPlayerNear(this.nearbyPlayer.clientId, this.nearbyPlayer.email);
+
+    } else if (!foundNearbyPlayer && this.nearbyPlayer) {
+        this.nearbyPlayer = null;
+        const onPlayerFar = this.game.registry.get('onPlayerFar');
+        if (onPlayerFar) onPlayerFar();
+    }
+}
 
   update() {
     const speed = 200;
@@ -310,12 +342,14 @@ export class MainScene extends Phaser.Scene {
         }
     });
 
-    const isOverlapping = this.physics.overlap(this.player, this.nearZone);
-    if (this.isNear && !isOverlapping) {
-      this.isNear = false;
-      const onFarCallback = this.game.registry.get('onPlayerFar');
+    const isOverlappingNpc = this.physics.overlap(this.player, this.nearZone);
+    if (this.isNearNpc && !isOverlappingNpc) {
+      this.isNearNpc = false;
+      const onFarCallback = this.game.registry.get('onPlayerFarNpc');
       if (onFarCallback) onFarCallback();
     }
+    
+    this.checkPlayerProximity();
   }
   
   destroy() {

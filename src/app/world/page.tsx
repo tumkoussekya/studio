@@ -8,7 +8,7 @@ import type * as Ably from 'ably';
 import Chat, { type Message } from '@/components/world/Chat';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { realtimeService, type PresenceData, type PlayerUpdateData } from '@/services/RealtimeService';
+import { realtimeService, type PresenceData, type PlayerUpdateData, type KnockData } from '@/services/RealtimeService';
 import { useToast } from '@/hooks/use-toast';
 import LogoutButton from '@/components/world/LogoutButton';
 import UserList from '@/components/world/UserList';
@@ -17,6 +17,8 @@ import AudioControl from '@/components/world/AudioControl';
 import type { MainScene } from '@/lib/phaser/scenes/MainScene';
 import { useRouter } from 'next/navigation';
 import AlexChat from '@/components/world/AlexChat';
+import { Button } from '@/components/ui/button';
+import { Hand } from 'lucide-react';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -24,6 +26,7 @@ const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer
 
 export default function WorldPage() {
   const [isNearAlex, setIsNearAlex] = useState(false);
+  const [nearbyPlayer, setNearbyPlayer] = useState<{ clientId: string; email: string } | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     { author: 'System', text: 'Welcome to Pixel Space! Use WASD or arrow keys to move.' },
   ]);
@@ -99,6 +102,14 @@ export default function WorldPage() {
            sceneRef.current?.updatePlayer(data.clientId, data.x, data.y, data.email);
         }
     };
+    
+    const handleKnock = (data: KnockData) => {
+        toast({
+            title: 'Someone is knocking!',
+            description: `${data.fromEmail} is knocking.`,
+            duration: 5000,
+        });
+    };
 
     realtimeService.onMessage(handleNewMessage);
     realtimeService.onInitialUsers(handleInitialUsers);
@@ -106,6 +117,7 @@ export default function WorldPage() {
     realtimeService.onUserLeft(handleUserLeft);
     realtimeService.onHistory(handleHistory);
     realtimeService.onPlayerUpdate(handlePlayerUpdate);
+    realtimeService.onKnock(handleKnock);
 
     // This must be called to start listening to the events.
     realtimeService.subscribeToEvents();
@@ -117,23 +129,73 @@ export default function WorldPage() {
   }, [currentUser, toast]);
 
 
-  const handlePlayerNear = useCallback(() => {
+  const handlePlayerNearNpc = useCallback(() => {
     setIsNearAlex(true);
   }, []);
 
-  const handlePlayerFar = useCallback(() => {
+  const handlePlayerFarNpc = useCallback(() => {
     setIsNearAlex(false);
+  }, []);
+  
+  const handlePlayerNear = useCallback((clientId: string, email: string) => {
+    setNearbyPlayer({ clientId, email });
+  }, []);
+
+  const handlePlayerFar = useCallback(() => {
+    setNearbyPlayer(null);
   }, []);
 
   const handleSendMessage = useCallback((text: string) => {
     if (!currentUser) return;
     realtimeService.sendMessage(text, { author: currentUser.email });
   }, [currentUser]);
+  
+  const handleKnock = () => {
+    if (!nearbyPlayer || !currentUser) return;
+    realtimeService.sendKnock(nearbyPlayer.clientId, currentUser.email);
+    toast({
+      title: 'Knock Sent',
+      description: `You knocked on ${nearbyPlayer.email}'s virtual door.`,
+    });
+  };
+  
+  const renderInteractionPanel = () => {
+      if (isNearAlex) {
+          return <AlexChat />;
+      }
+      if (nearbyPlayer) {
+          return (
+             <Card className="bg-secondary/50 border-dashed h-[188px]">
+                <CardHeader>
+                    <CardTitle className="text-lg">You're near {nearbyPlayer.email}!</CardTitle>
+                    <CardDescription>Would you like to get their attention?</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button onClick={handleKnock} className="w-full">
+                        <Hand className="mr-2 h-4 w-4" />
+                        Knock
+                    </Button>
+                </CardContent>
+            </Card>
+          );
+      }
+      return (
+          <div className="h-[188px] flex items-center justify-center text-center text-muted-foreground p-8">
+            <p>Move your avatar closer to Alex or another player to interact with them.</p>
+        </div>
+      );
+  }
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <div className="flex-grow relative order-2 md:order-1">
-        <PhaserContainer onPlayerNear={handlePlayerNear} onPlayerFar={handlePlayerFar} onSceneReady={(scene) => sceneRef.current = scene} />
+        <PhaserContainer 
+            onPlayerNearNpc={handlePlayerNearNpc} 
+            onPlayerFarNpc={handlePlayerFarNpc}
+            onPlayerNear={handlePlayerNear}
+            onPlayerFar={handlePlayerFar}
+            onSceneReady={(scene) => sceneRef.current = scene} 
+        />
       </div>
       <aside className="w-full md:w-80 lg:w-96 border-l bg-card p-4 flex flex-col gap-4 order-1 md:order-2 shrink-0">
         <Card className="h-full flex flex-col shadow-none border-none">
@@ -149,11 +211,7 @@ export default function WorldPage() {
             <Separator />
             <CardContent className="p-0 flex-grow flex flex-col min-h-0">
                 <div className="p-4">
-                  {isNearAlex ? <AlexChat /> : (
-                     <div className="h-[188px] flex items-center justify-center text-center text-muted-foreground p-8">
-                        <p>Move your avatar closer to Alex in the "Focus Zone" to start a conversation!</p>
-                    </div>
-                  )}
+                  {renderInteractionPanel()}
                 </div>
                 <Separator />
                 <div className="p-4">

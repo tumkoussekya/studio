@@ -8,12 +8,14 @@ import { getCookie } from 'cookies-next';
 import { realtimeService } from '@/services/RealtimeService';
 
 interface PhaserContainerProps {
-  onPlayerNear: () => void;
+  onPlayerNearNpc: () => void;
+  onPlayerFarNpc: () => void;
+  onPlayerNear: (clientId: string, email: string) => void;
   onPlayerFar: () => void;
   onSceneReady: (scene: MainScene) => void;
 }
 
-export default function PhaserContainer({ onPlayerNear, onPlayerFar, onSceneReady }: PhaserContainerProps) {
+export default function PhaserContainer({ onPlayerNearNpc, onPlayerFarNpc, onPlayerNear, onPlayerFar, onSceneReady }: PhaserContainerProps) {
   const gameRef = useRef<Phaser.Game | null>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
 
@@ -62,6 +64,8 @@ export default function PhaserContainer({ onPlayerNear, onPlayerFar, onSceneRead
       backgroundColor: 'hsl(var(--background))',
       callbacks: {
         postBoot: (game) => {
+          game.registry.set('onPlayerNearNpc', onPlayerNearNpc);
+          game.registry.set('onPlayerFarNpc', onPlayerFarNpc);
           game.registry.set('onPlayerNear', onPlayerNear);
           game.registry.set('onPlayerFar', onPlayerFar);
           
@@ -81,7 +85,7 @@ export default function PhaserContainer({ onPlayerNear, onPlayerFar, onSceneRead
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [onPlayerNear, onPlayerFar, onSceneReady]);
+  }, [onPlayerNearNpc, onPlayerFarNpc, onPlayerNear, onPlayerFar, onSceneReady]);
 
   return <div ref={gameContainerRef} className="w-full h-full" />;
 }
