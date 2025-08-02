@@ -1,13 +1,27 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, MessageSquare, Users, Volume2 } from 'lucide-react';
+import { ArrowRight, LogIn, MessageSquare, UserPlus, Users, Volume2 } from 'lucide-react';
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-primary font-headline">Pixel Space</h1>
+        <nav className="flex items-center gap-2">
+            <Link href="/login" passHref>
+                <Button variant="outline">
+                    <LogIn />
+                    Login
+                </Button>
+            </Link>
+            <Link href="/signup" passHref>
+                <Button>
+                    <UserPlus />
+                    Sign Up
+                </Button>
+            </Link>
+        </nav>
       </header>
       <main className="flex-grow">
         <section className="container mx-auto px-4 sm:px-6 lg:px-8 text-center py-16 md:py-24">
