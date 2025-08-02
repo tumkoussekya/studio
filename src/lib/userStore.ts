@@ -10,6 +10,7 @@ const users: User[] = [
     passwordHash: '$2a$10$V8.v4bH/wR4Fv.K5f.gS9.7Yj7.F1q.Y1q.N3.N3.L1gS9.N3.S9O',
     lastX: 200,
     lastY: 200,
+    role: 'Admin'
   }
 ];
 
@@ -19,9 +20,11 @@ export const userStore = {
     if (existingUser) {
       return null; // User already exists
     }
-    users.push(user);
+    // New users get TeamMember role by default
+    const userWithRole = { ...user, role: 'TeamMember' as const };
+    users.push(userWithRole);
     console.log('Current users:', users);
-    return user;
+    return userWithRole;
   },
   findByEmail: (email: string): User | undefined => {
     return users.find((user) => user.email === email);

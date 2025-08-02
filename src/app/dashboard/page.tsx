@@ -6,12 +6,15 @@ import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 import Link from 'next/link';
 import LogoutButton from '@/components/world/LogoutButton';
+import type { User } from '@/models/User';
 
-function getUser() {
+
+function getUser(): (User & {userId: string}) | null {
     const token = cookies().get('token');
     if (!token) return null;
     try {
-        return verify(token.value, process.env.JWT_SECRET || 'fallback-secret') as { email: string };
+        const decoded = verify(token.value, process.env.JWT_SECRET || 'fallback-secret');
+        return decoded as (User & { userId: string });
     } catch (e) {
         return null;
     }
@@ -19,6 +22,9 @@ function getUser() {
 
 export default function DashboardPage() {
     const user = getUser();
+    const isAdmin = user?.role === 'Admin';
+    const isProjectManager = user?.role === 'ProjectManager';
+
 
     return (
         <div className="flex flex-col min-h-screen bg-background">
@@ -50,24 +56,26 @@ export default function DashboardPage() {
                            </Link>
                         </CardContent>
                     </Card>
-                    <Card className="hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3">
-                               <KanbanSquare className="text-accent" />
+                    {(isAdmin || isProjectManager) && (
+                        <Card className="hover:shadow-lg transition-shadow">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3">
+                                <KanbanSquare className="text-accent" />
                                 <span>Manage Tasks</span>
-                            </CardTitle>
-                            <CardDescription>
-                                Organize your projects and ideas on the Kanban board.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Link href="/kanban">
-                                <Button className="w-full">
-                                    Open Kanban <ArrowRight className="ml-2" />
-                                </Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
+                                </CardTitle>
+                                <CardDescription>
+                                    Organize your projects and ideas on the Kanban board.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Link href="/kanban">
+                                    <Button className="w-full">
+                                        Open Kanban <ArrowRight className="ml-2" />
+                                    </Button>
+                                </Link>
+                            </CardContent>
+                        </Card>
+                    )}
                     <Card className="hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
@@ -140,24 +148,26 @@ export default function DashboardPage() {
                             </Link>
                         </CardContent>
                     </Card>
-                    <Card className="hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3">
-                               <Shield className="text-accent" />
+                    {isAdmin && (
+                        <Card className="hover:shadow-lg transition-shadow">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3">
+                                <Shield className="text-accent" />
                                 <span>Admin Panel</span>
-                            </CardTitle>
-                            <CardDescription>
-                                Manage users, teams, and system settings.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Link href="/admin">
-                                <Button className="w-full">
-                                    Go to Admin <ArrowRight className="ml-2" />
-                                </Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
+                                </CardTitle>
+                                <CardDescription>
+                                    Manage users, teams, and system settings.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Link href="/admin">
+                                    <Button className="w-full">
+                                        Go to Admin <ArrowRight className="ml-2" />
+                                    </Button>
+                                </Link>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </main>
         </div>

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
-    const token = sign({ userId: user.id, email: user.email, lastX: user.lastX, lastY: user.lastY }, JWT_SECRET, {
+    const token = sign({ userId: user.id, email: user.email, lastX: user.lastX, lastY: user.lastY, role: user.role }, JWT_SECRET, {
       expiresIn: '1h',
     });
 
