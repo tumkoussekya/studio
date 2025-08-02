@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList } from 'lucide-react';
+import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 import Link from 'next/link';
@@ -100,6 +100,24 @@ export default function DashboardPage() {
                             <Link href="/surveys">
                                 <Button className="w-full">
                                     Open Surveys <ArrowRight className="ml-2" />
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                    <Card className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3">
+                               <Shield className="text-accent" />
+                                <span>Admin Panel</span>
+                            </CardTitle>
+                            <CardDescription>
+                                Manage users, teams, and system settings.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Link href="/admin">
+                                <Button className="w-full">
+                                    Go to Admin <ArrowRight className="ml-2" />
                                 </Button>
                             </Link>
                         </CardContent>
