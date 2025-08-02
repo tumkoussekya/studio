@@ -18,7 +18,6 @@ import {
   SidebarMenuBadge,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import {
   Bell,
@@ -27,15 +26,61 @@ import {
   MessageSquare,
   Settings,
   MoreHorizontal,
+  FileText,
+  Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Announcements from '@/components/chat/Announcements';
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogAction,
+} from '@/components/ui/alert-dialog';
+import { summarizeChat, type ChatMessage } from '@/ai/flows/summarize-chat';
+import { useToast } from '@/hooks/use-toast';
+
+
+const sampleMessages: ChatMessage[] = [
+    { author: 'Charlie', text: 'Project stand-up in 15 minutes in the Focus Zone!' },
+    { author: 'You', text: 'On my way!' },
+    { author: 'Alice', text: 'I might be a few minutes late, wrapping something up.' },
+    { author: 'You', text: 'No problem, see you there.' },
+    { author: 'Bob', text: "Should I bring my laptop?"},
+    { author: 'Charlie', text: "Yes, we'll be reviewing the latest designs."}
+];
 
 export default function ChatPage() {
   const [activeView, setActiveView] = React.useState('messages');
   const [activeConversation, setActiveConversation] = React.useState(
     'general'
   );
+  const { toast } = useToast();
+  const [isSummarizing, setIsSummarizing] = React.useState(false);
+  const [summary, setSummary] = React.useState('');
+  const [isSummaryDialogOpen, setIsSummaryDialogOpen] = React.useState(false);
+
+  const handleSummarize = async () => {
+    setIsSummarizing(true);
+    try {
+        const result = await summarizeChat({ messages: sampleMessages });
+        setSummary(result.summary);
+        setIsSummaryDialogOpen(true);
+    } catch (error) {
+        console.error("Failed to summarize chat", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Could not generate a summary. Please try again later.'
+        });
+    } finally {
+        setIsSummarizing(false);
+    }
+  };
+
 
   const renderContent = () => {
     if (activeView === 'announcements') {
@@ -55,9 +100,19 @@ export default function ChatPage() {
                         <p className="text-sm text-muted-foreground">3 members</p>
                     </div>
                 </div>
-                 <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="size-5"/>
-                </Button>
+                 <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={handleSummarize} disabled={isSummarizing}>
+                        {isSummarizing ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <FileText className="mr-2 h-4 w-4" />
+                        )}
+                        Summarize
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="size-5"/>
+                    </Button>
+                </div>
             </header>
             <main className="flex-grow p-4 space-y-4 overflow-y-auto">
                  {/* Chat messages will go here */}
@@ -88,6 +143,66 @@ export default function ChatPage() {
                         </div>
                         <div className="p-3 bg-primary text-primary-foreground rounded-lg mt-1">
                             <p>On my way!</p>
+                        </div>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-3">
+                    <Avatar className="size-9">
+                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="female avatar" alt="Alice" />
+                        <AvatarFallback>A</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                            <span className="font-bold">Alice</span>
+                            <span className="text-xs text-muted-foreground">3:47 PM</span>
+                        </div>
+                        <div className="p-3 bg-secondary rounded-lg mt-1">
+                            <p>I might be a few minutes late, wrapping something up.</p>
+                        </div>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-3">
+                    <Avatar className="size-9">
+                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="You" />
+                        <AvatarFallback>Y</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                            <span className="font-bold">You</span>
+                            <span className="text-xs text-muted-foreground">3:47 PM</span>
+                        </div>
+                        <div className="p-3 bg-primary text-primary-foreground rounded-lg mt-1">
+                            <p>No problem, see you there.</p>
+                        </div>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-3">
+                    <Avatar className="size-9">
+                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Bob" />
+                        <AvatarFallback>B</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                            <span className="font-bold">Bob</span>
+                            <span className="text-xs text-muted-foreground">3:48 PM</span>
+                        </div>
+                        <div className="p-3 bg-secondary rounded-lg mt-1">
+                            <p>Should I bring my laptop?</p>
+                        </div>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-3">
+                    <Avatar className="size-9">
+                         <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="male avatar" alt="Charlie" />
+                        <AvatarFallback>C</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                            <span className="font-bold">Charlie</span>
+                            <span className="text-xs text-muted-foreground">3:49 PM</span>
+                        </div>
+                        <div className="p-3 bg-secondary rounded-lg mt-1">
+                            <p>Yes, we'll be reviewing the latest designs.</p>
                         </div>
                     </div>
                 </div>
@@ -226,6 +341,26 @@ export default function ChatPage() {
         <SidebarInset className="flex-grow flex flex-col">
             {renderContent()}
         </SidebarInset>
+        
+        <AlertDialog open={isSummaryDialogOpen} onOpenChange={setIsSummaryDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                        <FileText /> Chat Summary
+                    </AlertDialogTitle>
+                    <AlertDialogDescription
+                        asChild
+                        className="prose prose-sm dark:prose-invert max-h-[60vh] overflow-y-auto"
+                    >
+                     <div dangerouslySetInnerHTML={{ __html: summary.replace(/\n/g, '<br />') }} />
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogAction>Close</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
       </div>
     </SidebarProvider>
   );
