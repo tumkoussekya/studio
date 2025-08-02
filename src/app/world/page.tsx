@@ -16,6 +16,7 @@ import UserList from '@/components/world/UserList';
 import { getCookie } from 'cookies-next';
 import AudioControl from '@/components/world/AudioControl';
 import type { MainScene } from '@/lib/phaser/scenes/MainScene';
+import { useRouter } from 'next/navigation';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -30,76 +31,90 @@ export default function WorldPage() {
   const [currentUser, setCurrentUser] = useState<{ email: string, id: string } | null>(null);
   const { toast } = useToast();
   const sceneRef = useRef<MainScene | null>(null);
+  const router = useRouter();
 
 
   useEffect(() => {
     const token = getCookie('token') as string;
-    if (token) {
-        try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const user = { email: payload.email, id: payload.userId };
-            setCurrentUser(user);
-            chatService.enterPresence({ email: user.email });
-        } catch (e) {
-            console.error("Failed to decode token or connect to chat:", e);
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not verify your session.' });
-            return;
-        }
+    if (!token) {
+        // This should be handled by middleware, but as a fallback
+        router.push('/login');
+        return;
     }
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const user = { email: payload.email, id: payload.userId };
+        setCurrentUser(user);
+        chatService.enterPresence({ email: user.email });
+    } catch (e) {
+        console.error("Failed to decode token or connect to chat:", e);
+        toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not verify your session.' });
+        router.push('/login');
+    }
+  }, [router, toast]);
 
+
+  useEffect(() => {
     if (!currentUser) return;
 
     // --- Register all event handlers ---
-    chatService.onMessage((message: Ably.Types.Message) => {
+    const handleNewMessage = (message: Ably.Types.Message) => {
         const authorEmail = (message.data.author || message.clientId);
         const author = authorEmail === currentUser.email ? 'You' : authorEmail;
         setMessages((prev) => [...prev, { author, text: message.data.text }]);
-    });
+    };
     
-    chatService.onInitialUsers((users: Ably.Types.PresenceMessage[]) => {
+    const handleInitialUsers = (users: Ably.Types.PresenceMessage[]) => {
         const userEmails = users.map(u => (u.data as PresenceData).email);
         setOnlineUsers(userEmails);
-    });
+    };
 
-    chatService.onUserJoined((member: Ably.Types.PresenceMessage) => {
+    const handleUserJoined = (member: Ably.Types.PresenceMessage) => {
         const joinedEmail = (member.data as PresenceData).email;
         if(joinedEmail === currentUser.email) return;
         
         setOnlineUsers((prev) => [...new Set([...prev, joinedEmail])]);
         toast({ title: 'User Joined', description: `${joinedEmail} has entered the space.` });
-    });
+    };
     
-    chatService.onUserLeft((member: Ably.Types.PresenceMessage) => {
+    const handleUserLeft = (member: Ably.Types.PresenceMessage) => {
         const leftEmail = (member.data as PresenceData).email;
         setOnlineUsers((prev) => prev.filter(email => email !== leftEmail));
         toast({ title: 'User Left', description: `${leftEmail} has left the space.` });
         sceneRef.current?.removePlayer(member.clientId);
-    });
+    };
 
-    chatService.onHistory((history: Ably.Types.Message[]) => {
+    const handleHistory = (history: Ably.Types.Message[]) => {
       const pastMessages: Message[] = history.map(message => {
         const authorEmail = (message.data.author || message.clientId);
         const author = authorEmail === currentUser.email ? 'You' : authorEmail;
         return { author, text: message.data.text };
       });
       setMessages(prev => [...prev, ...pastMessages.reverse()]);
-    });
+    };
     
-    chatService.onPlayerUpdate((message: Ably.Types.Message) => {
+    const handlePlayerUpdate = (message: Ably.Types.Message) => {
         const data = message.data as PlayerUpdateData;
         if (data.clientId !== currentUser.id) {
            sceneRef.current?.updatePlayer(data.clientId, data.x, data.y, data.email);
         }
-    });
+    };
+
+    chatService.onMessage(handleNewMessage);
+    chatService.onInitialUsers(handleInitialUsers);
+    chatService.onUserJoined(handleUserJoined);
+    chatService.onUserLeft(handleUserLeft);
+    chatService.onHistory(handleHistory);
+    chatService.onPlayerUpdate(handlePlayerUpdate);
 
     // This must be called to start listening to the events.
     chatService.subscribeToEvents();
 
-
     return () => {
+      // It's good practice to disconnect and clean up listeners
       chatService.disconnect();
     };
-  }, [toast, currentUser]);
+  }, [currentUser, toast]);
 
 
   const handlePlayerNear = useCallback(() => {

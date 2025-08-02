@@ -2,7 +2,6 @@
 import {NextResponse} from 'next/server';
 import type {NextRequest} from 'next/server';
 import {verify} from 'jsonwebtoken';
-import { userStore } from './lib/userStore';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -36,7 +35,7 @@ export function middleware(request: NextRequest) {
   // If user has a token and accesses a protected route, allow access
   if (token && !isPublicRoute) {
      try {
-      verify(token, JWT_SECRET) as { email: string, lastX: number, lastY: number };
+      verify(token, JWT_SECRET);
       return NextResponse.next();
     } catch (error) {
       console.error('JWT Verification Error:', error);
