@@ -17,6 +17,7 @@ import { getCookie } from 'cookies-next';
 import AudioControl from '@/components/world/AudioControl';
 import type { MainScene } from '@/lib/phaser/scenes/MainScene';
 import { useRouter } from 'next/navigation';
+import AlexChat from '@/components/world/AlexChat';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -149,9 +150,9 @@ export default function WorldPage() {
             <Separator />
             <CardContent className="p-0 flex-grow flex flex-col min-h-0">
                 <div className="p-4">
-                  {isNear ? <ConversationStarter /> : (
+                  {isNear ? <AlexChat /> : (
                      <div className="h-[188px] flex items-center justify-center text-center text-muted-foreground p-8">
-                        <p>Move your avatar closer to Alex to get an AI-powered conversation starter!</p>
+                        <p>Move your avatar closer to Alex to start a conversation!</p>
                     </div>
                   )}
                 </div>
