@@ -1,16 +1,15 @@
 
 import {NextResponse} from 'next/server';
 import type {NextRequest} from 'next/server';
-import {verify, type JwtPayload} from 'jsonwebtoken';
+import { createClient } from './lib/supabase/server';
 import type { User } from './models/User';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
 
-interface DecodedToken extends JwtPayload, Partial<Pick<User, 'role'>> {}
-
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value;
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   const publicRoutes = ['/login', '/signup', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/careers', '/faq', '/blog'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
@@ -19,26 +18,20 @@ export function middleware(request: NextRequest) {
 
   if (isApiRoute) {
     if (pathname.startsWith('/api/admin')) {
-       if (!token) {
+       if (!user) {
         return new NextResponse(JSON.stringify({ message: 'Authentication required' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
        }
-       try {
-         const decoded = verify(token, JWT_SECRET) as DecodedToken;
-         if (decoded.role !== 'Admin') {
-            return new NextResponse(JSON.stringify({ message: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
-         }
-       } catch (error) {
-         return new NextResponse(JSON.stringify({ message: 'Invalid token' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+       // user_metadata is where we stored our custom role
+       if (user.user_metadata?.role !== 'Admin') {
+           return new NextResponse(JSON.stringify({ message: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
        }
     }
     return NextResponse.next();
   }
 
 
-  if (token) {
-    try {
-      const decoded = verify(token, JWT_SECRET) as DecodedToken;
-      const userRole = decoded.role;
+  if (user) {
+      const userRole = user.user_metadata?.role;
 
       // If authenticated, redirect from public routes to dashboard
       if (isPublicRoute && !pathname.startsWith('/blog') && !pathname.startsWith('/privacy-policy') && !pathname.startsWith('/terms-of-service')) { // allow authenticated users to view blog and legal pages
@@ -51,12 +44,6 @@ export function middleware(request: NextRequest) {
           return NextResponse.redirect(new URL('/dashboard?error=unauthorized', request.url));
       }
 
-    } catch (error) {
-      // Invalid token, clear it and redirect to login
-      const response = NextResponse.redirect(new URL('/login', request.url));
-      response.cookies.delete('token');
-      return response;
-    }
   } else {
     // Not authenticated
     if (!isPublicRoute && !isHomePage && !pathname.startsWith('/meetings/')) {

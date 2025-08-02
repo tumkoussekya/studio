@@ -23,6 +23,25 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenuItem, 
 import { MessageSquare, Rss } from 'lucide-react';
 import Announcements from '@/components/chat/Announcements';
 import type { UserRole } from '@/models/User';
+import { verify } from 'jsonwebtoken';
+
+
+// This is a simplified interface for the JWT payload from Supabase
+interface SupabaseJwtPayload {
+  sub: string; // This is the user ID
+  email: string;
+  role: UserRole; // This comes from our custom claims, might not be in the default token
+  app_metadata: {
+      provider?: string;
+      providers?: string[];
+  };
+  user_metadata: {
+      last_x: number;
+      last_y: number;
+      role: UserRole;
+  }
+}
+
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -43,22 +62,43 @@ export default function WorldPage() {
 
 
   useEffect(() => {
-    const token = getCookie('token') as string;
-    if (!token) {
-        // This should be handled by middleware, but as a fallback
-        router.push('/login');
-        return;
+    // This is a workaround to get user info on the client side since we can't use server hooks here.
+    // In a more complex app, this might be handled via a dedicated session context.
+    const cookie = getCookie('token'); // This is no longer a JWT we created, but Supabase's cookie
+    if (!cookie) {
+      router.push('/login');
+      return;
     }
+    
+    // We can't verify the Supabase JWT without the secret, so we'll just decode it.
+    // This is generally safe for reading claims but not for verifying authenticity.
+    // The server-side APIs will handle true verification.
     try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const user = { email: payload.email, id: payload.userId, role: payload.role };
+        const payload = JSON.parse(atob(cookie.split('.')[1]));
+        const user = { email: payload.email, id: payload.sub, role: payload.user_metadata.role || 'TeamMember' };
         setCurrentUser(user);
         realtimeService.enterPresence({ email: user.email });
-    } catch (e) {
-        console.error("Failed to decode token or connect to chat:", e);
-        toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not verify your session.' });
-        router.push('/login');
+    } catch(e) {
+        console.error("Could not decode user token", e);
+        // Fallback for older custom tokens if they exist, or just fail
+        const customToken = getCookie('token');
+        if(customToken) {
+            try {
+                const decoded = verify(customToken, process.env.NEXT_PUBLIC_JWT_SECRET || 'fallback-secret') as any;
+                 const user = { email: decoded.email, id: decoded.userId, role: decoded.role };
+                 setCurrentUser(user);
+                 realtimeService.enterPresence({ email: user.email });
+            } catch(jwtError) {
+                 console.error("Failed to decode token or connect to chat:", jwtError);
+                 toast({ variant: 'destructive', title: 'Authentication Error', description: 'Your session is invalid.' });
+                 router.push('/login');
+            }
+        } else {
+             toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not verify your session.' });
+             router.push('/login');
+        }
     }
+
 
     const handleShowAnnouncements = () => {
         setActiveRightPanel('announcements');
