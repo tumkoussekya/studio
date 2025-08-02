@@ -8,6 +8,8 @@ export class MainScene extends Phaser.Scene {
   private wasd!: { [key: string]: Phaser.Input.Keyboard.Key };
   private nearZone!: Phaser.GameObjects.Zone;
   private isNear = false;
+  private lastSentPosition = { x: 0, y: 0 };
+
 
   constructor() {
     super({ key: 'MainScene' });
@@ -117,6 +119,27 @@ export class MainScene extends Phaser.Scene {
 
     // Proximity check
     this.physics.add.overlap(this.player, this.nearZone, this.onPlayerNear, undefined, this);
+
+    // Position broadcast timer
+    this.time.addEvent({
+      delay: 100, // in milliseconds
+      callback: this.sendPosition,
+      callbackScope: this,
+      loop: true,
+    });
+  }
+
+  private sendPosition() {
+    const { x, y } = this.player.body.position;
+    if (x !== this.lastSentPosition.x || y !== this.lastSentPosition.y) {
+      fetch('/api/world/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ x, y }),
+      }).catch(err => console.error("Failed to send position:", err));
+      
+      this.lastSentPosition = { x, y };
+    }
   }
   
   onPlayerNear() {
