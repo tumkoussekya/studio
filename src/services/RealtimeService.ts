@@ -30,6 +30,8 @@ export interface KnockData {
     targetClientId: string;
 }
 
+export interface ClearData {}
+
 
 type MessageHandler = (message: Ably.Types.Message, channelId: string) => void;
 type HistoryHandler = (messages: Ably.Types.Message[], channelId: string) => void;
@@ -117,7 +119,7 @@ class RealtimeService {
             }
 
             // Also trigger generic message handler if it exists
-            const genericHandlers = this.eventHandlers.get(channelId)?.get('__generic_message');
+            const genericHandlers = this.eventHandlers.get('__any__')?.get('__generic_message');
              if(genericHandlers) {
                 genericHandlers.forEach(handler => handler(message, channelId));
             }
@@ -145,7 +147,14 @@ class RealtimeService {
         return this.ably.auth.clientId;
     }
 
-    public onMessage(handler: MessageHandler): void { this.subscribeToChannelEvent('__any__', '__generic_message', handler); }
+    public onMessage(handler: MessageHandler): void { 
+      const genericMessageHandler = (message: Ably.Types.Message, channelId: string) => {
+        if (message.name === 'message') {
+            handler(message, channelId);
+        }
+      };
+      this.subscribeToChannelEvent('__any__', '__generic_message', genericMessageHandler); 
+    }
     public onHistory(handler: HistoryHandler): void { this.subscribeToChannelEvent('__any__', '__history', handler); }
     public onPlayerUpdate(handler: PlayerUpdateHandler): void { this.subscribeToChannelEvent('pixel-space', 'player-update', handler); }
     public onKnock(handler: KnockHandler): void { 
@@ -192,7 +201,8 @@ class RealtimeService {
     }
     
     public sendMessage(channelId: string, text: string, data?: { author: string }, type: 'channel' | 'dm' = 'channel'): void {
-        this.publishToChannel(this.getChannel(channelId, type).name, 'message', { text, ...data });
+        const channel = this.getChannel(channelId, type);
+        channel.publish('message', { text, ...data });
     }
 
     public sendKnock(targetClientId: string, fromEmail: string): void {
@@ -223,4 +233,3 @@ class RealtimeService {
 
 export const realtimeService = new RealtimeService();
 export { RealtimeService };
-
