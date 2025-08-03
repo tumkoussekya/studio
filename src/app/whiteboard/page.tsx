@@ -31,13 +31,16 @@ export default function WhiteboardPage() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [drawingHistory, setDrawingHistory] = useState<DrawingData[]>([]);
 
   // --- Ably & Data Sync ---
   const drawOnCanvas = useCallback((ctx: CanvasRenderingContext2D, data: DrawingData) => {
       ctx.strokeStyle = data.color;
       ctx.lineWidth = data.brushSize;
+      ctx.globalCompositeOperation = data.tool === 'eraser' ? 'destination-out' : 'source-over';
 
-      if (data.tool === 'pen') {
+
+      if (data.tool === 'pen' || data.tool === 'eraser') {
           ctx.beginPath();
           ctx.moveTo(data.from.x, data.from.y);
           ctx.lineTo(data.to.x, data.to.y);
@@ -60,6 +63,7 @@ export default function WhiteboardPage() {
         
         const context = contextRef.current;
         if (context && data && data.content) {
+            setDrawingHistory(data.content);
             data.content.forEach((drawing: DrawingData) => {
                 drawOnCanvas(context, drawing);
             });
@@ -109,7 +113,10 @@ export default function WhiteboardPage() {
     
     const handleDraw = (message: Ably.Types.Message) => {
         const data: DrawingData = message.data;
-        if(contextRef.current) drawOnCanvas(contextRef.current, data);
+        if(contextRef.current) {
+            drawOnCanvas(contextRef.current, data);
+            setDrawingHistory(prev => [...prev, data]);
+        }
     };
 
     const handleClear = () => {
@@ -155,7 +162,7 @@ export default function WhiteboardPage() {
     setIsDrawing(true);
     lastPosition.current = { x: offsetX, y: offsetY };
 
-    if (currentTool === 'pen') {
+    if (currentTool === 'pen' || currentTool === 'eraser') {
         context.beginPath();
         context.moveTo(offsetX, offsetY);
     } else if (currentTool === 'rectangle') {
@@ -171,7 +178,7 @@ export default function WhiteboardPage() {
 
     setIsDrawing(false);
 
-    if (currentTool === 'pen') {
+    if (currentTool === 'pen' || currentTool === 'eraser') {
         context.closePath();
     } else if (currentTool === 'rectangle') {
         const rectData: RectangleData = {
@@ -183,6 +190,7 @@ export default function WhiteboardPage() {
         };
         drawOnCanvas(context, rectData);
         publishDrawData(rectData);
+        setDrawingHistory(prev => [...prev, rectData]);
     }
     lastPosition.current = null;
     snapshot.current = null;
@@ -192,18 +200,20 @@ export default function WhiteboardPage() {
     if (!isDrawing || !lastPosition.current || !contextRef.current) return;
     const { offsetX, offsetY } = nativeEvent;
     
-    if (currentTool === 'pen') {
+    if (currentTool === 'pen' || currentTool === 'eraser') {
         contextRef.current.lineTo(offsetX, offsetY);
         contextRef.current.stroke();
         
         const penData: PenData = {
-            tool: 'pen',
+            tool: currentTool,
             from: lastPosition.current,
             to: { x: offsetX, y: offsetY },
             color,
             brushSize
         };
         publishDrawData(penData);
+        setDrawingHistory(prev => [...prev, penData]);
+
 
         lastPosition.current = { x: offsetX, y: offsetY };
     } else if (currentTool === 'rectangle' && snapshot.current) {
@@ -219,6 +229,7 @@ export default function WhiteboardPage() {
     const context = contextRef.current;
     if (canvas && context) {
       context.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
+      setDrawingHistory([]);
       if (publish) {
         realtimeService.publishToChannel('whiteboard', 'clear', {} as ClearData);
       }
@@ -232,14 +243,10 @@ export default function WhiteboardPage() {
 
     setIsSaving(true);
     try {
-        // This is a simplified approach. A better way would be to store the sequence of drawing commands.
-        // For this demo, we'll save the canvas as a base64 image string.
-        const dataUrl = canvas.toDataURL('image/png');
-        
         const response = await fetch(`/api/whiteboard/${WHITEBOARD_ID}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: dataUrl }) // In a real app, this would be the command list.
+            body: JSON.stringify({ content: drawingHistory })
         });
 
         if (!response.ok) throw new Error("Failed to save whiteboard.");
@@ -269,6 +276,9 @@ export default function WhiteboardPage() {
                      <Button variant="ghost" size="icon" onClick={() => setCurrentTool('rectangle')} className={cn(currentTool === 'rectangle' && 'bg-accent text-accent-foreground')}>
                         <Square className="h-5 w-5" />
                     </Button>
+                    <Button variant="ghost" size="icon" onClick={() => setCurrentTool('eraser')} className={cn(currentTool === 'eraser' && 'bg-accent text-accent-foreground')}>
+                        <Eraser className="h-5 w-5" />
+                    </Button>
                     <div className="flex items-center gap-2">
                         <Palette className="h-5 w-5" />
                         <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-8 h-8 bg-transparent border-none cursor-pointer" />
@@ -285,7 +295,7 @@ export default function WhiteboardPage() {
                     </div>
                     <Button variant="outline" onClick={() => clearCanvas(true)}>
                         <Eraser className="h-5 w-5 mr-2" />
-                        Clear
+                        Clear All
                     </Button>
                     <Button variant="outline" onClick={saveCanvas} disabled={isSaving}>
                         {isSaving ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Save className="h-5 w-5 mr-2" />}

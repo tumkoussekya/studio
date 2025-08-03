@@ -57,8 +57,6 @@ export async function POST(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new NextResponse('Unauthorized', { status: 401 });
     
-    // In a real app, you would have a list of drawing commands.
-    // For this demo, we're just saving the base64 data URL.
     const { content } = await request.json();
     if (!content) {
         return new NextResponse(JSON.stringify({ error: 'Content is required' }), { status: 400 });

@@ -1,5 +1,5 @@
 
-export type Tool = 'pen' | 'rectangle';
+export type Tool = 'pen' | 'rectangle' | 'eraser';
 
 export interface BaseDrawingData {
   tool: Tool;
@@ -7,7 +7,7 @@ export interface BaseDrawingData {
   brushSize: number;
 }
 export interface PenData extends BaseDrawingData {
-  tool: 'pen';
+  tool: 'pen' | 'eraser';
   from: { x: number; y: number };
   to: { x: number; y: number };
 }
