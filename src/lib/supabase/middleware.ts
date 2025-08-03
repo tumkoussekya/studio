@@ -59,28 +59,39 @@ export async function updateSession(request: NextRequest) {
 
   const publicRoutes = ['/', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/careers', '/faq', '/blog'];
   const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route) && route !== '/') || request.nextUrl.pathname === '/';
+  
+  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/signup');
 
-  if (!user && !isPublicRoute) {
+  if (!user && !isPublicRoute && !isAuthRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
   
   if (user) {
+    if (isAuthRoute) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+
     const { data: userData } = await supabase.from('users').select('profile_complete, role').eq('id', user.id).single();
 
+    // If profile is not complete, redirect to /profile, unless they are already there.
     if (userData && !userData.profile_complete && request.nextUrl.pathname !== '/profile') {
         const url = request.nextUrl.clone()
         url.pathname = '/profile'
         return NextResponse.redirect(url)
     }
 
+    // If profile is complete and they are trying to access /profile, redirect to dashboard.
     if (userData && userData.profile_complete && request.nextUrl.pathname === '/profile') {
         const url = request.nextUrl.clone()
         url.pathname = '/dashboard'
         return NextResponse.redirect(url)
     }
 
+    // Protect admin-only routes
     if (userData && userData.role !== 'Admin' && (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/analytics') || request.nextUrl.pathname.startsWith('/kanban'))) {
        const url = request.nextUrl.clone()
        url.pathname = '/dashboard'
