@@ -102,6 +102,7 @@ class RealtimeService {
         this.currentUserId = currentUserId;
 
         const allChannelIds = new Set<string>(channelIds);
+        // The world page also uses this, so we ensure pixel-space is always included for now.
         allChannelIds.add('pixel-space');
 
         for (const id of allChannelIds) {

@@ -47,7 +47,7 @@ export default function WorldPage() {
   const [messages, setMessages] = useState<Message[]>([
     { author: 'System', text: 'Welcome to SyncroSpace! Use WASD or arrow keys to move. Click on other players to "knock"!' },
   ]);
-  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<Ably.Types.PresenceMessage[]>([]);
   const [currentUser, setCurrentUser] = useState<{ email: string, id: string, role: UserRole, last_x: number, last_y: number } | null>(null);
   const { toast } = useToast();
   const sceneRef = useRef<MainScene | null>(null);
@@ -102,7 +102,7 @@ export default function WorldPage() {
         }
 
         setCurrentUser(userData);
-        realtimeService.enterPresence({ email: userData.email });
+        await realtimeService.enterPresence({ email: userData.email, id: userData.id });
     }
 
     fetchUserAndConnect();
@@ -132,41 +132,37 @@ export default function WorldPage() {
     if (!currentUser) return;
     let isSubscribed = true;
 
-    // --- Register all event handlers ---
-    const handleNewMessage = (message: Ably.Types.Message) => {
+    const handleNewMessage = (ablyMessage: Ably.Types.Message, channelId: string) => {
         if (!isSubscribed) return;
-        const authorEmail = (message.data.author || message.clientId);
+        const authorEmail = (ablyMessage.data.author || 'Anonymous');
         const author = authorEmail === currentUser.email ? 'You' : authorEmail;
-        setMessages((prev) => [...prev, { author, text: message.data.text }]);
+        setMessages((prev) => [...prev, { author, text: ablyMessage.data.text }]);
     };
     
-    const handleInitialUsers = (users: Ably.Types.PresenceMessage[]) => {
-        if (!isSubscribed) return;
-        const userEmails = users.map(u => (u.data as PresenceData).email);
-        setOnlineUsers(userEmails);
-    };
+    const handlePresenceUpdate = (presenceMessage?: Ably.Types.PresenceMessage) => {
+       if (!isSubscribed) return;
+       realtimeService.getPresence('pixel-space', (err, members) => {
+           if (!err && members) {
+               setOnlineUsers(members);
 
-    const handleUserJoined = (member: Ably.Types.PresenceMessage) => {
-        if (!isSubscribed) return;
-        const joinedEmail = (member.data as PresenceData).email;
-        if(joinedEmail === currentUser.email) return;
-        
-        setOnlineUsers((prev) => [...new Set([...prev, joinedEmail])]);
-        toast({ title: 'User Joined', description: `${joinedEmail} has entered the space.` });
+                if (presenceMessage?.action === 'enter') {
+                    const joinedEmail = (presenceMessage.data as PresenceData).email;
+                    if (joinedEmail !== currentUser.email) {
+                        toast({ title: 'User Joined', description: `${joinedEmail} has entered the space.` });
+                    }
+                } else if (presenceMessage?.action === 'leave') {
+                    const leftEmail = (presenceMessage.data as PresenceData).email;
+                    toast({ title: 'User Left', description: `${leftEmail} has left the space.` });
+                    sceneRef.current?.removePlayer(presenceMessage.clientId);
+                }
+           }
+       });
     };
     
-    const handleUserLeft = (member: Ably.Types.PresenceMessage) => {
-        if (!isSubscribed) return;
-        const leftEmail = (member.data as PresenceData).email;
-        setOnlineUsers((prev) => prev.filter(email => email !== leftEmail));
-        toast({ title: 'User Left', description: `${leftEmail} has left the space.` });
-        sceneRef.current?.removePlayer(member.clientId);
-    };
-
-    const handleHistory = (history: Ably.Types.Message[]) => {
+    const handleHistory = (history: Ably.Types.Message[], channelId: string) => {
       if (!isSubscribed) return;
       const pastMessages: Message[] = history.map(message => {
-        const authorEmail = (message.data.author || message.clientId);
+        const authorEmail = (message.data.author || 'Anonymous');
         const author = authorEmail === currentUser.email ? 'You' : authorEmail;
         return { author, text: message.data.text };
       });
@@ -191,18 +187,15 @@ export default function WorldPage() {
     };
 
     realtimeService.onMessage(handleNewMessage);
-    realtimeService.onInitialUsers(handleInitialUsers);
-    realtimeService.onUserJoined(handleUserJoined);
-    realtimeService.onUserLeft(handleUserLeft);
+    realtimeService.onPresenceUpdate('pixel-space', handlePresenceUpdate);
     realtimeService.onHistory(handleHistory);
     realtimeService.onPlayerUpdate(handlePlayerUpdate);
     realtimeService.onKnock(handleKnock);
 
     // This must be called to start listening to the events.
-    realtimeService.subscribeToEvents();
+    realtimeService.subscribeToChannels(['pixel-space'], currentUser.id);
 
     return () => {
-      // It's good practice to disconnect and clean up listeners
       isSubscribed = false;
     };
   }, [currentUser, toast]);
@@ -226,7 +219,7 @@ export default function WorldPage() {
 
   const handleSendMessage = useCallback((text: string) => {
     if (!currentUser) return;
-    realtimeService.sendMessage(text, { author: currentUser.email });
+    realtimeService.sendMessage('pixel-space', text, { author: currentUser.email }, 'channel');
   }, [currentUser]);
   
   const renderInteractionPanel = () => {
@@ -254,6 +247,8 @@ export default function WorldPage() {
   if (!currentUser) {
     return <WorldLoadingSkeleton />;
   }
+
+  const userEmails = onlineUsers.map(u => (u.data as PresenceData).email).filter(Boolean);
 
   return (
     <SidebarProvider>
@@ -318,7 +313,7 @@ export default function WorldPage() {
                         <MediaControls stream={videoStream} hasPermission={hasMediaPermission} />
                     </div>
                     <Separator />
-                    <UserList users={onlineUsers} />
+                    <UserList users={userEmails} />
                     <Chat messages={messages} onSendMessage={handleSendMessage} />
                 </div>
              )}
