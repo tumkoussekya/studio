@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
         data: {
             role: 'TeamMember', // Default role
             profile_complete: false, // Custom metadata
+            onboarding_complete: false,
         }
     }
   });
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
   const { error: dbError } = await supabase
     .from('users')
     .insert([
-      { id: authData.user.id, email: authData.user.email, role: 'TeamMember', last_x: 200, last_y: 200, profile_complete: false },
+      { id: authData.user.id, email: authData.user.email, role: 'TeamMember', last_x: 200, last_y: 200, profile_complete: false, onboarding_complete: false },
     ]);
 
   if (dbError) {

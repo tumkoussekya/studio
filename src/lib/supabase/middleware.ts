@@ -74,21 +74,31 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    const { data: userData } = await supabase.from('users').select('profile_complete, role').eq('id', user.id).single();
+    const { data: userData } = await supabase.from('users').select('onboarding_complete, profile_complete, role').eq('id', user.id).single();
 
-    // If profile is not complete, redirect to /profile, unless they are already there.
-    if (userData && !userData.profile_complete && request.nextUrl.pathname !== '/profile') {
+    if (userData) {
+      // If onboarding is not complete, redirect to /onboarding.
+      if (!userData.onboarding_complete && request.nextUrl.pathname !== '/onboarding') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/onboarding'
+        return NextResponse.redirect(url)
+      }
+      
+      // If onboarding is complete but profile is not, redirect to /profile.
+      if (userData.onboarding_complete && !userData.profile_complete && request.nextUrl.pathname !== '/profile') {
         const url = request.nextUrl.clone()
         url.pathname = '/profile'
         return NextResponse.redirect(url)
+      }
+
+      // If everything is complete and user tries to access onboarding/profile, redirect to dashboard.
+      if (userData.onboarding_complete && userData.profile_complete && (request.nextUrl.pathname === '/profile' || request.nextUrl.pathname === '/onboarding')) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/dashboard'
+          return NextResponse.redirect(url)
+      }
     }
 
-    // If profile is complete and they are trying to access /profile, redirect to dashboard.
-    if (userData && userData.profile_complete && request.nextUrl.pathname === '/profile') {
-        const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
-    }
 
     // Protect admin-only routes
     if (userData && userData.role !== 'Admin' && (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/analytics'))) {
