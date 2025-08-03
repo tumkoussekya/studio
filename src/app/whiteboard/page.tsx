@@ -1,40 +1,22 @@
 
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent } from '@/components/ui/card';
-import { Eraser, Palette, Pen, Users, Square, Save } from 'lucide-react';
-import * as Ably from 'ably';
+import { Eraser, Palette, Pen, Users, Square, Save, Loader2 } from 'lucide-react';
+import { realtimeService } from '@/services/RealtimeService';
+import type { DrawingData, PenData, RectangleData, Tool, ClearData } from '@/models/Whiteboard';
+import { useToast } from '@/hooks/use-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import type { PresenceData } from '@/services/RealtimeService';
+import type * as Ably from 'ably';
+import { createClient } from '@/lib/supabase/client';
 
-type Tool = 'pen' | 'rectangle';
-
-interface BaseDrawingData {
-  tool: Tool;
-  color: string;
-  brushSize: number;
-}
-interface PenData extends BaseDrawingData {
-  tool: 'pen';
-  from: { x: number; y: number };
-  to: { x: number; y: number };
-}
-
-interface RectangleData extends BaseDrawingData {
-  tool: 'rectangle';
-  from: { x: number; y: number };
-  to: { x: number; y: number };
-}
-
-type DrawingData = PenData | RectangleData;
-
-// Connect to Ably
-const ably = new Ably.Realtime({ authUrl: '/api/ably-token', authMethod: 'POST' });
-const channel = ably.channels.get('whiteboard');
+const WHITEBOARD_ID = 'b7e2f7a8-8f6a-4b1e-8e4a-3e4d8f6a3b1e'; // Hardcoded for single whiteboard demo
 
 export default function WhiteboardPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -46,62 +28,12 @@ export default function WhiteboardPage() {
   const lastPosition = useRef<{ x: number, y: number } | null>(null);
   const [currentTool, setCurrentTool] = useState<Tool>('pen');
   const snapshot = useRef<ImageData | null>(null);
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-
-  useEffect(() => {
-    // --- Canvas Setup ---
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const scale = window.devicePixelRatio;
-    const parent = canvas.parentElement;
-    if (parent) {
-      canvas.width = parent.offsetWidth * scale;
-      canvas.height = parent.offsetHeight * scale;
-    }
-
-
-    const context = canvas.getContext('2d');
-    if (!context) return;
-    
-    context.scale(scale, scale);
-    contextRef.current = context;
-    context.lineCap = 'round';
-    context.lineJoin = 'round';
-
-    // --- Ably Setup ---
-    const handlePresence = () => {
-        channel.presence.get((err, members) => {
-            if (!err && members) {
-                setOnlineUsers(members.length);
-            }
-        });
-    };
-    
-    channel.presence.subscribe(['enter', 'leave'], handlePresence);
-    channel.presence.enter();
-    
-    channel.subscribe('draw', (message: Ably.Types.Message) => {
-        const data: DrawingData = message.data;
-        const remoteContext = canvas.getContext('2d');
-        if(remoteContext) {
-           drawOnCanvas(remoteContext, data);
-        }
-    });
-
-    channel.subscribe('clear', () => {
-        clearCanvas(false); // Don't publish again
-    });
-
-
-    return () => {
-        channel.presence.leave();
-        channel.unsubscribe();
-    }
-
-  }, []);
-
-  const drawOnCanvas = (ctx: CanvasRenderingContext2D, data: DrawingData) => {
+  // --- Ably & Data Sync ---
+  const drawOnCanvas = useCallback((ctx: CanvasRenderingContext2D, data: DrawingData) => {
       ctx.strokeStyle = data.color;
       ctx.lineWidth = data.brushSize;
 
@@ -117,7 +49,89 @@ export default function WhiteboardPage() {
            ctx.stroke();
            ctx.closePath();
       }
-  };
+  }, []);
+
+  const loadCanvasState = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const response = await fetch(`/api/whiteboard/${WHITEBOARD_ID}`);
+        if (!response.ok) throw new Error("Could not load whiteboard state.");
+        const data = await response.json();
+        
+        const context = contextRef.current;
+        if (context && data && data.content) {
+            data.content.forEach((drawing: DrawingData) => {
+                drawOnCanvas(context, drawing);
+            });
+        }
+    } catch(error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [drawOnCanvas, toast]);
+
+  // Debounced publish function
+  const publishDrawData = useDebouncedCallback((data: DrawingData) => {
+    realtimeService.publishToChannel('whiteboard', 'draw', data);
+  }, 10);
+
+  useEffect(() => {
+    // --- Canvas Setup ---
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const scale = window.devicePixelRatio;
+    const parent = canvas.parentElement;
+    if (parent) {
+      canvas.width = parent.offsetWidth * scale;
+      canvas.height = parent.offsetHeight * scale;
+    }
+
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    
+    context.scale(scale, scale);
+    contextRef.current = context;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    
+    loadCanvasState();
+    
+    // --- Ably Setup ---
+    const handlePresence = (presenceMessage?: Ably.Types.PresenceMessage) => {
+        realtimeService.getPresence('whiteboard', (err, members) => {
+            if (!err && members) {
+                setOnlineUsers(members.length);
+            }
+        });
+    };
+    
+    const handleDraw = (message: Ably.Types.Message) => {
+        const data: DrawingData = message.data;
+        if(contextRef.current) drawOnCanvas(contextRef.current, data);
+    };
+
+    const handleClear = () => {
+        clearCanvas(false);
+    }
+    
+    realtimeService.subscribeToChannels(['whiteboard'], 'whiteboard-user');
+    realtimeService.onPresenceUpdate('whiteboard', handlePresence);
+    realtimeService.subscribeToChannelEvent('whiteboard', 'draw', handleDraw);
+    realtimeService.subscribeToChannelEvent('whiteboard', 'clear', handleClear);
+
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session }}) => {
+       if (session?.user.email) {
+          realtimeService.enterPresence({ email: session.user.email, id: session.user.id }, 'whiteboard');
+       }
+    });
+
+    return () => {
+        realtimeService.disconnect();
+    }
+  }, [loadCanvasState, drawOnCanvas]);
 
 
   useEffect(() => {
@@ -132,14 +146,11 @@ export default function WhiteboardPage() {
     }
   }, [brushSize]);
 
-  const publishDrawData = useDebouncedCallback((data: DrawingData) => {
-    channel.publish('draw', data);
-  }, 10); 
 
   const startDrawing = ({ nativeEvent }: React.MouseEvent<HTMLCanvasElement>) => {
     const { offsetX, offsetY } = nativeEvent;
     const context = contextRef.current;
-    if (!context) return;
+    if (!context || isLoading) return;
 
     setIsDrawing(true);
     lastPosition.current = { x: offsetX, y: offsetY };
@@ -182,11 +193,9 @@ export default function WhiteboardPage() {
     const { offsetX, offsetY } = nativeEvent;
     
     if (currentTool === 'pen') {
-        // Draw locally first
         contextRef.current.lineTo(offsetX, offsetY);
         contextRef.current.stroke();
         
-        // Then publish to others
         const penData: PenData = {
             tool: 'pen',
             from: lastPosition.current,
@@ -211,24 +220,41 @@ export default function WhiteboardPage() {
     if (canvas && context) {
       context.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
       if (publish) {
-        channel.publish('clear', {});
+        realtimeService.publishToChannel('whiteboard', 'clear', {} as ClearData);
       }
     }
   };
 
-  const saveCanvas = () => {
+  const saveCanvas = async () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const context = contextRef.current;
+    if (!canvas || !context) return;
 
-    const link = document.createElement('a');
-    link.download = 'whiteboard.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    setIsSaving(true);
+    try {
+        // This is a simplified approach. A better way would be to store the sequence of drawing commands.
+        // For this demo, we'll save the canvas as a base64 image string.
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        const response = await fetch(`/api/whiteboard/${WHITEBOARD_ID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: dataUrl }) // In a real app, this would be the command list.
+        });
+
+        if (!response.ok) throw new Error("Failed to save whiteboard.");
+        toast({ title: "Whiteboard Saved!", description: "Your drawing has been saved to the cloud." });
+
+    } catch(error: any) {
+         toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
-      <header className="p-4 border-b flex justify-between items-center">
+      <header className="p-4 border-b flex flex-wrap justify-between items-center gap-4">
         <h1 className="text-2xl font-bold">Collaborative Whiteboard</h1>
         <div className="flex items-center gap-4">
              <Badge variant="outline" className="flex items-center gap-2 text-base">
@@ -236,7 +262,7 @@ export default function WhiteboardPage() {
                 <span>{onlineUsers} user{onlineUsers !== 1 ? 's' : ''} online</span>
              </Badge>
             <Card className="p-2">
-                <CardContent className="flex items-center gap-4 p-0">
+                <CardContent className="flex items-center flex-wrap gap-4 p-0">
                      <Button variant="ghost" size="icon" onClick={() => setCurrentTool('pen')} className={cn(currentTool === 'pen' && 'bg-accent text-accent-foreground')}>
                         <Pen className="h-5 w-5" />
                     </Button>
@@ -261,15 +287,20 @@ export default function WhiteboardPage() {
                         <Eraser className="h-5 w-5 mr-2" />
                         Clear
                     </Button>
-                    <Button variant="outline" onClick={saveCanvas}>
-                        <Save className="h-5 w-5 mr-2" />
+                    <Button variant="outline" onClick={saveCanvas} disabled={isSaving}>
+                        {isSaving ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Save className="h-5 w-5 mr-2" />}
                         Save
                     </Button>
                 </CardContent>
             </Card>
         </div>
       </header>
-      <main className="flex-grow relative">
+      <main className="flex-grow relative bg-muted/20">
+        {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )}
         <canvas
           ref={canvasRef}
           onMouseDown={startDrawing}

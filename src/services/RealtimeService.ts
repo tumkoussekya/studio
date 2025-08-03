@@ -2,6 +2,7 @@
 'use client';
 
 import * as Ably from 'ably';
+import type { DrawingData } from '@/models/Whiteboard';
 
 export interface MessageData {
     author: string;
@@ -35,6 +36,9 @@ type HistoryHandler = (messages: Ably.Types.Message[], channelId: string) => voi
 type PresenceHandler = (presenceMessage?: Ably.Types.PresenceMessage) => void;
 type PlayerUpdateHandler = (message: Ably.Types.Message) => void;
 type KnockHandler = (data: KnockData) => void;
+type DrawingHandler = (message: Ably.Types.Message) => void;
+type ClearHandler = () => void;
+
 
 const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "HO4oK9VllF/g3Y+e1dG1A/dDESfSDjI0aEZ1LzH1y0E=";
 
@@ -43,11 +47,7 @@ class RealtimeService {
     private channels: Map<string, Ably.Types.RealtimeChannel> = new Map();
     private connectionPromise: Promise<void>;
     private currentUserId: string | null = null;
-
-    private messageHandler: MessageHandler | null = null;
-    private historyHandler: HistoryHandler | null = null;
-    private playerUpdateHandler: PlayerUpdateHandler | null = null;
-    private knockHandler: KnockHandler | null = null;
+    private eventHandlers: Map<string, Map<string, ((...args: any[]) => void)[]>> = new Map();
 
 
     constructor() {
@@ -87,7 +87,7 @@ class RealtimeService {
             };
             const channel = this.ably.channels.get(finalChannelId, channelOptions);
             this.channels.set(finalChannelId, channel);
-            this.subscribeToChannelEvents(channel, finalChannelId);
+            this.subscribeToAllEvents(channel, finalChannelId);
             this.fetchHistory(finalChannelId, conversationType);
         }
         return this.channels.get(finalChannelId)!;
@@ -107,27 +107,56 @@ class RealtimeService {
         }
     }
     
-    private async subscribeToChannelEvents(channel: Ably.Types.RealtimeChannel, channelId: string) {
+    private async subscribeToAllEvents(channel: Ably.Types.RealtimeChannel, channelId: string) {
         await this.connectionPromise;
         
-        channel.subscribe('message', (message) => this.messageHandler?.(message, channelId));
-        channel.subscribe('player-update', (message) => this.playerUpdateHandler?.(message));
-        channel.subscribe('knock', (message) => {
-            const data = message.data as KnockData;
-            if (this.knockHandler && data.targetClientId === this.getClientId()) {
-                this.knockHandler(data);
+        channel.subscribe((message) => {
+            const handlers = this.eventHandlers.get(channelId)?.get(message.name);
+            if(handlers) {
+                handlers.forEach(handler => handler(message));
+            }
+
+            // Also trigger generic message handler if it exists
+            const genericHandlers = this.eventHandlers.get(channelId)?.get('__generic_message');
+             if(genericHandlers) {
+                genericHandlers.forEach(handler => handler(message, channelId));
             }
         });
     }
+
+    public subscribeToChannelEvent(channelId: string, eventName: string, handler: (...args: any[]) => void) {
+        if (!this.eventHandlers.has(channelId)) {
+            this.eventHandlers.set(channelId, new Map());
+        }
+        if (!this.eventHandlers.get(channelId)!.has(eventName)) {
+            this.eventHandlers.get(channelId)!.set(eventName, []);
+        }
+        this.eventHandlers.get(channelId)!.get(eventName)!.push(handler);
+        this.getChannel(channelId); // Ensure channel is initialized
+    }
+    
+     public publishToChannel(channelId: string, eventName: string, data: any) {
+        const channel = this.getChannel(channelId);
+        channel.publish(eventName, data);
+    }
+
 
     public getClientId(): string {
         return this.ably.auth.clientId;
     }
 
-    public onMessage(handler: MessageHandler): void { this.messageHandler = handler; }
-    public onHistory(handler: HistoryHandler): void { this.historyHandler = handler; }
-    public onPlayerUpdate(handler: PlayerUpdateHandler): void { this.playerUpdateHandler = handler; }
-    public onKnock(handler: KnockHandler): void { this.knockHandler = handler; }
+    public onMessage(handler: MessageHandler): void { this.subscribeToChannelEvent('__any__', '__generic_message', handler); }
+    public onHistory(handler: HistoryHandler): void { this.subscribeToChannelEvent('__any__', '__history', handler); }
+    public onPlayerUpdate(handler: PlayerUpdateHandler): void { this.subscribeToChannelEvent('pixel-space', 'player-update', handler); }
+    public onKnock(handler: KnockHandler): void { 
+         const knockWrapper = (message: Ably.Types.Message) => {
+            const data = message.data as KnockData;
+            if (data.targetClientId === this.getClientId()) {
+                handler(data);
+            }
+        };
+        this.subscribeToChannelEvent('pixel-space', 'knock', knockWrapper);
+    }
 
     public onPresenceUpdate(channelId: string, handler: PresenceHandler): void {
         const channel = this.getChannel(channelId);
@@ -142,17 +171,20 @@ class RealtimeService {
         channel.presence.get(callback);
     }
 
-    public async enterPresence(userData: PresenceData) {
+    public async enterPresence(userData: PresenceData, channelId: string = 'pixel-space') {
         await this.connectionPromise;
-        const pixelSpaceChannel = this.getChannel('pixel-space');
-        pixelSpaceChannel.presence.enter(userData);
+        const channel = this.getChannel(channelId);
+        channel.presence.enter(userData);
     }
 
     public fetchHistory(channelId: string, type: 'channel' | 'dm' = 'channel') {
         const channel = this.getChannel(channelId, type);
          channel.history((err, result) => {
             if (!err && result.items) {
-                this.historyHandler?.(result.items, channel.name);
+                const historyHandlers = this.eventHandlers.get('__any__')?.get('__history');
+                if (historyHandlers) {
+                    historyHandlers.forEach(handler => handler(result.items, channel.name));
+                }
             } else if (err) {
                 console.error(`Error fetching history for ${channel.name}:`, err);
             }
@@ -160,27 +192,24 @@ class RealtimeService {
     }
     
     public sendMessage(channelId: string, text: string, data?: { author: string }, type: 'channel' | 'dm' = 'channel'): void {
-        const channel = this.getChannel(channelId, type);
-        channel.publish('message', { text, ...data });
+        this.publishToChannel(this.getChannel(channelId, type).name, 'message', { text, ...data });
     }
 
     public sendKnock(targetClientId: string, fromEmail: string): void {
-        const channel = this.getChannel('pixel-space');
         const knockData: KnockData = {
             targetClientId,
             fromClientId: this.getClientId(),
             fromEmail: fromEmail
         };
-        channel.publish('knock', knockData);
+        this.publishToChannel('pixel-space', 'knock', knockData);
     }
     
     public broadcastPlayerPosition(x: number, y: number, email: string, clientId: string): void {
-        const channel = this.getChannel('pixel-space');
         const event: PlayerUpdateData = {
             type: 'move',
             payload: { x, y, email, clientId }
         };
-        channel.publish('player-update', event);
+        this.publishToChannel('pixel-space', 'player-update', event);
     }
     
     public disconnect(): void {
@@ -188,8 +217,10 @@ class RealtimeService {
             this.ably.close();
         }
         this.channels.clear();
+        this.eventHandlers.clear();
     }
 }
 
 export const realtimeService = new RealtimeService();
 export { RealtimeService };
+
