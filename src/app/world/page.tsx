@@ -138,8 +138,8 @@ export default function WorldPage() {
     const handlePlayerUpdate = (message: Ably.Types.Message) => {
         if (!isSubscribed) return;
         const data = message.data as PlayerUpdateData;
-        if (data.clientId !== currentUser.id) {
-           sceneRef.current?.updatePlayer(data.clientId, data.x, data.y, data.email);
+        if (data.payload.clientId !== currentUser.id) {
+           sceneRef.current?.updatePlayer(data.payload.clientId, data.payload.x, data.payload.y, data.payload.email);
         }
     };
     

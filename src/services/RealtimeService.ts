@@ -13,10 +13,13 @@ export interface PresenceData {
 }
 
 export interface PlayerUpdateData {
-    x: number;
-    y: number;
-    email: string;
-    clientId: string;
+    type: 'move';
+    payload: {
+        x: number;
+        y: number;
+        email: string;
+        clientId: string;
+    }
 }
 
 export interface KnockData {
@@ -39,7 +42,8 @@ const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "HO4oK9VllF/g3Y+e1dG1A/d
 
 class RealtimeService {
     private ably: Ably.Realtime;
-    private channel: Ably.Types.RealtimeChannel;
+    private pixelSpaceChannel: Ably.Types.RealtimeChannel;
+    private whiteboardChannel: Ably.Types.RealtimeChannel;
     private connectionPromise: Promise<void>;
 
     private messageHandler: MessageHandler | null = null;
@@ -67,7 +71,9 @@ class RealtimeService {
             }
         };
 
-        this.channel = this.ably.channels.get('pixel-space', channelOptions);
+        this.pixelSpaceChannel = this.ably.channels.get('pixel-space', channelOptions);
+        this.whiteboardChannel = this.ably.channels.get('whiteboard', channelOptions);
+
 
         this.connectionPromise = new Promise((resolve) => {
             this.ably.connection.on('connected', () => {
@@ -88,19 +94,19 @@ class RealtimeService {
     public async subscribeToEvents(): Promise<void> {
         await this.connectionPromise;
         
-        this.channel.subscribe('message', (message) => {
+        this.pixelSpaceChannel.subscribe('message', (message) => {
             if (this.messageHandler) {
                 this.messageHandler(message);
             }
         });
         
-        this.channel.subscribe('player-update', (message) => {
+        this.pixelSpaceChannel.subscribe('player-update', (message) => {
             if (this.playerUpdateHandler) {
                 this.playerUpdateHandler(message);
             }
         });
         
-        this.channel.subscribe('knock', (message) => {
+        this.pixelSpaceChannel.subscribe('knock', (message) => {
             const data = message.data as KnockData;
             // Only process the knock if this client is the target
             if (this.knockHandler && data.targetClientId === this.getClientId()) {
@@ -108,25 +114,25 @@ class RealtimeService {
             }
         });
 
-        this.channel.history((err, result) => {
+        this.pixelSpaceChannel.history((err, result) => {
             if (!err && result.items && this.historyHandler) {
                 this.historyHandler(result.items);
             }
         });
 
-        this.channel.presence.subscribe('enter', (member) => {
+        this.pixelSpaceChannel.presence.subscribe('enter', (member) => {
             if (this.userJoinedHandler) {
                 this.userJoinedHandler(member);
             }
         });
         
-        this.channel.presence.subscribe('leave', (member) => {
+        this.pixelSpaceChannel.presence.subscribe('leave', (member) => {
              if (this.userLeftHandler) {
                 this.userLeftHandler(member);
             }
         });
 
-        this.channel.presence.get((err, members) => {
+        this.pixelSpaceChannel.presence.get((err, members) => {
             if (!err && members && this.initialUsersHandler) {
                 this.initialUsersHandler(members);
             }
@@ -163,11 +169,11 @@ class RealtimeService {
 
     public async enterPresence(userData: PresenceData) {
         await this.connectionPromise;
-        this.channel.presence.enter(userData);
+        this.pixelSpaceChannel.presence.enter(userData);
     }
     
     public sendMessage(text: string, data?: { author: string }): void {
-        this.channel.publish('message', { text, ...data });
+        this.pixelSpaceChannel.publish('message', { text, ...data });
     }
 
     public sendKnock(targetClientId: string, fromEmail: string): void {
@@ -176,12 +182,15 @@ class RealtimeService {
             fromClientId: this.getClientId(),
             fromEmail: fromEmail
         };
-        this.channel.publish('knock', knockData);
+        this.pixelSpaceChannel.publish('knock', knockData);
     }
     
     public broadcastPlayerPosition(x: number, y: number, email: string, clientId: string): void {
-        // No need to use the API endpoint anymore, we can publish directly
-        this.channel.publish('player-update', { x, y, email, clientId });
+        const event: PlayerUpdateData = {
+            type: 'move',
+            payload: { x, y, email, clientId }
+        };
+        this.pixelSpaceChannel.publish('player-update', event);
     }
 
     public disconnect(): void {
