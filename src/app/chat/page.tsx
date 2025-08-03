@@ -45,7 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Announcements from '@/components/chat/Announcements';
 import { Skeleton } from '@/components/ui/skeleton';
-import { realtimeService, type PresenceData, type MessageData } from '@/services/RealtimeService';
+import { realtimeService, type MessageData } from '@/services/RealtimeService';
 import type * as Ably from 'ably';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -62,9 +62,9 @@ interface ChatUser {
 }
 
 const sampleChannels = [
-    { id: 'general', name: '#general', status: 'Charlie: See you there!' },
-    { id: 'design-team', name: '#design-team', status: 'Bob: Latest mockups are up.' },
-    { id: 'project-phoenix', name: '#project-phoenix', status: 'Alice: We hit our milestone!' },
+    { id: 'general', name: '#general', status: 'Main team channel' },
+    { id: 'design-team', name: '#design-team', status: 'All things design' },
+    { id: 'project-phoenix', name: '#project-phoenix', status: 'Project-specific updates' },
 ];
 
 const emojis = ['😀', '😂', '👍', '❤️', '🙏', '🎉', '🔥', '🚀'];
@@ -86,7 +86,7 @@ export default function ChatPage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  const [messages, setMessages] = React.useState<Record<string, ChatMessage[]>>({});
 
 
   React.useEffect(() => {
@@ -105,12 +105,12 @@ export default function ChatPage() {
             if (userError) throw userError;
             setCurrentUser(userData);
 
-            const { data: allUsers, error: allUsersError } = await fetch('/api/users');
-            if (allUsersError) throw allUsersError;
-            const allUsersData = await allUsers.json();
+            const response = await fetch('/api/users');
+            if (!response.ok) throw new Error('Could not fetch users');
+            const allUsersData = await response.json();
             setUsers(allUsersData.filter((u: ChatUser) => u.id !== session.user.id));
             
-            await realtimeService.enterPresence({ email: userData.email });
+            await realtimeService.enterPresence({ email: userData.email, id: userData.id });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load user list.'});
         } finally {
@@ -122,27 +122,32 @@ export default function ChatPage() {
 
   React.useEffect(() => {
     if (!currentUser) return;
-    let isSubscribed = true;
 
-    const handleNewMessage = (message: Ably.Types.Message) => {
-        if (!isSubscribed) return;
-        const authorEmail = (message.data.author || 'Anonymous');
+    const handleNewMessage = (ablyMessage: Ably.Types.Message, channelId: string) => {
+        const authorEmail = (ablyMessage.data.author || 'Anonymous');
         const author = authorEmail === currentUser.email ? 'You' : authorEmail;
-        setMessages((prev) => [...prev, { id: message.id, author, text: message.data.text, clientId: message.clientId }]);
+        const newMessage: ChatMessage = { id: ablyMessage.id, author, text: ablyMessage.data.text, clientId: ablyMessage.clientId };
+        
+        setMessages(prev => ({
+            ...prev,
+            [channelId]: [...(prev[channelId] || []), newMessage]
+        }));
     };
 
-     const handleHistory = (history: Ably.Types.Message[]) => {
-      if (!isSubscribed) return;
+    const handleHistory = (history: Ably.Types.Message[], channelId: string) => {
       const pastMessages: ChatMessage[] = history.map(message => {
         const authorEmail = (message.data.author || 'Anonymous');
         const author = authorEmail === currentUser.email ? 'You' : authorEmail;
         return { id: message.id, author, text: message.data.text, clientId: message.clientId };
       });
-      setMessages(prev => [...pastMessages.reverse()]);
+      setMessages(prev => ({
+        ...prev,
+        [channelId]: [...pastMessages.reverse(), ...(prev[channelId] || [])]
+      }));
     };
 
     const handlePresenceUpdate = (presenceMessage?: Ably.Types.PresenceMessage) => {
-       realtimeService.pixelSpaceChannel.presence.get((err, members) => {
+       realtimeService.getPresence('pixel-space', (err, members) => {
            if (!err && members) {
                setOnlineUsers(members);
            }
@@ -151,21 +156,26 @@ export default function ChatPage() {
     
     realtimeService.onMessage(handleNewMessage);
     realtimeService.onHistory(handleHistory);
-    realtimeService.onInitialUsers(handlePresenceUpdate);
-    realtimeService.onUserJoined(handlePresenceUpdate);
-    realtimeService.onUserLeft(handlePresenceUpdate);
+    realtimeService.onPresenceUpdate('pixel-space', handlePresenceUpdate);
+    
+    // Initial subscription to all relevant channels
+    const dmUserIds = users.map(u => u.id);
+    const channelIds = sampleChannels.map(c => c.id);
+    realtimeService.subscribeToChannels([...channelIds, ...dmUserIds], currentUser.id);
 
-    realtimeService.subscribeToEvents();
 
     return () => {
-        isSubscribed = false;
         realtimeService.disconnect();
     }
-  }, [currentUser]);
+  }, [currentUser, users]);
   
   const handleSendMessage = (text: string) => {
     if (text.trim() && currentUser) {
-        realtimeService.sendMessage(text, { author: currentUser.email });
+        let channelId = activeConversation;
+        if (conversationType === 'dm') {
+            channelId = realtimeService.getDmChannelId(currentUser.id, activeConversation);
+        }
+        realtimeService.sendMessage(channelId, text, { author: currentUser.email });
         setMessage('');
     }
   };
@@ -173,14 +183,16 @@ export default function ChatPage() {
 
   const handleSummarize = async () => {
     setIsSummarizing(true);
-    if (messages.length === 0) {
+    const currentMessages = messages[activeConversation] || [];
+
+    if (currentMessages.length === 0) {
         toast({ title: "Not enough messages", description: "There's nothing to summarize yet."});
         setIsSummarizing(false);
         return;
     }
 
     try {
-        const result = await summarizeChat({ messages: messages.map(m => ({ author: m.author, text: m.text })) });
+        const result = await summarizeChat({ messages: currentMessages.map(m => ({ author: m.author, text: m.text })) });
         setSummary(result.summary);
         setIsSummaryDialogOpen(true);
     } catch (error) {
@@ -194,6 +206,16 @@ export default function ChatPage() {
         setIsSummarizing(false);
     }
   };
+  
+  const handleConversationSelect = (id: string, type: 'channel' | 'dm') => {
+      setActiveConversation(id);
+      setConversationType(type);
+      let channelId = id;
+      if (type === 'dm' && currentUser) {
+          channelId = realtimeService.getDmChannelId(currentUser.id, id);
+      }
+      realtimeService.fetchHistory(channelId);
+  }
 
   const getActiveConversationName = () => {
     if (conversationType === 'channel') {
@@ -226,6 +248,8 @@ export default function ChatPage() {
   const getOnlineStatus = (userId: string) => {
     return onlineUsers.some(member => member.clientId === userId);
   }
+
+  const currentMessages = messages[activeConversation] || messages[realtimeService.getDmChannelId(currentUser?.id || '', activeConversation)] || [];
 
 
   return (
@@ -309,7 +333,7 @@ export default function ChatPage() {
                             ) : (
                                 users.map(user => (
                                     <SidebarMenuItem key={user.id}>
-                                        <SidebarMenuButton size="lg" isActive={activeConversation === user.id} onClick={() => { setActiveConversation(user.id); setConversationType('dm'); }}>
+                                        <SidebarMenuButton size="lg" isActive={activeConversation === user.id} onClick={() => handleConversationSelect(user.id, 'dm')}>
                                             <div className="relative">
                                                 <Avatar className="size-8">
                                                     <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.email} />
@@ -332,7 +356,7 @@ export default function ChatPage() {
                         <SidebarMenu>
                             {sampleChannels.map(channel => (
                                 <SidebarMenuItem key={channel.id}>
-                                    <SidebarMenuButton size="lg" isActive={activeConversation === channel.id} onClick={() => { setActiveConversation(channel.id); setConversationType('channel'); }}>
+                                    <SidebarMenuButton size="lg" isActive={activeConversation === channel.id} onClick={() => handleConversationSelect(channel.id, 'channel')}>
                                         <div className="p-2 bg-muted rounded-md mr-2">
                                             <MessageSquare className="size-4"/>
                                         </div>
@@ -381,12 +405,12 @@ export default function ChatPage() {
                     </div>
                 </header>
                 <main className="flex-grow p-4 space-y-4 overflow-y-auto">
-                    {messages.length === 0 && (
+                    {currentMessages.length === 0 && (
                         <div className="flex items-center justify-center h-full text-muted-foreground">
                             <p>No messages yet. Start the conversation!</p>
                         </div>
                     )}
-                    {messages.map((msg, index) => (
+                    {currentMessages.map((msg, index) => (
                          <div key={msg.id || index} className="flex items-start gap-3">
                             <Avatar className="size-9">
                                 <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="avatar" alt={msg.author} />
