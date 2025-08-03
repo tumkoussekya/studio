@@ -8,7 +8,8 @@ const roleUpdateSchema = z.object({
 });
 
 
-async function checkAdmin(supabase: ReturnType<typeof createClient>) {
+async function checkAdmin() {
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('Not authenticated');
@@ -34,11 +35,11 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient();
   const targetUserId = params.id;
 
   try {
-    await checkAdmin(supabase);
+    await checkAdmin();
+    const supabase = createClient();
 
     const body = await request.json();
     const parseResult = roleUpdateSchema.safeParse(body);
@@ -79,11 +80,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient();
   const targetUserId = params.id;
 
   try {
-    await checkAdmin(supabase);
+    await checkAdmin();
+    const supabase = createClient();
 
     // Using the service role key to delete users is best practice for production
     // But for this demo, the admin user can delete others.

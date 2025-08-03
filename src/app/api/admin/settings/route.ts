@@ -10,7 +10,8 @@ const domainRestrictionSchema = z.object({
 });
 
 // Helper function to check admin role
-async function checkAdmin(supabase: ReturnType<typeof createClient>) {
+async function checkAdmin() {
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('Not authenticated');
@@ -33,9 +34,9 @@ async function checkAdmin(supabase: ReturnType<typeof createClient>) {
 
 // GET the current domain restriction setting
 export async function GET(req: NextRequest) {
-  const supabase = createClient();
   try {
-    await checkAdmin(supabase);
+    await checkAdmin();
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('settings')
@@ -59,9 +60,9 @@ export async function GET(req: NextRequest) {
 
 // POST to update the domain restriction setting
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
   try {
-    await checkAdmin(supabase);
+    await checkAdmin();
+    const supabase = createClient();
 
     const body = await req.json();
     const parseResult = domainRestrictionSchema.safeParse(body);

@@ -3,13 +3,13 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
   const { email } = await req.json();
 
   if (!email) {
     return NextResponse.json({ message: 'Email is required' }, { status: 400 });
   }
 
+  const supabase = createClient();
   // Get the redirect URL from the request headers
   // Supabase sends a magic link, and it needs to know where to redirect the user back to
   // after they've set their new password.

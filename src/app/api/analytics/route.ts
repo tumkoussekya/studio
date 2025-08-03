@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 // Helper function to check admin role
-async function checkAdmin(supabase: ReturnType<typeof createClient>) {
+async function checkAdmin() {
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('Not authenticated');
@@ -28,7 +29,7 @@ export async function GET() {
   const supabase = createClient();
   try {
     // Ensure the user is an admin before proceeding
-    await checkAdmin(supabase);
+    await checkAdmin();
 
     // 1. Get total users
     const { count: totalUsers, error: usersError } = await supabase
