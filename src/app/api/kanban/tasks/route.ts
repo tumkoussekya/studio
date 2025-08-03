@@ -51,11 +51,17 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new NextResponse('Unauthorized', { status: 401 });
 
-    const { content, columnId } = await req.json();
+    const { content, columnId, priority } = await req.json();
 
     const { data, error } = await supabase
       .from('tasks')
-      .insert({ content, column_id: columnId, assignee_id: user.id, due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() })
+      .insert({ 
+        content, 
+        column_id: columnId, 
+        assignee_id: user.id, 
+        due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        priority: priority || 'Medium'
+      })
       .select()
       .single();
 

@@ -61,6 +61,9 @@ export async function POST(req: NextRequest) {
         
         if (error) throw error;
 
+        // In a real app, you would also add attendees to the meeting_attendees table.
+        // For simplicity, we're just creating the meeting event itself here.
+
         return NextResponse.json(data);
     } catch (error: any) {
          return new NextResponse(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });

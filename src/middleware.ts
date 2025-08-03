@@ -1,22 +1,23 @@
 
-import {NextResponse} from 'next/server';
-import type {NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { createClient } from './lib/supabase/server';
-import type { User } from './models/User';
-
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Create a Supabase client for middleware
   const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
 
   const publicRoutes = ['/login', '/signup', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/careers', '/faq', '/blog'];
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-  const isHomePage = pathname === '/';
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route)) || pathname === '/';
+  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup');
   const isApiRoute = pathname.startsWith('/api/');
   const isProfileRoute = pathname === '/profile';
 
+  // Allow all API routes to be handled by their own logic, except for special cases
   if (isApiRoute) {
     if (pathname.startsWith('/api/admin')) {
        if (!user) {
@@ -30,40 +31,39 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-
+  // Handle authenticated users
   if (user) {
-      const userRole = user.user_metadata?.role;
-      const profileComplete = user.user_metadata?.profile_complete;
+    const profileComplete = user.user_metadata?.profile_complete;
+    const userRole = user.user_metadata?.role;
 
-      // If profile is not complete, redirect to profile setup page
-      if (!profileComplete && !isProfileRoute && !isApiRoute && pathname !== '/api/auth/logout') {
-          return NextResponse.redirect(new URL('/profile', request.url));
-      }
-      
-      // If profile IS complete, but they try to access the setup page, redirect to dashboard
-      if (profileComplete && isProfileRoute) {
-          return NextResponse.redirect(new URL('/dashboard', request.url));
-      }
+    // If profile is not complete, force redirection to the profile page
+    if (!profileComplete && !isProfileRoute && pathname !== '/api/auth/logout') {
+      return NextResponse.redirect(new URL('/profile', request.url));
+    }
 
-      // If authenticated, redirect from public auth routes to dashboard
-      if (pathname.startsWith('/login') || pathname.startsWith('/signup')) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
-      }
+    // If profile is complete, don't let them access the profile page again
+    if (profileComplete && isProfileRoute) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+    
+    // If user is on an auth page like login/signup, redirect to dashboard
+    if (isAuthRoute) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
 
-      // --- Role-based access control for protected routes ---
-      // Admin-only routes
-      if ((pathname.startsWith('/admin') || pathname.startsWith('/analytics') || pathname.startsWith('/kanban')) && userRole !== 'Admin') {
-          return NextResponse.redirect(new URL('/dashboard?error=unauthorized', request.url));
-      }
+    // Handle role-based access for protected client-side routes
+    if ((pathname.startsWith('/admin') || pathname.startsWith('/analytics')) && userRole !== 'Admin') {
+        return NextResponse.redirect(new URL('/dashboard?error=unauthorized', request.url));
+    }
 
-  } else {
-    // Not authenticated
-    if (!isPublicRoute && !isHomePage && !isProfileRoute && !pathname.startsWith('/meetings/')) {
+  } else { // Handle unauthenticated users
+    // If the route is not public, redirect to login
+    if (!isPublicRoute) {
+        // Allow unauthenticated users to join meetings, but Jitsi will prompt for a name.
         if (pathname.startsWith('/meetings/')) {
-            // Allow anonymous users to join meetings, but they will be prompted for a name by Jitsi
-        } else {
-             return NextResponse.redirect(new URL('/login', request.url));
+            return NextResponse.next();
         }
+       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 

@@ -21,7 +21,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -127,7 +127,7 @@ export default function KanbanPage() {
         const response = await fetch('/api/kanban/tasks', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskId: draggableId, newColumnId: destination.droppableId, newIndex: destination.index })
+            body: JSON.stringify({ taskId: draggableId, newColumnId: destination.droppableId })
         });
         if (!response.ok) throw new Error('Failed to update task position.');
     } catch (error: any) {
@@ -288,6 +288,8 @@ export default function KanbanPage() {
                                             <Tooltip>
                                                 <TooltipTrigger>
                                                     <Avatar className="h-6 w-6">
+                                                        {/* In a real app, you'd fetch the user's avatar image */}
+                                                        <AvatarImage src="" />
                                                         <AvatarFallback>{task.assignee_id ? 'A' : '?'}</AvatarFallback>
                                                     </Avatar>
                                                 </TooltipTrigger>

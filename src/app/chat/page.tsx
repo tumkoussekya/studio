@@ -263,7 +263,7 @@ export default function ChatPage() {
                     <div className="flex items-center gap-3">
                         <SidebarTrigger className='md:hidden' />
                         <Avatar className="size-9">
-                            <AvatarImage src={conversationType === 'dm' ? 'https://placehold.co/40x40.png' : ''} />
+                            <AvatarImage src={conversationType === 'dm' ? 'https://placehold.co/40x40.png' : undefined} data-ai-hint="avatar" />
                             <AvatarFallback>{conversationType === 'channel' ? '#' : getActiveConversationName().charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -378,7 +378,7 @@ export default function ChatPage() {
                         asChild
                         className="prose prose-sm dark:prose-invert max-h-[60vh] overflow-y-auto"
                     >
-                     <div dangerouslySetInnerHTML={{ __html: summary.replace(/\n/g, '<br />') }} />
+                     <div dangerouslySetInnerHTML={{ __html: summary.replace(/\\n/g, '<br />') }} />
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
