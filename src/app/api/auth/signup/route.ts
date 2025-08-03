@@ -10,6 +10,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
   }
 
+  // Check for domain restriction
+  const { data: setting, error: settingError } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('id', 'domain_restriction')
+    .single();
+  
+  if (setting && setting.value && (setting.value as any).domain) {
+    const restrictedDomain = (setting.value as any).domain;
+    if (!email.endsWith(`@${restrictedDomain}`)) {
+      return NextResponse.json({ message: `Sign-up is restricted to the @${restrictedDomain} domain.` }, { status: 403 });
+    }
+  }
+
+
   // Sign up the user in Supabase Auth
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
