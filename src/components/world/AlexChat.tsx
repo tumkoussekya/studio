@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { SendHorizonal, Sparkles } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
@@ -21,7 +21,7 @@ export default function AlexChat() {
     { role: 'model', content: "Hello there! I'm Alex. You can ask me to create tasks for your Kanban board or suggest what to do next." }
   ]);
   const [inputValue, setInputValue] = useState('');
-  const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const handleSendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
@@ -66,8 +66,8 @@ export default function AlexChat() {
   }
 
   useEffect(() => {
-    if (scrollViewportRef.current) {
-        scrollViewportRef.current.scrollTo({ top: scrollViewportRef.current.scrollHeight, behavior: 'smooth' });
+    if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
     }
   }, [messages]);
 
@@ -78,7 +78,7 @@ export default function AlexChat() {
          <h3 className="text-base font-semibold">Chat with Alex</h3>
       </div>
       <ScrollArea className="flex-grow bg-secondary/30">
-        <ScrollArea.Viewport ref={scrollViewportRef} className="h-full w-full">
+        <ScrollArea.Viewport ref={scrollAreaRef} className="h-full w-full">
             <div className="space-y-3 p-3 text-sm">
             {messages.map((msg, index) => (
                 <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -96,7 +96,6 @@ export default function AlexChat() {
             )}
             </div>
         </ScrollArea.Viewport>
-        <ScrollBar />
       </ScrollArea>
        <div className="p-2 border-t">
           <Button variant="outline" size="sm" className="w-full" onClick={handleSuggestionClick} disabled={isLoading}>

@@ -34,34 +34,22 @@ export type SummarizeChatOutput = z.infer<typeof SummarizeChatOutputSchema>;
 export async function summarizeChat(
   input: SummarizeChatInput
 ): Promise<SummarizeChatOutput> {
-  return summarizeChatFlow(input);
+  const prompt = ai.definePrompt({
+    name: 'summarizeChatPrompt',
+    input: {schema: SummarizeChatInputSchema},
+    output: {schema: SummarizeChatOutputSchema},
+    prompt: `You are a helpful assistant that summarizes chat conversations.
+    
+    Analyze the following chat history and provide a concise summary of the key points, decisions, and action items.
+    Present the summary in well-structured markdown format.
+
+    Chat History:
+    {{#each messages}}
+    **{{author}}**: {{{text}}}
+    {{/each}}
+    `,
+  });
+
+  const {output} = await prompt(input);
+  return output!;
 }
-
-
-const prompt = ai.definePrompt({
-  name: 'summarizeChatPrompt',
-  input: {schema: SummarizeChatInputSchema},
-  output: {schema: SummarizeChatOutputSchema},
-  prompt: `You are a helpful assistant that summarizes chat conversations.
-  
-  Analyze the following chat history and provide a concise summary of the key points, decisions, and action items.
-  Present the summary in well-structured markdown format.
-
-  Chat History:
-  {{#each messages}}
-  **{{author}}**: {{{text}}}
-  {{/each}}
-  `,
-});
-
-const summarizeChatFlow = ai.defineFlow(
-  {
-    name: 'summarizeChatFlow',
-    inputSchema: SummarizeChatInputSchema,
-    outputSchema: SummarizeChatOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);

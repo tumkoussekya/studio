@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { SendHorizonal } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
@@ -20,7 +20,7 @@ interface ChatProps {
 
 export default function Chat({ messages, onSendMessage }: ChatProps) {
   const [inputValue, setInputValue] = useState('');
-  const scrollViewportRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +31,8 @@ export default function Chat({ messages, onSendMessage }: ChatProps) {
   };
 
   useEffect(() => {
-    if (scrollViewportRef.current) {
-        scrollViewportRef.current.scrollTo({ top: scrollViewportRef.current.scrollHeight, behavior: 'smooth' });
+    if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
     }
   }, [messages]);
 
@@ -40,7 +40,7 @@ export default function Chat({ messages, onSendMessage }: ChatProps) {
     <div className="flex flex-col h-[40vh] md:h-auto md:flex-grow mt-4 md:mt-0 border-t">
       <h3 className="text-lg font-semibold mb-2 px-4 pt-4">Chat</h3>
       <ScrollArea className="flex-grow">
-        <ScrollArea.Viewport ref={scrollViewportRef} className="h-full w-full">
+        <ScrollArea.Viewport ref={scrollAreaRef} className="h-full w-full">
             <div className="space-y-4 px-4 pb-4">
               {messages.map((msg, index) => (
                 <div key={index}>
@@ -52,7 +52,6 @@ export default function Chat({ messages, onSendMessage }: ChatProps) {
               ))}
             </div>
         </ScrollArea.Viewport>
-        <ScrollBar />
       </ScrollArea>
       <form onSubmit={handleSubmit} className="p-4 flex items-center gap-2 border-t mt-auto">
         <Input
