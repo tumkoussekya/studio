@@ -2,7 +2,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield, MessageSquare, Video, LayoutDashboard } from 'lucide-react';
-import { cookies } from 'next/headers';
 import Link from 'next/link';
 import LogoutButton from '@/components/world/LogoutButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -49,7 +48,7 @@ export default async function DashboardPage() {
                 <h1 id="tour-logo" className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
                  <div id="tour-header-buttons" className="flex items-center gap-4">
                     <ThemeToggle />
-                    {user && <LogoutButton />}
+                    <LogoutButton />
                  </div>
             </header>
             <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -71,7 +70,7 @@ export default async function DashboardPage() {
                         <CardContent>
                            <Link href="/world">
                              <Button className="w-full">
-                                Go to World <ArrowRight className="ml-2" />
+                                Go to World <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                            </Link>
                         </CardContent>
@@ -89,7 +88,7 @@ export default async function DashboardPage() {
                         <CardContent>
                             <Link href="/chat">
                                 <Button className="w-full">
-                                    Open Chat <ArrowRight className="ml-2" />
+                                    Open Chat <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </Link>
                         </CardContent>
@@ -107,7 +106,7 @@ export default async function DashboardPage() {
                         <CardContent>
                             <Link href="/meetings">
                                 <Button className="w-full">
-                                    Go to Meetings <ArrowRight className="ml-2" />
+                                    Go to Meetings <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </Link>
                         </CardContent>
@@ -125,7 +124,7 @@ export default async function DashboardPage() {
                         <CardContent>
                             <Link href="/whiteboard">
                                 <Button className="w-full">
-                                    Go to Whiteboard <ArrowRight className="ml-2" />
+                                    Go to Whiteboard <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </Link>
                         </CardContent>
@@ -143,7 +142,7 @@ export default async function DashboardPage() {
                         <CardContent>
                             <Link href="/surveys">
                                 <Button className="w-full">
-                                    Open Surveys <ArrowRight className="ml-2" />
+                                    Open Surveys <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </Link>
                         </CardContent>
@@ -163,7 +162,7 @@ export default async function DashboardPage() {
                                 <CardContent>
                                     <Link href="/kanban">
                                         <Button className="w-full">
-                                            Open Kanban <ArrowRight className="ml-2" />
+                                            Open Kanban <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </Link>
                                 </CardContent>
@@ -181,7 +180,7 @@ export default async function DashboardPage() {
                                 <CardContent>
                                     <Link href="/analytics">
                                         <Button className="w-full">
-                                            View Analytics <ArrowRight className="ml-2" />
+                                            View Analytics <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </Link>
                                 </CardContent>
@@ -199,7 +198,7 @@ export default async function DashboardPage() {
                                 <CardContent>
                                     <Link href="/admin">
                                         <Button className="w-full">
-                                            Go to Admin <ArrowRight className="ml-2" />
+                                            Go to Admin <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </Link>
                                 </CardContent>
@@ -211,3 +210,5 @@ export default async function DashboardPage() {
         </div>
     )
 }
+
+    
