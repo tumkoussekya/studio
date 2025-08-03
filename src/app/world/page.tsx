@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useState, useRef } from 'react';
 import type * as Ably from 'ably';
 
 import Chat, { type Message } from '@/components/world/Chat';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { realtimeService, type PresenceData, type PlayerUpdateData, type KnockData } from '@/services/RealtimeService';
 import { useToast } from '@/hooks/use-toast';
@@ -21,8 +21,8 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenuItem, 
 import { MessageSquare, Rss } from 'lucide-react';
 import Announcements from '@/components/chat/Announcements';
 import type { UserRole } from '@/models/User';
-import { createClient } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
 
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
@@ -44,12 +44,8 @@ export default function WorldPage() {
 
 
   useEffect(() => {
-    // This is a simplified client-side Supabase client.
-    // It's only used for fetching the current session, not for sensitive operations.
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    // This is the recommended client-side Supabase client.
+    const supabase = createClient();
 
     const fetchUserAndConnect = async () => {
         const { data: { session } } = await supabase.auth.getSession();
