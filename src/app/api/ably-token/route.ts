@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
     const tokenRequestData = await client.auth.createTokenRequest({
         clientId: clientId,
         capability: {
-             "pixel-space": ["subscribe", "publish", "presence"]
+             "pixel-space": ["subscribe", "publish", "presence"],
+             "whiteboard": ["subscribe", "publish", "presence"]
         }
     });
 
