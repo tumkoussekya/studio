@@ -5,6 +5,7 @@ import { getAllJobs, getJobById } from '@/lib/job-openings';
 import { ArrowLeft, Briefcase, Check, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import ApplicationForm from '@/components/careers/ApplicationForm';
 
 
 export async function generateStaticParams() {
@@ -65,7 +66,7 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
                     </ul>
 
                     <div className="mt-12 text-center">
-                        <Button size="lg">Apply for this position</Button>
+                        <ApplicationForm jobTitle={job.title} jobId={job.id} />
                     </div>
                 </CardContent>
             </Card>
