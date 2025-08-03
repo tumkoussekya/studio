@@ -186,26 +186,26 @@ async function Dashboard() {
                             </Link>
                         </CardContent>
                     </Card>
+                    <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3">
+                            <KanbanSquare className="text-accent" />
+                            <span>Manage Tasks</span>
+                            </CardTitle>
+                            <CardDescription>
+                                Organize your projects and ideas on the Kanban board.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Link href="/kanban">
+                                <Button className="w-full">
+                                    Open Kanban <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
                     {isAdmin && (
                         <>
-                            <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-3">
-                                    <KanbanSquare className="text-accent" />
-                                    <span>Manage Tasks</span>
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Organize your projects and ideas on the Kanban board.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Link href="/kanban">
-                                        <Button className="w-full">
-                                            Open Kanban <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
                             <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-3">

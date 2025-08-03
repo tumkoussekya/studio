@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -11,11 +11,12 @@ import {
 } from '@/components/ui/card';
 import {
   Users,
-  Clock,
-  MapPin,
   CheckCircle,
   TrendingUp,
   BarChart2,
+  ListTodo,
+  Columns,
+  Activity,
 } from 'lucide-react';
 import {
   LineChart,
@@ -29,27 +30,136 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
-const userActivityData = [
-  { date: 'Mon', users: 120 },
-  { date: 'Tue', users: 150 },
-  { date: 'Wed', users: 170 },
-  { date: 'Thu', users: 160 },
-  { date: 'Fri', users: 210 },
-  { date: 'Sat', users: 250 },
-  { date: 'Sun', users: 230 },
-];
+interface TaskStatusData {
+    name: string;
+    count: number;
+}
 
-const featureUsageData = [
-  { name: 'Chat', usage: 85 },
-  { name: 'Kanban', usage: 65 },
-  { name: 'Whiteboard', usage: 45 },
-  { name: 'Meetings', usage: 30 },
-  { name: 'Surveys', usage: 20 },
-];
+interface RecentTask {
+    content: string;
+    created_at: string;
+}
+
+interface AnalyticsData {
+    totalUsers: number;
+    totalTasks: number;
+    taskStatusDistribution: TaskStatusData[];
+    recentTasks: RecentTask[];
+}
+
+
+const AnalyticsSkeleton = () => (
+    <div className="flex-grow p-4 md:p-6 lg:p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array.from({length: 4}).map((_, i) => (
+            <Card key={i}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <Skeleton className="h-5 w-2/3" />
+                    <Skeleton className="h-4 w-4" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-8 w-1/3 mb-2" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardContent>
+            </Card>
+        ))}
+         <Card className="sm:col-span-2 lg:col-span-4">
+            <CardHeader>
+                <Skeleton className="h-6 w-1/4 mb-2" />
+                <Skeleton className="h-4 w-2/5" />
+            </CardHeader>
+            <CardContent className="h-72">
+                <Skeleton className="h-full w-full" />
+            </CardContent>
+        </Card>
+         <Card className="sm:col-span-2 lg:col-span-2">
+            <CardHeader>
+                 <Skeleton className="h-6 w-1/4 mb-2" />
+                 <Skeleton className="h-4 w-2/5" />
+            </CardHeader>
+            <CardContent className="h-72">
+                <Skeleton className="h-full w-full" />
+            </CardContent>
+        </Card>
+         <Card className="sm:col-span-2 lg:col-span-2">
+            <CardHeader>
+                 <Skeleton className="h-6 w-1/4 mb-2" />
+                 <Skeleton className="h-4 w-2/5" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 {Array.from({length: 3}).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                        <Skeleton className="h-5 w-5" />
+                        <div className="flex-grow space-y-2">
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-3 w-1/4" />
+                        </div>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+    </div>
+);
+
 
 export default function AnalyticsPage() {
+    const [data, setData] = useState<AnalyticsData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('/api/analytics');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch analytics data');
+                }
+                const analyticsData = await response.json();
+                setData(analyticsData);
+            } catch (error: any) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: error.message
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, [toast]);
+
+
+  if (isLoading) {
+      return (
+        <div className="flex flex-col min-h-screen bg-background">
+            <header className="p-4 border-b">
+                <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
+            </header>
+            <AnalyticsSkeleton />
+        </div>
+      );
+  }
+
+  if (!data) {
+       return (
+        <div className="flex flex-col min-h-screen bg-background">
+            <header className="p-4 border-b">
+                <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
+            </header>
+            <main className="flex-grow p-4 md:p-6 lg:p-8">
+                 <Card className="flex items-center justify-center h-48 border-dashed">
+                    <p className="text-muted-foreground">Could not load analytics data.</p>
+                </Card>
+            </main>
+        </div>
+       )
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="p-4 border-b">
@@ -59,71 +169,72 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Daily Active Users
+              Total Users
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">250</div>
+            <div className="text-2xl font-bold">{data.totalUsers}</div>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <span className="text-green-500 flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1" /> +8.2%
-              </span>
-              from yesterday
+              All registered users in the system.
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Avg. Session Duration
+              Total Tasks
             </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <ListTodo className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24m 15s</div>
+            <div className="text-2xl font-bold">{data.totalTasks}</div>
             <p className="text-xs text-muted-foreground">
-              -1.5% from last week
+              All tasks across all boards.
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Task Completion Rate
+              Tasks In Progress
             </CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.taskStatusDistribution.find(s => s.name === 'In Progress')?.count || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Tasks currently being worked on.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed Tasks</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">88%</div>
+            <div className="text-2xl font-bold">{data.taskStatusDistribution.find(s => s.name === 'Done')?.count || 0}</div>
             <p className="text-xs text-muted-foreground">
-              75 tasks completed this week
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Most Popular Area</CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Coffee Room</div>
-            <p className="text-xs text-muted-foreground">
-              3,204 visits this month
+              Tasks that have been completed.
             </p>
           </CardContent>
         </Card>
 
         <Card className="sm:col-span-2 lg:col-span-4">
           <CardHeader>
-            <CardTitle>User Activity</CardTitle>
+            <CardTitle>Dummy User Activity</CardTitle>
             <CardDescription>
-              Daily active users over the last 7 days.
+              This is a placeholder chart showing fake daily active user data.
             </CardDescription>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={userActivityData}>
+              <LineChart data={[
+                  { date: 'Mon', users: 120 }, { date: 'Tue', users: 150 }, { date: 'Wed', users: 170 },
+                  { date: 'Thu', users: 160 }, { date: 'Fri', users: 210 }, { date: 'Sat', users: 250 },
+                  { date: 'Sun', users: 230 }
+                ]}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                 <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
@@ -150,14 +261,14 @@ export default function AnalyticsPage() {
         
          <Card className="sm:col-span-2 lg:col-span-2">
           <CardHeader>
-            <CardTitle>Feature Usage</CardTitle>
+            <CardTitle>Task Status Distribution</CardTitle>
             <CardDescription>
-              Most used features across the platform.
+              How many tasks are in each column.
             </CardDescription>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={featureUsageData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                <BarChart data={data.taskStatusDistribution} layout="vertical" margin={{ left: 10, right: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} width={80} />
@@ -169,7 +280,7 @@ export default function AnalyticsPage() {
                             borderRadius: 'var(--radius)',
                         }}
                       />
-                    <Bar dataKey="usage" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} barSize={20} />
+                    <Bar dataKey="count" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} barSize={20} />
                 </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -177,32 +288,23 @@ export default function AnalyticsPage() {
         
         <Card className="sm:col-span-2 lg:col-span-2">
             <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>A live feed of recent user actions.</CardDescription>
+                <CardTitle>Recently Created Tasks</CardTitle>
+                <CardDescription>A feed of the latest tasks added to the board.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                        <Users className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex-grow">
-                            <p className="text-sm"><strong>user@example.com</strong> entered the <strong>Coffee Room</strong>.</p>
-                            <p className="text-xs text-muted-foreground">2 minutes ago</p>
+                    {data.recentTasks.map((task, index) => (
+                         <div key={index} className="flex items-center gap-3">
+                            <CheckCircle className="h-5 w-5 text-muted-foreground" />
+                            <div className="flex-grow">
+                                <p className="text-sm truncate"><strong>{task.content}</strong></p>
+                                <p className="text-xs text-muted-foreground">{format(new Date(task.created_at), 'PPP p')}</p>
+                            </div>
                         </div>
-                    </div>
-                     <div className="flex items-center gap-3">
-                        <CheckCircle className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex-grow">
-                            <p className="text-sm"><strong>Alice</strong> completed the task "Deploy to production".</p>
-                            <p className="text-xs text-muted-foreground">15 minutes ago</p>
-                        </div>
-                    </div>
-                     <div className="flex items-center gap-3">
-                        <BarChart2 className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex-grow">
-                            <p className="text-sm"><strong>Charlie</strong> created a new survey: "Q4 Planning".</p>
-                            <p className="text-xs text-muted-foreground">1 hour ago</p>
-                        </div>
-                    </div>
+                    ))}
+                    {data.recentTasks.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center">No recent tasks found.</p>
+                    )}
                 </div>
             </CardContent>
         </Card>
