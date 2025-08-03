@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {kanbanStore} from '@/lib/kanbanStore';
+import { createClient } from '@/lib/supabase/server';
 import {z} from 'zod';
 
 export const addTask = ai.defineTool(
@@ -30,12 +30,28 @@ export const addTask = ai.defineTool(
   },
   async (input) => {
     try {
-      kanbanStore.addTask(input.columnId, input.content, input.priority);
+      const supabase = createClient();
+       // In a real multi-tenant app, we would get the user ID here.
+       // For now, we are adding it to the default user's board.
+       const { data: { user } } = await supabase.auth.getUser();
+
+      const { error } = await supabase
+        .from('tasks')
+        .insert({ 
+          content: input.content, 
+          column_id: input.columnId, 
+          priority: input.priority || 'Medium',
+          assignee_id: user?.id,
+        });
+
+      if (error) throw error;
+      
       return {
         success: true,
         message: `Successfully added the task "${input.content}" to the board.`,
       };
     } catch (error: any) {
+      console.error("Failed to add task via AI tool:", error);
       return {
         success: false,
         message: `Failed to add task: ${error.message}`,
@@ -53,13 +69,31 @@ export const getTasks = ai.defineTool(
     },
     async () => {
         try {
-            const data = kanbanStore.getData();
-            // We only need to return the tasks, not the full board structure
+            const supabase = createClient();
+            const { data: columnsData, error: columnsError } = await supabase
+              .from('kanban_columns')
+              .select('*')
+              .order('column_order', { ascending: true });
+            
+            if (columnsError) throw columnsError;
+        
+            const { data: tasksData, error: tasksError } = await supabase
+              .from('tasks')
+              .select('*');
+        
+            if (tasksError) throw tasksError;
+
+            // The AI needs a simple list of tasks and columns to reason about.
+            // We can simplify the data structure we return to it.
+            const columns = columnsData.map(c => ({ id: c.id, title: c.title }));
+            const tasks = tasksData.map(t => ({ id: t.id, content: t.content, columnId: t.column_id, priority: t.priority }));
+
             return {
-                tasks: Object.values(data.tasks),
-                columns: data.columns,
+                tasks: tasks,
+                columns: columns,
             };
         } catch (error: any) {
+            console.error("Failed to get tasks via AI tool:", error);
             return {
                 success: false,
                 message: `Failed to get tasks: ${error.message}`,

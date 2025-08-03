@@ -1,3 +1,3 @@
-// This file is now obsolete and will be removed.
-// All Kanban data is now fetched directly from the Supabase database
-// via API routes.
+// This file is intentionally left blank as it is now obsolete.
+// All Kanban data is now handled by Supabase via API routes
+// and direct database calls in the AI tools.
