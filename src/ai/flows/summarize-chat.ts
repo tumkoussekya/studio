@@ -5,6 +5,7 @@
  * @fileOverview A Genkit flow for summarizing a chat conversation.
  *
  * - summarizeChat - A function that takes a chat history and returns a summary.
+ * - ChatMessage - The type for a single chat message.
  * - SummarizeChatInput - The input type for the summarizeChat function.
  * - SummarizeChatOutput - The return type for the summarizeChat function.
  */
@@ -12,19 +13,19 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const ChatMessageSchema = z.object({
+const ChatMessageSchema = z.object({
     author: z.string().describe('The author of the message.'),
     text: z.string().describe('The content of the message.'),
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
-export const SummarizeChatInputSchema = z.object({
+const SummarizeChatInputSchema = z.object({
   messages: z.array(ChatMessageSchema).describe('The history of the conversation to summarize.'),
 });
 export type SummarizeChatInput = z.infer<typeof SummarizeChatInputSchema>;
 
 
-export const SummarizeChatOutputSchema = z.object({
+const SummarizeChatOutputSchema = z.object({
   summary: z.string().describe('The generated summary of the conversation.'),
 });
 export type SummarizeChatOutput = z.infer<typeof SummarizeChatOutputSchema>;
