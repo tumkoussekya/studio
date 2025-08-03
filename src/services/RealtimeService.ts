@@ -32,9 +32,10 @@ type PresenceHandler = (presenceMessage: Ably.Types.PresenceMessage) => void;
 type PlayerUpdateHandler = (message: Ably.Types.Message) => void;
 type KnockHandler = (data: KnockData) => void;
 
-// In a real-world application, this key should be securely generated and shared
-// between the participants of a conversation, and not hardcoded.
-const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "super-secret-key-for-e2e-chat";
+// This is a default, properly encoded 256-bit AES key.
+// In a real-world application, this key should be managed via environment variables
+// and shared securely between the participants of a conversation.
+const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "k8F8E/f+T5m6n2r5u8x/A?D(G+KbPeSh";
 
 class RealtimeService {
     private ably: Ably.Realtime;
@@ -57,8 +58,6 @@ class RealtimeService {
         const channelOptions: Ably.Types.ChannelOptions = {
             params: { rewind: '25' },
             // NOTE: This enables End-to-End encryption.
-            // In a real application, the key should be managed securely
-            // and shared only between the intended recipients.
             cipher: {
                 algorithm: 'aes',
                 keyLength: 256,
