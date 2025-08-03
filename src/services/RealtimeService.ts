@@ -32,10 +32,10 @@ type PresenceHandler = (presenceMessage: Ably.Types.PresenceMessage) => void;
 type PlayerUpdateHandler = (message: Ably.Types.Message) => void;
 type KnockHandler = (data: KnockData) => void;
 
-// This is a default, properly encoded 256-bit AES key.
+// This is a default, properly Base64-encoded 256-bit AES key.
 // In a real-world application, this key should be managed via environment variables
 // and shared securely between the participants of a conversation.
-const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "k8F8E/f+T5m6n2r5u8x/A?D(G+KbPeSh";
+const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "HO4oK9VllF/g3Y+e1dG1A/dDESfSDjI0aEZ1LzH1y0E=";
 
 class RealtimeService {
     private ably: Ably.Realtime;
