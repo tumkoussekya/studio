@@ -4,8 +4,10 @@ import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const profileSchema = z.object({
-  first_name: z.string().min(1),
-  last_name: z.string().min(1),
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
+  username: z.string().min(3, 'Username must be at least 3 characters').optional().or(z.literal('')),
+  job_role: z.string().optional(),
   phone_number: z.string().optional(),
   birth_date: z.string().optional(), // Dates come as strings from JSON
   pronunciation: z.string().optional(),

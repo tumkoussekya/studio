@@ -25,16 +25,19 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useState } from 'react';
-import { Save } from 'lucide-react';
+import { Save, CalendarIcon, Upload } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 
 const profileFormSchema = z.object({
   first_name: z.string().min(1, { message: 'First name is required.' }),
   last_name: z.string().min(1, { message: 'Last name is required.' }),
+  username: z.string().min(3, { message: 'Username must be at least 3 characters.' }).optional().or(z.literal('')),
+  job_role: z.string().optional(),
   phone_number: z.string().optional(),
   birth_date: z.date().optional(),
   pronunciation: z.string().optional(),
@@ -46,17 +49,33 @@ export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       first_name: '',
       last_name: '',
+      username: '',
+      job_role: '',
       phone_number: '',
       birth_date: undefined,
       pronunciation: '',
     },
   });
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      setAvatarPreview(URL.createObjectURL(file));
+      // In a real app, you would upload the file to storage here.
+      toast({
+        title: 'Avatar Updated',
+        description: 'Avatar preview changed. Save your profile to apply changes.',
+      });
+    }
+  };
+
 
   async function onSubmit(values: ProfileFormValues) {
     setIsLoading(true);
@@ -75,7 +94,7 @@ export default function ProfilePage() {
 
       toast({
         title: 'Profile Updated!',
-        description: 'Welcome to SyncroSpace! Redirecting to your dashboard.',
+        description: 'Your profile information has been saved.',
       });
       router.push('/dashboard');
       router.refresh();
@@ -91,18 +110,42 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 md:p-8">
+      <Card className="w-full max-w-4xl">
         <CardHeader>
-          <CardTitle className="text-2xl">Complete Your Profile</CardTitle>
+          <CardTitle className="text-3xl">User Profile</CardTitle>
           <CardDescription>
-            Tell us a bit more about yourself before you jump in.
+            Manage your account settings and personal details.
           </CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Avatar Section */}
+                <div className="md:col-span-1 flex flex-col items-center text-center">
+                    <Avatar className="h-32 w-32 mb-4 border-4 border-primary">
+                        <AvatarImage src={avatarPreview || `https://placehold.co/128x128.png`} data-ai-hint="avatar placeholder" />
+                        <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
+                     <input
+                        type="file"
+                        id="avatar-upload"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                      />
+                    <label htmlFor="avatar-upload" className={cn(buttonVariants({ variant: 'outline' }), 'cursor-pointer')}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Change Avatar
+                    </label>
+                    <p className="text-xs text-muted-foreground mt-2">
+                        PNG, JPG, GIF up to 10MB.
+                    </p>
+                </div>
+
+                {/* Form Fields Section */}
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                  <FormField
                   control={form.control}
                   name="first_name"
@@ -129,15 +172,55 @@ export default function ProfilePage() {
                     </FormItem>
                   )}
                 />
-              </div>
-               <FormField
+                 <FormField
                   control={form.control}
-                  name="phone_number"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number (Optional)</FormLabel>
+                      <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="(123) 456-7890" {...field} disabled={isLoading} />
+                        <Input placeholder="johndoe" {...field} disabled={isLoading} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="job_role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Job Role</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Software Engineer" {...field} disabled={isLoading} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="md:col-span-2">
+                 <FormField
+                    control={form.control}
+                    name="phone_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(123) 456-7890" {...field} disabled={isLoading} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                 <FormField
+                  control={form.control}
+                  name="pronunciation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name Pronunciation</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Jon Do" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -148,7 +231,7 @@ export default function ProfilePage() {
                 name="birth_date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Date of birth (Optional)</FormLabel>
+                    <FormLabel>Date of birth</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -184,23 +267,13 @@ export default function ProfilePage() {
                   </FormItem>
                 )}
               />
-               <FormField
-                  control={form.control}
-                  name="pronunciation"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name Pronunciation (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Jon Do" {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                </div>
+              </div>
             </CardContent>
-            <CardFooter>
-              <Button className="w-full" type="submit" disabled={isLoading}>
-                {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4" /> Save and Continue</>}
+            <Separator className="my-6" />
+            <CardFooter className="flex justify-end">
+              <Button type="submit" disabled={isLoading} size="lg">
+                {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4" /> Save Changes</>}
               </Button>
             </CardFooter>
           </form>
