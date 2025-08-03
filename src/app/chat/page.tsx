@@ -62,8 +62,8 @@ import type * as Ably from 'ably';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
-import { ChatSettingsDialog } from '@/components/chat/ChatSettingsDialog';
 import { cn } from '@/lib/utils';
+import SettingsPanel from '@/components/chat/SettingsPanel';
 
 
 interface ChatMessage extends MessageData {
@@ -102,7 +102,6 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isCreatingChannel, setIsCreatingChannel] = React.useState(false);
   const [isNewChannelDialogOpen, setIsNewChannelDialogOpen] = React.useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   const { toast } = useToast();
   const [isSummarizing, setIsSummarizing] = React.useState(false);
@@ -365,7 +364,8 @@ export default function ChatPage() {
              <SidebarMenu>
                 <SidebarMenuItem>
                      <SidebarMenuButton
-                        onClick={() => setIsSettingsOpen(true)}
+                        isActive={activeView === 'settings'}
+                        onClick={() => setActiveView('settings')}
                         tooltip={{
                             children: 'Settings',
                         }}
@@ -598,6 +598,15 @@ export default function ChatPage() {
                 <Announcements />
             </SidebarInset>
         )}
+
+        {activeView === 'settings' && (
+            <SidebarInset>
+                <SettingsPanel 
+                    chatDensity={chatDensity}
+                    setChatDensity={setChatDensity}
+                />
+            </SidebarInset>
+        )}
         
         <AlertDialog open={isSummaryDialogOpen} onOpenChange={setIsSummaryDialogOpen}>
             <AlertDialogContent>
@@ -620,13 +629,6 @@ export default function ChatPage() {
 
       </div>
     </SidebarProvider>
-
-    <ChatSettingsDialog
-        isOpen={isSettingsOpen}
-        setIsOpen={setIsSettingsOpen}
-        chatDensity={chatDensity}
-        setChatDensity={setChatDensity}
-    />
   </>
   );
 }
