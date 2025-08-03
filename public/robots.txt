@@ -1,0 +1,36 @@
+# See https://www.robotstxt.org/robotstxt.html for documentation
+
+# Block all crawlers from sensitive areas
+User-agent: *
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /profile/
+Disallow: /world/
+Disallow: /chat/
+Disallow: /meetings/
+Disallow: /kanban/
+Disallow: /surveys/
+Disallow: /whiteboard/
+Disallow: /api/
+
+# Allow crawling of public-facing pages
+Allow: /$
+Allow: /about
+Allow: /blog
+Allow: /careers
+Allow: /contact
+Allow: /faq
+Allow: /features
+Allow: /pricing
+Allow: /privacy-policy
+Allow: /terms-of-service
+
+# Block specific AI crawlers from the whole site
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /

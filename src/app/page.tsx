@@ -4,19 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowRight, LogIn, UserPlus, Users, Volume2, MessageSquare, Video, KanbanSquare, Shapes, ClipboardList, BarChart2, Shield } from 'lucide-react';
 import LogoutButton from '@/components/world/LogoutButton';
-import { cookies } from 'next/headers';
-import { verify } from 'jsonwebtoken';
+import { createClient } from '@/lib/supabase/server';
 import Image from 'next/image';
 
 async function IsAuthenticated() {
-    const token = cookies().get('token');
-    if (!token) return false;
-    try {
-        verify(token.value, process.env.JWT_SECRET || 'fallback-secret');
-        return true;
-    } catch (e) {
-        return false;
-    }
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return !!session;
 }
 
 
