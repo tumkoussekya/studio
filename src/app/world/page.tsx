@@ -22,6 +22,7 @@ import { MessageSquare, Rss } from 'lucide-react';
 import Announcements from '@/components/chat/Announcements';
 import type { UserRole } from '@/models/User';
 import { createClient } from '@supabase/supabase-js';
+import { Button } from '@/components/ui/button';
 
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
