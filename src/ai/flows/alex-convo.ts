@@ -18,7 +18,7 @@ const MessageSchema = z.object({
     content: z.string(),
 });
 
-export const ChatWithAlexInputSchema = z.object({
+const ChatWithAlexInputSchema = z.object({
   history: z.array(MessageSchema).describe('The conversation history.'),
   newMessage: z.string().describe('The new message from the user.'),
 });
@@ -26,7 +26,7 @@ export type ChatWithAlexInput = z.infer<
   typeof ChatWithAlexInputSchema
 >;
 
-export const ChatWithAlexOutputSchema = z.object({
+const ChatWithAlexOutputSchema = z.object({
   response: z.string().describe('The response from Alex.'),
 });
 export type ChatWithAlexOutput = z.infer<
@@ -36,15 +36,12 @@ export type ChatWithAlexOutput = z.infer<
 export async function chatWithAlex(
   input: ChatWithAlexInput
 ): Promise<ChatWithAlexOutput> {
-  return chatWithAlexFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'chatWithAlexPrompt',
-  input: {schema: ChatWithAlexInputSchema},
-  output: {schema: ChatWithAlexOutputSchema},
-  tools: [addTask, getTasks],
-  prompt: `You are Alex, a friendly and knowledgeable virtual assistant in SyncroSpace. You are standing in the "Focus Zone" of the world.
+  const prompt = ai.definePrompt({
+    name: 'chatWithAlexPrompt',
+    input: {schema: ChatWithAlexInputSchema},
+    output: {schema: ChatWithAlexOutputSchema},
+    tools: [addTask, getTasks],
+    prompt: `You are Alex, a friendly and knowledgeable virtual assistant in SyncroSpace. You are standing in the "Focus Zone" of the world.
 
   You are talking to a user who has just walked up to you. Be helpful, engaging, and slightly witty. Keep your responses concise.
 
@@ -62,16 +59,8 @@ const prompt = ai.definePrompt({
   user: {{{newMessage}}}
 
   Your response:`,
-});
+  });
 
-const chatWithAlexFlow = ai.defineFlow(
-  {
-    name: 'chatWithAlexFlow',
-    inputSchema: ChatWithAlexInputSchema,
-    outputSchema: ChatWithAlexOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}
