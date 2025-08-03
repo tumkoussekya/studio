@@ -21,35 +21,32 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LogIn } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useState } from 'react';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
-  password: z.string().min(1, { message: 'Password is required.' }),
 });
 
-export function LoginForm() {
-  const router = useRouter();
+export function ForgotPasswordForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
-      password: '',
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/request-password-reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
@@ -60,17 +57,18 @@ export function LoginForm() {
       if (!response.ok) {
         throw new Error(data.message || 'Something went wrong');
       }
-
+      
       toast({
-        title: 'Login Successful',
-        description: "Welcome back! You're being redirected.",
+        title: 'Check your email',
+        description: data.message,
       });
-      router.push('/dashboard');
-      router.refresh(); // Ensures server-side components re-render with new auth state
+
+      setIsSubmitted(true);
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Login Failed',
+        title: 'Request Failed',
         description: error.message,
       });
     } finally {
@@ -78,12 +76,30 @@ export function LoginForm() {
     }
   }
 
+  if (isSubmitted) {
+    return (
+        <Card className="w-full max-w-sm">
+            <CardHeader>
+                <CardTitle className="text-2xl">Request Sent</CardTitle>
+                <CardDescription>
+                    If an account with that email exists, a password reset link has been sent. Please check your inbox.
+                </CardDescription>
+            </CardHeader>
+             <CardFooter>
+                 <Link href="/login" className='w-full'>
+                    <Button className="w-full" variant="outline">Back to Login</Button>
+                </Link>
+            </CardFooter>
+        </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl">Login</CardTitle>
+        <CardTitle className="text-2xl">Forgot Password?</CardTitle>
         <CardDescription>
-          Enter your email below to login to your account.
+          No problem. Enter your email and we'll send you a link to reset it.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -102,36 +118,15 @@ export function LoginForm() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center">
-                    <FormLabel>Password</FormLabel>
-                    <Link
-                      href="/forgot-password"
-                      className="ml-auto inline-block text-sm underline"
-                    >
-                      Forgot your password?
-                    </Link>
-                  </div>
-                  <FormControl>
-                    <Input type="password" {...field} disabled={isLoading} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </CardContent>
-          <CardFooter className="flex flex-col">
+          <CardFooter className="flex flex-col gap-4">
             <Button className="w-full" type="submit" disabled={isLoading}>
-              {isLoading ? 'Logging in...' : <><LogIn className="mr-2 h-4 w-4" /> Login</>}
+              {isLoading ? 'Sending...' : <><Mail className="mr-2 h-4 w-4" /> Send Reset Link</>}
             </Button>
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="underline">
-                Sign up
+             <div className="text-center text-sm">
+              Remember your password?{' '}
+              <Link href="/login" className="underline">
+                Login
               </Link>
             </div>
           </CardFooter>

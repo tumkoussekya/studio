@@ -28,6 +28,7 @@ import {
   Smile,
   Paperclip,
   Rss,
+  Hand,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -39,11 +40,20 @@ import {
     AlertDialogFooter,
     AlertDialogAction,
 } from '@/components/ui/alert-dialog';
-import { summarizeChat, type ChatMessage } from '@/ai/flows/summarize-chat';
+import { summarizeChat } from '@/ai/flows/summarize-chat';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Announcements from '@/components/chat/Announcements';
 import { Skeleton } from '@/components/ui/skeleton';
+import { realtimeService, type PresenceData, type MessageData } from '@/services/RealtimeService';
+import type * as Ably from 'ably';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+
+interface ChatMessage extends MessageData {
+  id?: string;
+  clientId?: string;
+}
 
 interface ChatUser {
     id: string;
@@ -65,6 +75,8 @@ export default function ChatPage() {
   const [activeConversation, setActiveConversation] = React.useState('general');
   const [conversationType, setConversationType] = React.useState<'channel' | 'dm'>('channel');
   const [users, setUsers] = React.useState<ChatUser[]>([]);
+  const [onlineUsers, setOnlineUsers] = React.useState<Ably.Types.PresenceMessage[]>([]);
+  const [currentUser, setCurrentUser] = React.useState<ChatUser | null>(null);
   const [isLoadingUsers, setIsLoadingUsers] = React.useState(true);
   const { toast } = useToast();
   const [isSummarizing, setIsSummarizing] = React.useState(false);
@@ -72,27 +84,91 @@ export default function ChatPage() {
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
-  // Hardcoded messages to be replaced by Ably history
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
 
 
   React.useEffect(() => {
-    async function fetchUsers() {
+    const supabase = createClient();
+
+    const fetchInitialData = async () => {
         setIsLoadingUsers(true);
         try {
-            const response = await fetch('/api/users');
-            if (!response.ok) throw new Error('Failed to fetch users');
-            const data = await response.json();
-            setUsers(data);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                router.push('/login');
+                return;
+            }
+            
+            const { data: userData, error: userError } = await supabase.from('users').select('*').eq('id', session.user.id).single();
+            if (userError) throw userError;
+            setCurrentUser(userData);
+
+            const { data: allUsers, error: allUsersError } = await fetch('/api/users');
+            if (allUsersError) throw allUsersError;
+            const allUsersData = await allUsers.json();
+            setUsers(allUsersData.filter((u: ChatUser) => u.id !== session.user.id));
+            
+            await realtimeService.enterPresence({ email: userData.email });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load user list.'});
         } finally {
             setIsLoadingUsers(false);
         }
     }
-    fetchUsers();
-  }, [toast]);
+    fetchInitialData();
+  }, [router, toast]);
+
+  React.useEffect(() => {
+    if (!currentUser) return;
+    let isSubscribed = true;
+
+    const handleNewMessage = (message: Ably.Types.Message) => {
+        if (!isSubscribed) return;
+        const authorEmail = (message.data.author || 'Anonymous');
+        const author = authorEmail === currentUser.email ? 'You' : authorEmail;
+        setMessages((prev) => [...prev, { id: message.id, author, text: message.data.text, clientId: message.clientId }]);
+    };
+
+     const handleHistory = (history: Ably.Types.Message[]) => {
+      if (!isSubscribed) return;
+      const pastMessages: ChatMessage[] = history.map(message => {
+        const authorEmail = (message.data.author || 'Anonymous');
+        const author = authorEmail === currentUser.email ? 'You' : authorEmail;
+        return { id: message.id, author, text: message.data.text, clientId: message.clientId };
+      });
+      setMessages(prev => [...pastMessages.reverse()]);
+    };
+
+    const handlePresenceUpdate = (presenceMessage?: Ably.Types.PresenceMessage) => {
+       realtimeService.pixelSpaceChannel.presence.get((err, members) => {
+           if (!err && members) {
+               setOnlineUsers(members);
+           }
+       });
+    };
+    
+    realtimeService.onMessage(handleNewMessage);
+    realtimeService.onHistory(handleHistory);
+    realtimeService.onInitialUsers(handlePresenceUpdate);
+    realtimeService.onUserJoined(handlePresenceUpdate);
+    realtimeService.onUserLeft(handlePresenceUpdate);
+
+    realtimeService.subscribeToEvents();
+
+    return () => {
+        isSubscribed = false;
+        realtimeService.disconnect();
+    }
+  }, [currentUser]);
+  
+  const handleSendMessage = (text: string) => {
+    if (text.trim() && currentUser) {
+        realtimeService.sendMessage(text, { author: currentUser.email });
+        setMessage('');
+    }
+  };
 
 
   const handleSummarize = async () => {
@@ -104,7 +180,7 @@ export default function ChatPage() {
     }
 
     try {
-        const result = await summarizeChat({ messages: messages });
+        const result = await summarizeChat({ messages: messages.map(m => ({ author: m.author, text: m.text })) });
         setSummary(result.summary);
         setIsSummaryDialogOpen(true);
     } catch (error) {
@@ -137,6 +213,19 @@ export default function ChatPage() {
         });
     }
   };
+  
+  const handleKnock = (user: ChatUser) => {
+      if (!currentUser) return;
+      realtimeService.sendKnock(user.id, currentUser.email);
+      toast({
+          title: "Knock, knock!",
+          description: `You sent a knock to ${user.email}.`
+      })
+  }
+  
+  const getOnlineStatus = (userId: string) => {
+    return onlineUsers.some(member => member.clientId === userId);
+  }
 
 
   return (
@@ -150,7 +239,7 @@ export default function ChatPage() {
           <SidebarHeader>
              <Avatar className="size-8">
                 <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="User Avatar" />
-                <AvatarFallback>U</AvatarFallback>
+                <AvatarFallback>{currentUser?.email.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
             </Avatar>
           </SidebarHeader>
           <SidebarContent>
@@ -221,10 +310,13 @@ export default function ChatPage() {
                                 users.map(user => (
                                     <SidebarMenuItem key={user.id}>
                                         <SidebarMenuButton size="lg" isActive={activeConversation === user.id} onClick={() => { setActiveConversation(user.id); setConversationType('dm'); }}>
-                                            <Avatar className="size-8">
-                                                <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.email} />
-                                                <AvatarFallback>{user.email.charAt(0).toUpperCase()}</AvatarFallback>
-                                            </Avatar>
+                                            <div className="relative">
+                                                <Avatar className="size-8">
+                                                    <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.email} />
+                                                    <AvatarFallback>{user.email.charAt(0).toUpperCase()}</AvatarFallback>
+                                                </Avatar>
+                                                {getOnlineStatus(user.id) && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />}
+                                            </div>
                                             <div className="flex flex-col items-start text-left">
                                                 <span>{user.email}</span>
                                                 <span className="text-xs text-muted-foreground">{user.role}</span>
@@ -270,6 +362,11 @@ export default function ChatPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        {conversationType === 'dm' && (
+                             <Button variant="outline" size="sm" onClick={() => handleKnock(users.find(u => u.id === activeConversation)!)}>
+                                <Hand className="mr-2 h-4 w-4" /> Knock
+                            </Button>
+                        )}
                         <Button variant="outline" size="sm" onClick={handleSummarize} disabled={isSummarizing}>
                             {isSummarizing ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -290,7 +387,7 @@ export default function ChatPage() {
                         </div>
                     )}
                     {messages.map((msg, index) => (
-                         <div key={index} className="flex items-start gap-3">
+                         <div key={msg.id || index} className="flex items-start gap-3">
                             <Avatar className="size-9">
                                 <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="avatar" alt={msg.author} />
                                 <AvatarFallback>{msg.author.charAt(0).toUpperCase()}</AvatarFallback>
@@ -317,8 +414,7 @@ export default function ChatPage() {
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
-                                    // handleSendMessage(message); // This will be wired up with Ably later
-                                    setMessage('');
+                                    handleSendMessage(message);
                                 }
                             }}
                         />

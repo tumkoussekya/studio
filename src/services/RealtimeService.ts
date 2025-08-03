@@ -42,8 +42,8 @@ const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "HO4oK9VllF/g3Y+e1dG1A/d
 
 class RealtimeService {
     private ably: Ably.Realtime;
-    private pixelSpaceChannel: Ably.Types.RealtimeChannel;
-    private whiteboardChannel: Ably.Types.RealtimeChannel;
+    public pixelSpaceChannel: Ably.Types.RealtimeChannel;
+    public whiteboardChannel: Ably.Types.RealtimeChannel;
     private connectionPromise: Promise<void>;
 
     private messageHandler: MessageHandler | null = null;
@@ -120,17 +120,14 @@ class RealtimeService {
             }
         });
 
-        this.pixelSpaceChannel.presence.subscribe('enter', (member) => {
-            if (this.userJoinedHandler) {
+        this.pixelSpaceChannel.presence.subscribe(['enter', 'leave', 'update'], (member) => {
+            if (member.action === 'enter' && this.userJoinedHandler) {
                 this.userJoinedHandler(member);
-            }
-        });
-        
-        this.pixelSpaceChannel.presence.subscribe('leave', (member) => {
-             if (this.userLeftHandler) {
+            } else if (member.action === 'leave' && this.userLeftHandler) {
                 this.userLeftHandler(member);
             }
         });
+        
 
         this.pixelSpaceChannel.presence.get((err, members) => {
             if (!err && members && this.initialUsersHandler) {
