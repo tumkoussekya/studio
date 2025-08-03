@@ -56,7 +56,7 @@ export class MainScene extends Phaser.Scene {
     await Tone.start();
     
     // Set listener position
-    const { x, y } = this.player.body.position;
+    const { x, y } = this.player.body;
     Tone.Listener.positionX.value = x;
     Tone.Listener.positionY.value = y;
     Tone.Listener.positionZ.value = 5; // Ears are slightly above the ground
@@ -72,7 +72,7 @@ export class MainScene extends Phaser.Scene {
 
   private savePosition = () => {
     if (this.player) {
-      const { x, y } = this.player.body.position;
+      const { x, y } = this.player.body;
       // Use sendBeacon as it's more reliable for requests during page unload
       navigator.sendBeacon('/api/world/update-position', JSON.stringify({ x, y }));
     }
@@ -82,13 +82,14 @@ export class MainScene extends Phaser.Scene {
   private playerStartY = 200;
 
   create() {
-    const wallColor = 0x553a99; // Primary color
-    const playerColor = 0xe040fb; // Accent color
+    const wallColor = 0x6678B8; // Primary color
+    const playerColor = 0xF7B733; // Accent color
     const otherPlayerColor = 0x38bdf8; // sky-400
     const npcColor = 0x9ca3af; // Gray-400
     const portalColor = 0x4ade80; // Green-400
     const interactiveObjectColor = 0xfacc15; // yellow-400
-    const textColor = '#e5e7eb';
+    const textColor = 'hsl(var(--foreground))';
+    const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
     
     // World bounds
     this.physics.world.setBounds(0, 0, 800, 1200);
@@ -165,28 +166,32 @@ export class MainScene extends Phaser.Scene {
     const toFocusZonePortal = this.add.rectangle(350, 320, 10, 80, portalColor);
     this.physics.add.existing(toFocusZonePortal, true);
     this.physics.add.overlap(this.player, toFocusZonePortal, () => {
-        (this.player.body as Phaser.Physics.Arcade.Body).setPosition(430, 400);
+        this.player.body.x = 430;
+        this.player.body.y = 400;
     });
     this.add.text(320, 360, 'To Focus', { font: '16px VT323', color: '#ffffff' }).setAngle(-90);
 
     const toCoffeeRoomPortal = this.add.rectangle(225, 620, 100, 10, portalColor);
     this.physics.add.existing(toCoffeeRoomPortal, true);
     this.physics.add.overlap(this.player, toCoffeeRoomPortal, () => {
-        (this.player.body as Phaser.Physics.Arcade.Body).setPosition(375, 680);
+        this.player.body.x = 375;
+        this.player.body.y = 680;
     });
     this.add.text(180, 600, 'To Coffee Room', { font: '16px VT323', color: '#ffffff' });
 
     const toLoungeFromCoffeePortal = this.add.rectangle(400, 680, 100, 10, portalColor);
     this.physics.add.existing(toLoungeFromCoffeePortal, true);
     this.physics.add.overlap(this.player, toLoungeFromCoffeePortal, () => {
-        (this.player.body as Phaser.Physics.Arcade.Body).setPosition(200, 580);
+        this.player.body.x = 200;
+        this.player.body.y = 580;
     });
     this.add.text(355, 660, 'To Lounge', { font: '16px VT323', color: '#ffffff' });
 
     const toLoungeFromAdminPortal = this.add.rectangle(225, 430, 100, 10, portalColor);
     this.physics.add.existing(toLoungeFromAdminPortal, true);
     this.physics.add.overlap(this.player, toLoungeFromAdminPortal, () => {
-      (this.player.body as Phaser.Physics.Arcade.Body).setPosition(225, 320);
+      this.player.body.x = 225;
+      this.player.body.y = 320;
     });
     this.add.text(180, 410, 'To Lounge', { font: '16px VT323', color: '#ffffff' });
 
@@ -195,7 +200,8 @@ export class MainScene extends Phaser.Scene {
     this.physics.add.existing(toAdminLoungePortal, true);
     this.physics.add.overlap(this.player, toAdminLoungePortal, () => {
         if (this.myRole === 'Admin') {
-            (this.player.body as Phaser.Physics.Arcade.Body).setPosition(225, 430);
+            this.player.body.x = 225;
+            this.player.body.y = 430;
         } else {
             this.showRestrictionMessage();
         }
@@ -240,7 +246,7 @@ export class MainScene extends Phaser.Scene {
   }
   
   private showRestrictionMessage() {
-      const { x, y } = this.player.body.position;
+      const { x, y } = this.player.body;
       this.restrictionMessage.setPosition(x, y - 30).setVisible(true);
       this.time.delayedCall(2000, () => {
         this.restrictionMessage.setVisible(false);
@@ -248,7 +254,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private sendPosition() {
-    const { x, y } = this.player.body.position;
+    const { x, y } = this.player.body;
     if (x !== this.lastSentPosition.x || y !== this.lastSentPosition.y) {
        this.realtimeService.broadcastPlayerPosition(x, y, this.myEmail, this.myClientId);
        this.lastSentPosition = { x, y };
