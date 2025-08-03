@@ -3,25 +3,35 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
-  // Check for environment variables.
+  // Check for environment variables at the very beginning.
   // If they are missing, redirect to a setup page.
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const ablyApiKey = process.env.ABLY_API_KEY;
 
-  if (request.nextUrl.pathname !== '/setup' && (!supabaseUrl || !supabaseAnonKey || !ablyApiKey)) {
+  const isConfigured = supabaseUrl && supabaseAnonKey && ablyApiKey;
+
+  // If not configured and not on the setup page, redirect to setup.
+  if (!isConfigured && request.nextUrl.pathname !== '/setup') {
     const url = request.nextUrl.clone()
     url.pathname = '/setup'
     return NextResponse.redirect(url)
   }
 
-  if (request.nextUrl.pathname.startsWith('/setup')) {
+  // If configured, but user tries to access setup page, redirect to home.
+  if (isConfigured && request.nextUrl.pathname === '/setup') {
+     const url = request.nextUrl.clone()
+     url.pathname = '/'
+     return NextResponse.redirect(url)
+  }
+  
+  // If we are on the setup page (because we weren't configured), allow the request.
+  if (request.nextUrl.pathname === '/setup') {
     return NextResponse.next();
   }
 
 
-  // This will refresh the user's session cookie and handle redirection
-  // if the user is not authenticated.
+  // If we are configured, proceed with session handling.
   return await updateSession(request)
 }
 
