@@ -143,7 +143,7 @@ export default function KanbanPage() {
     } finally {
         setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, isLoading]);
 
   useEffect(() => {
     fetchKanbanData();
@@ -273,7 +273,7 @@ export default function KanbanPage() {
                   <Card key={column.id} className="bg-secondary/50">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <h2 className="text-lg font-semibold">{column.title} ({tasks.length})</h2>
-                       <Dialog open={isModalOpen && selectedColumn === column.id} onOpenChange={setIsModalOpen}>
+                       <Dialog open={isModalOpen && selectedColumn === column.id} onOpenChange={(isOpen) => { if (!isOpen) setSelectedColumn(''); setIsModalOpen(isOpen); }}>
                         <DialogTrigger asChild>
                            <Button variant="ghost" size="icon" onClick={() => openModalForColumn(column.id)}>
                               <Plus className="h-4 w-4" />
