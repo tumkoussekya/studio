@@ -40,18 +40,18 @@ export default function Chat({ messages, onSendMessage }: ChatProps) {
     <div className="flex flex-col h-[40vh] md:h-auto md:flex-grow mt-4 md:mt-0 border-t">
       <h3 className="text-lg font-semibold mb-2 px-4 pt-4">Chat</h3>
       <ScrollArea className="flex-grow">
-        <div ref={scrollViewportRef} className="h-full w-full">
+        <ScrollArea.Viewport ref={scrollViewportRef} className="h-full w-full">
             <div className="space-y-4 px-4 pb-4">
               {messages.map((msg, index) => (
                 <div key={index}>
-                  <span className={`font-bold ${msg.author === 'You' ? 'text-primary' : (msg.author === 'System' || msg.author === 'Server') ? 'text-muted-foreground' : 'text-accent-foreground'}`}>
+                  <span className={`font-bold ${msg.author === 'You' ? 'text-primary' : (msg.author === 'System' || msg.author === 'Server') ? 'text-muted-foreground' : 'text-accent'}`}>
                     {msg.author}:
                   </span>{' '}
                   <span className="text-muted-foreground break-words">{msg.text}</span>
                 </div>
               ))}
             </div>
-        </div>
+        </ScrollArea.Viewport>
         <ScrollBar />
       </ScrollArea>
       <form onSubmit={handleSubmit} className="p-4 flex items-center gap-2 border-t mt-auto">
