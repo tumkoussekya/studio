@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -13,7 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { type UserData } from '@/models/User';
+import { type UserData } from '@/app/admin/page';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 

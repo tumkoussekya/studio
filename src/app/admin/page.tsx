@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, startTransition } from 'react';
@@ -68,7 +67,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [toast]);
+  }, []);
 
   const handleAction = (action: string, email: string) => {
     toast({

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -13,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { type UserData, type UserRole } from '@/models/User';
+import { type UserData } from '@/app/admin/page';
+import type { UserRole } from '@/models/User';
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
