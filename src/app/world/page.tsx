@@ -12,35 +12,16 @@ import { realtimeService, type PresenceData, type PlayerUpdateData, type KnockDa
 import { useToast } from '@/hooks/use-toast';
 import LogoutButton from '@/components/world/LogoutButton';
 import UserList from '@/components/world/UserList';
-import { getCookie } from 'cookies-next';
 import AudioControl from '@/components/world/AudioControl';
 import type { MainScene } from '@/lib/phaser/scenes/MainScene';
 import { useRouter } from 'next/navigation';
 import AlexChat from '@/components/world/AlexChat';
-import ConversationStarter from '@/components/world/ConversationStarter';
 import KnockButton from '@/components/world/KnockButton';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenuItem, SidebarMenu, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { MessageSquare, Rss } from 'lucide-react';
 import Announcements from '@/components/chat/Announcements';
 import type { UserRole } from '@/models/User';
-import { verify } from 'jsonwebtoken';
-
-
-// This is a simplified interface for the JWT payload from Supabase
-interface SupabaseJwtPayload {
-  sub: string; // This is the user ID
-  email: string;
-  role: UserRole; // This comes from our custom claims, might not be in the default token
-  app_metadata: {
-      provider?: string;
-      providers?: string[];
-  };
-  user_metadata: {
-      last_x: number;
-      last_y: number;
-      role: UserRole;
-  }
-}
+import { createClient } from '@supabase/supabase-js';
 
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
@@ -54,7 +35,7 @@ export default function WorldPage() {
     { author: 'System', text: 'Welcome to SyncroSpace! Use WASD or arrow keys to move. Click on other players to "knock"!' },
   ]);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-  const [currentUser, setCurrentUser] = useState<{ email: string, id: string, role: UserRole } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ email: string, id: string, role: UserRole, last_x: number, last_y: number } | null>(null);
   const { toast } = useToast();
   const sceneRef = useRef<MainScene | null>(null);
   const router = useRouter();
@@ -62,43 +43,38 @@ export default function WorldPage() {
 
 
   useEffect(() => {
-    // This is a workaround to get user info on the client side since we can't use server hooks here.
-    // In a more complex app, this might be handled via a dedicated session context.
-    const cookie = getCookie('token'); // This is no longer a JWT we created, but Supabase's cookie
-    if (!cookie) {
-      router.push('/login');
-      return;
-    }
-    
-    // We can't verify the Supabase JWT without the secret, so we'll just decode it.
-    // This is generally safe for reading claims but not for verifying authenticity.
-    // The server-side APIs will handle true verification.
-    try {
-        const payload = JSON.parse(atob(cookie.split('.')[1]));
-        const user = { email: payload.email, id: payload.sub, role: payload.user_metadata.role || 'TeamMember' };
-        setCurrentUser(user);
-        realtimeService.enterPresence({ email: user.email });
-    } catch(e) {
-        console.error("Could not decode user token", e);
-        // Fallback for older custom tokens if they exist, or just fail
-        const customToken = getCookie('token');
-        if(customToken) {
-            try {
-                const decoded = verify(customToken, process.env.NEXT_PUBLIC_JWT_SECRET || 'fallback-secret') as any;
-                 const user = { email: decoded.email, id: decoded.userId, role: decoded.role };
-                 setCurrentUser(user);
-                 realtimeService.enterPresence({ email: user.email });
-            } catch(jwtError) {
-                 console.error("Failed to decode token or connect to chat:", jwtError);
-                 toast({ variant: 'destructive', title: 'Authentication Error', description: 'Your session is invalid.' });
-                 router.push('/login');
-            }
-        } else {
-             toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not verify your session.' });
-             router.push('/login');
+    // This is a simplified client-side Supabase client.
+    // It's only used for fetching the current session, not for sensitive operations.
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const fetchUserAndConnect = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            router.push('/login');
+            return;
         }
+
+        const { data: userData, error } = await supabase
+            .from('users')
+            .select('id, email, role, last_x, last_y')
+            .eq('id', session.user.id)
+            .single();
+
+        if (error || !userData) {
+            console.error("Failed to fetch user data", error);
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not fetch your profile.' });
+            router.push('/login');
+            return;
+        }
+
+        setCurrentUser(userData);
+        realtimeService.enterPresence({ email: userData.email });
     }
 
+    fetchUserAndConnect();
 
     const handleShowAnnouncements = () => {
         setActiveRightPanel('announcements');
@@ -237,7 +213,13 @@ export default function WorldPage() {
     <div className="w-screen h-screen overflow-hidden bg-background flex flex-col md:flex-row">
       <div className="flex-grow relative order-2 md:order-1 h-1/2 md:h-full">
        {currentUser && <PhaserContainer 
-            userRole={currentUser.role}
+            user={{
+              id: currentUser.id,
+              email: currentUser.email,
+              role: currentUser.role,
+              last_x: currentUser.last_x,
+              last_y: currentUser.last_y,
+            }}
             onPlayerNearNpc={handlePlayerNearNpc} 
             onPlayerFarNpc={handlePlayerFarNpc}
             onPlayerNear={handlePlayerNear}

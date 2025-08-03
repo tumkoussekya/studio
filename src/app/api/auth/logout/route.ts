@@ -1,15 +1,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteCookie } from 'cookies-next';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
-  const response = NextResponse.json({ message: 'Logout successful' }, { status: 200 });
+  const supabase = createClient();
+  const { error } = await supabase.auth.signOut();
 
-  deleteCookie('token', {
-    req,
-    res: response,
-    path: '/',
-  });
+  if (error) {
+    console.error('Error logging out:', error);
+    return NextResponse.json({ message: 'Logout failed' }, { status: 500 });
+  }
 
-  return response;
+  return NextResponse.json({ message: 'Logout successful' }, { status: 200 });
 }

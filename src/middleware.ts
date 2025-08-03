@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
     const userRole = user.user_metadata?.role;
 
     // If profile is not complete, force redirection to the profile page
-    if (!profileComplete && !isProfileRoute && pathname !== '/api/auth/logout') {
+    if (!profileComplete && !isProfileRoute && pathname !== '/api/auth/logout' && pathname !== '/api/profile/update') {
       return NextResponse.redirect(new URL('/profile', request.url));
     }
 
@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Handle role-based access for protected client-side routes
-    if ((pathname.startsWith('/admin') || pathname.startsWith('/analytics')) && userRole !== 'Admin') {
+    if ((pathname.startsWith('/admin') || pathname.startsWith('/analytics') || pathname.startsWith('/kanban')) && userRole !== 'Admin') {
         return NextResponse.redirect(new URL('/dashboard?error=unauthorized', request.url));
     }
 
