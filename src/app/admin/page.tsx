@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, startTransition } from 'react';
 import type { User } from '@/models/User';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -21,54 +21,61 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, PlusCircle, UserPlus, Users } from 'lucide-react';
+import { MoreHorizontal, UserPlus, Users, Trash2, Edit } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EditUserRoleDialog } from '@/components/admin/EditUserRoleDialog';
+import { DeleteUserConfirmationDialog } from '@/components/admin/DeleteUserConfirmationDialog';
 
-type UserData = Omit<User, 'passwordHash'>;
+export type UserData = Omit<User, 'passwordHash'>;
 
 export default function AdminPage() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    async function fetchUsers() {
-      setIsLoading(true);
-      try {
-        const response = await fetch('/api/admin/users');
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to fetch users');
-        }
-        const data = await response.json();
-        setUsers(data);
-      } catch (error: any) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error.message,
-        });
-      } finally {
-        setIsLoading(false);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/admin/users');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch users');
       }
+      const data = await response.json();
+      setUsers(data);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchUsers();
   }, [toast]);
 
   const handleAction = (action: string, email: string) => {
     toast({
       title: `${action}`,
-      description: `This action for ${email} is a placeholder. A full implementation would require a database connection.`,
+      description: `This action for ${email} is a placeholder.`,
     });
   };
-
 
   const getBadgeVariant = (role: User['role']) => {
     switch (role) {
@@ -80,100 +87,139 @@ export default function AdminPage() {
         return 'outline';
     }
   };
+  
+  const handleOpenEdit = (user: UserData) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+  
+  const handleOpenDelete = (user: UserData) => {
+    setSelectedUser(user);
+    setIsDeleteModalOpen(true);
+  }
+
+  const onUserUpdate = () => {
+    startTransition(() => {
+        fetchUsers();
+    });
+  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <header className="p-4 border-b">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Users className="text-primary" />
-          Administrator Panel
-        </h1>
-      </header>
-      <main className="flex-grow p-4 md:p-6 lg:p-8">
-        <Card>
-          <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                View and manage all users in the system.
-              </CardDescription>
-            </div>
-            <Button onClick={() => handleAction('Invite User', '')}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Invite User
-            </Button>
-          </CardHeader>
-          <CardContent>
-           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead className="hidden md:table-cell">Role</TableHead>
-                  <TableHead className="hidden lg:table-cell">Last Position (X, Y)</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                      <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
-                      <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : users.length > 0 ? (
-                  users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.email}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Badge variant={getBadgeVariant(user.role)}>
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        ({user.lastX}, {user.lastY})
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleAction('Edit Role', user.email)}>Edit Role</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleAction('Reset Password', user.email)}>
-                              Reset Password
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleAction('Delete User', user.email)}>
-                              Delete User
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
+    <>
+      <div className="flex flex-col min-h-screen bg-background">
+        <header className="p-4 border-b">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Users className="text-primary" />
+            Administrator Panel
+          </h1>
+        </header>
+        <main className="flex-grow p-4 md:p-6 lg:p-8">
+          <Card>
+            <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>
+                  View and manage all users in the system.
+                </CardDescription>
+              </div>
+              <Button onClick={() => handleAction('Invite User', '')}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Invite User
+              </Button>
+            </CardHeader>
+            <CardContent>
+             <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      No users found.
-                    </TableCell>
+                    <TableHead>Email</TableHead>
+                    <TableHead className="hidden md:table-cell">Role</TableHead>
+                    <TableHead className="hidden lg:table-cell">Last Position (X, Y)</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-           </div>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : users.length > 0 ? (
+                    users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.email}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Badge variant={getBadgeVariant(user.role)}>
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          ({user.lastX}, {user.lastY})
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => handleOpenEdit(user)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Role
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleAction('Reset Password', user.email)}>
+                                Reset Password
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleOpenDelete(user)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete User
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className="h-24 text-center text-muted-foreground"
+                      >
+                        No users found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+             </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+       {selectedUser && (
+        <>
+          <EditUserRoleDialog 
+            isOpen={isEditModalOpen} 
+            setIsOpen={setIsEditModalOpen}
+            user={selectedUser}
+            onUserUpdate={onUserUpdate}
+          />
+          <DeleteUserConfirmationDialog 
+             isOpen={isDeleteModalOpen}
+             setIsOpen={setIsDeleteModalOpen}
+             user={selectedUser}
+             onUserUpdate={onUserUpdate}
+          />
+        </>
+      )}
+    </>
   );
 }
