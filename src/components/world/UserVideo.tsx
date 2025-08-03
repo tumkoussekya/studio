@@ -17,6 +17,12 @@ const UserVideo: React.FC<UserVideoProps> = ({ stream }) => {
     }
   }, [stream]);
 
+  const isVideoEnabled = stream.getVideoTracks().some(track => track.enabled);
+
+  if (!isVideoEnabled) {
+    return null;
+  }
+
   return (
     <Card className="absolute bottom-4 left-4 w-48 h-36 rounded-lg overflow-hidden shadow-2xl z-20 border-primary border-2">
       <video
