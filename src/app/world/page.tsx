@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import AlexChat from '@/components/world/AlexChat';
 import PlayerInteraction from '@/components/world/PlayerInteraction';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenuItem, SidebarMenu, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
-import { MessageSquare, Rss, Loader2, Lock, Globe } from 'lucide-react';
+import { MessageSquare, Rss, Loader2, Lock, Globe, Camera } from 'lucide-react';
 import Announcements from '@/components/chat/Announcements';
 import type { UserRole } from '@/models/User';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import { createClient } from '@/lib/supabase/client';
 import UserVideo from '@/components/world/UserVideo';
 import EmoteMenu from '@/components/world/EmoteMenu';
 import { webRTCService } from '@/services/WebRTCService';
+import { format } from 'date-fns';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -66,6 +67,7 @@ export default function WorldPage() {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<RemoteStream[]>([]);
   const [currentZone, setCurrentZone] = useState('pixel-space');
+  const worldContainerRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
@@ -255,6 +257,36 @@ export default function WorldPage() {
     }
   }
 
+  const handleScreenshot = () => {
+    const worldEl = worldContainerRef.current;
+    const sidebarEl = document.querySelector('[data-sidebar="sidebar"]');
+    const emoteMenuEl = document.querySelector('.absolute.bottom-4.right-4');
+
+    if (!worldEl || !sceneRef.current?.game.canvas) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not capture screenshot.' });
+      return;
+    }
+
+    // Hide UI elements
+    if (sidebarEl) (sidebarEl as HTMLElement).style.display = 'none';
+    if (emoteMenuEl) (emoteMenuEl as HTMLElement).style.display = 'none';
+
+    setTimeout(() => {
+      const canvas = sceneRef.current!.game.canvas;
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `syncrospace-moment-${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.png`;
+      link.href = dataUrl;
+      link.click();
+
+      // Restore UI elements
+      if (sidebarEl) (sidebarEl as HTMLElement).style.display = '';
+      if (emoteMenuEl) (emoteMenuEl as HTMLElement).style.display = '';
+
+      toast({ title: 'Screenshot Saved!', description: 'Your moment has been captured.' });
+    }, 100); // Small delay to allow UI to hide
+  };
+
   const renderInteractionPanel = () => {
       if (isNearAlex) { return <AlexChat />; }
       if (nearbyPlayer) {
@@ -284,7 +316,7 @@ export default function WorldPage() {
   return (
     <SidebarProvider>
     <div className="w-screen h-screen overflow-hidden bg-background flex flex-col md:flex-row">
-      <div className="flex-grow relative order-2 md:order-1 h-1/2 md:h-full">
+      <div ref={worldContainerRef} className="flex-grow relative order-2 md:order-1 h-1/2 md:h-full">
        {currentUser && <PhaserContainer 
             user={{
               id: currentUser.id,
@@ -311,7 +343,13 @@ export default function WorldPage() {
             ))}
         </div>
 
-        <EmoteMenu onEmote={onEmote} />
+        <div className="absolute bottom-4 right-20 z-20 flex items-center gap-2">
+            <Button variant="outline" size="icon" className="rounded-full w-12 h-12 shadow-lg" onClick={handleScreenshot}>
+                <Camera className="h-6 w-6" />
+                <span className="sr-only">Take Screenshot</span>
+            </Button>
+            <EmoteMenu onEmote={onEmote} />
+        </div>
       </div>
       <Sidebar collapsible="offcanvas" side="right" className="w-full md:w-80 lg:w-96 border-l bg-card p-0 flex flex-col gap-0 order-1 md:order-2 shrink-0 h-1/2 md:h-full">
         <SidebarHeader>
