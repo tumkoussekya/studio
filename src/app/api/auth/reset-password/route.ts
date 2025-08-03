@@ -1,15 +1,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { userStore } from '@/lib/userStore';
+import { createClient } from '@/lib/supabase/server';
 import { hash } from 'bcryptjs';
 
-// NOTE: This is a placeholder for a password reset flow.
-// In a real application, you would:
-// 1. Verify the reset token is valid and not expired.
-// 2. Find the user associated with the token.
-// 3. Hash the new password.
-// 4. Update the user's password in the database.
-// 5. Invalidate the reset token.
+// NOTE: This is a placeholder for a password reset flow handled via Supabase Magic Links.
+// The actual token verification and password update happens on a Supabase-hosted page
+// when the user clicks the link in the email. This endpoint is not directly called in that flow.
+// It remains as a reference or for potential future custom flows.
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,19 +16,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Token and new password are required' }, { status: 400 });
     }
 
-    // In a real implementation, you would look up the user by the token
-    // For this demo, we'll just log that the action would have happened.
-    console.log(`Password reset requested for token: ${token}`);
-    
-    // const user = userStore.findByResetToken(token);
-    // if (!user) {
-    //   return NextResponse.json({ message: 'Invalid or expired token' }, { status: 400 });
+    // In a real custom implementation, you would:
+    // 1. Exchange the code/token for a session with Supabase.
+    // const supabase = createClient();
+    // const { data, error } = await supabase.auth.exchangeCodeForSession(token);
+    // 2. If successful, update the user's password.
+    // if (data.user) {
+    //    await supabase.auth.updateUser({ password: newPassword });
     // }
-    
-    // const passwordHash = await hash(newPassword, 10);
-    // userStore.updateUserPassword(user.id, passwordHash);
-    
-    // userStore.clearResetToken(user.id);
+
+    console.log(`Password reset action simulated for token: ${token}`);
 
     return NextResponse.json({ message: 'Password has been reset successfully. (Simulated)' }, { status: 200 });
 

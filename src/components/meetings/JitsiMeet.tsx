@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getCookie } from 'cookies-next';
+import { createClient } from '@/lib/supabase/client';
 
 interface JitsiMeetProps {
   roomName: string;
@@ -21,9 +21,22 @@ const JitsiMeet: React.FC<JitsiMeetProps> = ({ roomName, onMeetingEnd }) => {
   const jitsiApiRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [displayName, setDisplayName] = useState('Guest');
 
   useEffect(() => {
-    // Check if the Jitsi API script is loaded
+    const fetchUser = async () => {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.email) {
+            setDisplayName(user.email);
+        }
+    };
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    if (!displayName || !jitsiContainerRef.current) return;
+
     if (!window.JitsiMeetExternalAPI) {
       toast({
         variant: 'destructive',
@@ -32,18 +45,6 @@ const JitsiMeet: React.FC<JitsiMeetProps> = ({ roomName, onMeetingEnd }) => {
       });
       return;
     }
-
-    let userDisplayName = 'Guest';
-    const token = getCookie('token');
-    if (token) {
-        try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            userDisplayName = payload.email || 'User';
-        } catch (error) {
-            console.warn("Could not parse user token for Jitsi display name.");
-        }
-    }
-
 
     const domain = 'meet.jit.si';
     const options = {
@@ -62,32 +63,27 @@ const JitsiMeet: React.FC<JitsiMeetProps> = ({ roomName, onMeetingEnd }) => {
         ],
       },
        configOverwrite: {
-        prejoinPageEnabled: false, // Disables the page where you set your name and devices
+        prejoinPageEnabled: false,
       },
       userInfo: {
-        displayName: userDisplayName
+        displayName: displayName
       }
     };
 
-    // Initialize the JitsiMeeting
     const api = new window.JitsiMeetExternalAPI(domain, options);
     jitsiApiRef.current = api;
     setLoading(false);
 
-    // Add event listeners
     api.addEventListener('videoConferenceLeft', () => {
-      console.log('User left the meeting');
       if (onMeetingEnd) {
         onMeetingEnd();
       }
     });
 
-    // Cleanup function
     return () => {
-      console.log('Disposing Jitsi Meet API');
       jitsiApiRef.current?.dispose();
     };
-  }, [roomName, onMeetingEnd, toast]);
+  }, [roomName, onMeetingEnd, toast, displayName]);
 
   return (
     <>
