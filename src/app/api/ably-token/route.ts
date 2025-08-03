@@ -26,8 +26,9 @@ export async function POST(req: NextRequest) {
     const tokenRequestData = await client.auth.createTokenRequest({
         clientId: clientId,
         capability: {
-             "pixel-space": ["subscribe", "publish", "presence"],
-             "whiteboard": ["subscribe", "publish", "presence"]
+             // Use a wildcard to allow access to all channels.
+             // This is necessary for dynamic channels like DMs and private zones.
+             "*": ["subscribe", "publish", "presence"],
         }
     });
 
