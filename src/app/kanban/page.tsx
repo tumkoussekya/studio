@@ -201,23 +201,36 @@ export default function KanbanPage() {
   };
 
   const handleAddTask = async (values: AddTaskFormValues) => {
-    if (!selectedColumn) return;
+    if (!selectedColumn || !data) return;
     
+    // Disable form while submitting
+    form.formState.isSubmitting = true;
+
     try {
         const response = await fetch('/api/kanban/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: values.content, columnId: selectedColumn, priority: values.priority }),
         });
-        if (!response.ok) throw new Error('Failed to add task.');
         
+        const newTask = await response.json();
+        if (!response.ok) throw new Error(newTask.message || 'Failed to add task.');
+        
+        // Optimistic UI update
+        const updatedData = { ...data };
+        updatedData.tasks[newTask.id] = newTask;
+        updatedData.columns[selectedColumn].taskIds.push(newTask.id);
+        setData(updatedData);
+
         toast({ title: 'Task Added', description: `"${values.content}" has been added.`});
         form.reset();
         setSelectedColumn('');
         setIsModalOpen(false);
-        fetchKanbanData(); // Refresh data
+
     } catch (error: any) {
          toast({ variant: 'destructive', title: 'Failed to add task', description: error.message });
+    } finally {
+        form.formState.isSubmitting = false;
     }
   };
   
@@ -373,10 +386,12 @@ export default function KanbanPage() {
                                                 <Flag className="h-3 w-3 mr-1" />
                                                 {task.priority}
                                             </Badge>
-                                            <div className="flex items-center gap-1">
-                                                <Calendar className="h-4 w-4" />
-                                                <span>{new Date(task.due_date).toLocaleDateString()}</span>
-                                            </div>
+                                            {task.due_date && (
+                                              <div className="flex items-center gap-1">
+                                                  <Calendar className="h-4 w-4" />
+                                                  <span>{new Date(task.due_date).toLocaleDateString()}</span>
+                                              </div>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Tooltip>

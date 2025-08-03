@@ -30,7 +30,10 @@ export async function GET(req: NextRequest) {
     const columns = columnsData.reduce((acc, column) => {
       acc[column.id] = {
         ...column,
-        taskIds: tasksData.filter(t => t.column_id === column.id).map(t => t.id)
+        taskIds: tasksData
+            .filter(t => t.column_id === column.id)
+            .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) // Assuming you want them ordered by creation
+            .map(t => t.id)
       };
       return acc;
     }, {} as any);
@@ -63,7 +66,6 @@ export async function POST(req: NextRequest) {
         content, 
         column_id: columnId, 
         assignee_id: user.id, 
-        due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         priority: priority || 'Medium'
       })
       .select()
@@ -84,6 +86,9 @@ export async function PUT(req: NextRequest) {
     if (!user) return new NextResponse('Unauthorized', { status: 401 });
 
     const { taskId, newColumnId } = await req.json();
+    if (!taskId || !newColumnId) {
+        return new NextResponse('Task ID and New Column ID are required', { status: 400 });
+    }
 
     const { error } = await supabase
       .from('tasks')
