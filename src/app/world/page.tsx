@@ -92,20 +92,24 @@ export default function WorldPage() {
 
   useEffect(() => {
     if (!currentUser) return;
+    let isSubscribed = true;
 
     // --- Register all event handlers ---
     const handleNewMessage = (message: Ably.Types.Message) => {
+        if (!isSubscribed) return;
         const authorEmail = (message.data.author || message.clientId);
         const author = authorEmail === currentUser.email ? 'You' : authorEmail;
         setMessages((prev) => [...prev, { author, text: message.data.text }]);
     };
     
     const handleInitialUsers = (users: Ably.Types.PresenceMessage[]) => {
+        if (!isSubscribed) return;
         const userEmails = users.map(u => (u.data as PresenceData).email);
         setOnlineUsers(userEmails);
     };
 
     const handleUserJoined = (member: Ably.Types.PresenceMessage) => {
+        if (!isSubscribed) return;
         const joinedEmail = (member.data as PresenceData).email;
         if(joinedEmail === currentUser.email) return;
         
@@ -114,6 +118,7 @@ export default function WorldPage() {
     };
     
     const handleUserLeft = (member: Ably.Types.PresenceMessage) => {
+        if (!isSubscribed) return;
         const leftEmail = (member.data as PresenceData).email;
         setOnlineUsers((prev) => prev.filter(email => email !== leftEmail));
         toast({ title: 'User Left', description: `${leftEmail} has left the space.` });
@@ -121,6 +126,7 @@ export default function WorldPage() {
     };
 
     const handleHistory = (history: Ably.Types.Message[]) => {
+      if (!isSubscribed) return;
       const pastMessages: Message[] = history.map(message => {
         const authorEmail = (message.data.author || message.clientId);
         const author = authorEmail === currentUser.email ? 'You' : authorEmail;
@@ -130,6 +136,7 @@ export default function WorldPage() {
     };
     
     const handlePlayerUpdate = (message: Ably.Types.Message) => {
+        if (!isSubscribed) return;
         const data = message.data as PlayerUpdateData;
         if (data.clientId !== currentUser.id) {
            sceneRef.current?.updatePlayer(data.clientId, data.x, data.y, data.email);
@@ -137,6 +144,7 @@ export default function WorldPage() {
     };
     
     const handleKnock = (data: KnockData) => {
+        if (!isSubscribed) return;
         toast({
             title: 'Someone is knocking!',
             description: `${data.fromEmail} is knocking.`,
@@ -157,6 +165,7 @@ export default function WorldPage() {
 
     return () => {
       // It's good practice to disconnect and clean up listeners
+      isSubscribed = false;
       realtimeService.disconnect();
     };
   }, [currentUser, toast]);
@@ -239,14 +248,14 @@ export default function WorldPage() {
             <div className="px-4">
                 <div className="p-1 bg-muted rounded-md flex items-center gap-1">
                      <Button 
-                        variant={activeRightPanel === 'chat' ? 'primary' : 'ghost'} 
+                        variant={activeRightPanel === 'chat' ? 'default' : 'ghost'} 
                         className="flex-1"
                         onClick={() => setActiveRightPanel('chat')}
                     >
                         <MessageSquare className="mr-2 h-4 w-4" /> Chat
                     </Button>
                     <Button 
-                        variant={activeRightPanel === 'announcements' ? 'primary' : 'ghost'} 
+                        variant={activeRightPanel === 'announcements' ? 'default' : 'ghost'} 
                         className="flex-1"
                         onClick={() => setActiveRightPanel('announcements')}
                     >

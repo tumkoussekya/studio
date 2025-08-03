@@ -40,6 +40,7 @@ const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "HO4oK9VllF/g3Y+e1dG1A/d
 class RealtimeService {
     private ably: Ably.Realtime;
     private channel: Ably.Types.RealtimeChannel;
+    private connectionPromise: Promise<void>;
 
     private messageHandler: MessageHandler | null = null;
     private historyHandler: HistoryHandler | null = null;
@@ -68,8 +69,11 @@ class RealtimeService {
 
         this.channel = this.ably.channels.get('pixel-space', channelOptions);
 
-        this.ably.connection.on('connected', () => {
-            console.log('Ably connected!');
+        this.connectionPromise = new Promise((resolve) => {
+            this.ably.connection.on('connected', () => {
+                console.log('Ably connected!');
+                resolve();
+            });
         });
 
         this.ably.connection.on('closed', () => {
@@ -81,7 +85,9 @@ class RealtimeService {
         return this.ably.auth.clientId;
     }
 
-    public subscribeToEvents(): void {
+    public async subscribeToEvents(): Promise<void> {
+        await this.connectionPromise;
+        
         this.channel.subscribe('message', (message) => {
             if (this.messageHandler) {
                 this.messageHandler(message);
@@ -155,7 +161,8 @@ class RealtimeService {
         this.initialUsersHandler = handler;
     }
 
-    public enterPresence(userData: PresenceData): void {
+    public async enterPresence(userData: PresenceData) {
+        await this.connectionPromise;
         this.channel.presence.enter(userData);
     }
     
