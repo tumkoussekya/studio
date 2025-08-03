@@ -61,6 +61,9 @@ import type * as Ably from 'ably';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
+import { ChatSettingsDialog } from '@/components/chat/ChatSettingsDialog';
+import { cn } from '@/lib/utils';
+
 
 interface ChatMessage extends MessageData {
   id?: string;
@@ -79,6 +82,8 @@ interface ChatChannel {
     description: string | null;
 }
 
+export type ChatDensity = 'cozy' | 'compact';
+
 const emojis = ['😀', '😂', '👍', '❤️', '🙏', '🎉', '🔥', '🚀'];
 
 
@@ -96,6 +101,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isCreatingChannel, setIsCreatingChannel] = React.useState(false);
   const [isNewChannelDialogOpen, setIsNewChannelDialogOpen] = React.useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   const { toast } = useToast();
   const [isSummarizing, setIsSummarizing] = React.useState(false);
@@ -106,6 +112,7 @@ export default function ChatPage() {
   const router = useRouter();
 
   const [messages, setMessages] = React.useState<Record<string, ChatMessage[]>>({});
+  const [chatDensity, setChatDensity] = React.useState<ChatDensity>('cozy');
 
 
   const fetchInitialData = React.useCallback(async () => {
@@ -311,6 +318,7 @@ export default function ChatPage() {
 
 
   return (
+    <>
     <SidebarProvider>
       <div className="flex min-h-screen bg-background text-foreground">
         <Sidebar
@@ -356,6 +364,7 @@ export default function ChatPage() {
              <SidebarMenu>
                 <SidebarMenuItem>
                      <SidebarMenuButton
+                        onClick={() => setIsSettingsOpen(true)}
                         tooltip={{
                             children: 'Settings',
                         }}
@@ -511,8 +520,8 @@ export default function ChatPage() {
                         </div>
                     )}
                     {currentMessages.map((msg, index) => (
-                         <div key={msg.id || index} className="flex items-start gap-3">
-                            <Avatar className="size-9">
+                         <div key={msg.id || index} className={cn("flex items-start gap-3", chatDensity === 'compact' ? 'py-1' : 'py-2')}>
+                            <Avatar className={cn(chatDensity === 'compact' ? 'size-8' : 'size-9')}>
                                 <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="avatar" alt={msg.author} />
                                 <AvatarFallback>{msg.author.charAt(0).toUpperCase()}</AvatarFallback>
                             </Avatar>
@@ -606,5 +615,13 @@ export default function ChatPage() {
 
       </div>
     </SidebarProvider>
+
+    <ChatSettingsDialog
+        isOpen={isSettingsOpen}
+        setIsOpen={setIsSettingsOpen}
+        chatDensity={chatDensity}
+        setChatDensity={setChatDensity}
+    />
+  </>
   );
 }
