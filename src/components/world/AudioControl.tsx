@@ -24,6 +24,11 @@ export default function AudioControl() {
     }, []);
 
     const startAudio = async () => {
+        if (Tone.context.state === 'closed') {
+            console.warn("AudioContext is closed and cannot be resumed. Please refresh the page.");
+            return;
+        }
+
         if (Tone.context.state !== 'running') {
             try {
                 // This will be caught by the Phaser scene
