@@ -101,11 +101,20 @@ export async function updateSession(request: NextRequest) {
 
 
     // Protect admin-only routes
-    if (userData && userData.role !== 'Admin' && (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/analytics'))) {
+    if (userData && userData.role !== 'Admin' && request.nextUrl.pathname.startsWith('/analytics')) {
        const url = request.nextUrl.clone()
        url.pathname = '/dashboard'
        url.searchParams.set('error', 'unauthorized')
        return NextResponse.redirect(url)
+    }
+    
+    // Protect admin pages
+    const adminPaths = ['/admin'];
+    if (userData && userData.role !== 'Admin' && adminPaths.some(p => request.nextUrl.pathname.startsWith(p))) {
+         const url = request.nextUrl.clone()
+         url.pathname = '/dashboard'
+         url.searchParams.set('error', 'unauthorized')
+         return NextResponse.redirect(url)
     }
   }
 

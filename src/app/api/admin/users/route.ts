@@ -2,10 +2,21 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
-  // Note: The middleware should have already handled authentication
-  // and role-based access control for this endpoint.
   const supabase = createClient();
   try {
+    const { data: { user: adminUser } } = await supabase.auth.getUser();
+    if (!adminUser) return new NextResponse('Unauthorized', { status: 401 });
+
+    const { data: adminUserData, error: adminError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', adminUser.id)
+      .single();
+      
+    if (adminError || adminUserData?.role !== 'Admin') {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
+
     const { data: users, error } = await supabase
       .from('users')
       .select('id, email, role, last_x, last_y');
@@ -14,8 +25,6 @@ export async function GET() {
       throw error;
     }
     
-    // The user object from the database has last_x and last_y, which matches the required format.
-    // We just need to rename the fields for the frontend if necessary, but the current model is fine.
     const formattedUsers = users.map(user => ({
       id: user.id,
       email: user.email,
