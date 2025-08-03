@@ -16,7 +16,7 @@ import MediaControls from '@/components/world/MediaControls';
 import type { MainScene } from '@/lib/phaser/scenes/MainScene';
 import { useRouter } from 'next/navigation';
 import AlexChat from '@/components/world/AlexChat';
-import KnockButton from '@/components/world/KnockButton';
+import PlayerInteraction from '@/components/world/PlayerInteraction';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenuItem, SidebarMenu, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { MessageSquare, Rss, Loader2, Lock, Globe } from 'lucide-react';
 import Announcements from '@/components/chat/Announcements';
@@ -258,7 +258,7 @@ export default function WorldPage() {
   const renderInteractionPanel = () => {
       if (isNearAlex) { return <AlexChat />; }
       if (nearbyPlayer) {
-          return <KnockButton 
+          return <PlayerInteraction 
                     player={nearbyPlayer} 
                     onKnock={(targetClientId) => {
                         if (currentUser) {
@@ -277,7 +277,7 @@ export default function WorldPage() {
   }
   
   if (!currentUser) { return <WorldLoadingSkeleton />; }
-  const userEmails = onlineUsers.map(u => (u.data as PresenceData).email).filter(Boolean);
+  const userList = onlineUsers.map(u => ({ clientId: u.clientId, email: (u.data as PresenceData).email })).filter(Boolean);
   const currentMessages = messages[currentZone] || [];
   const isPrivateZone = currentZone !== 'pixel-space';
 
@@ -361,7 +361,7 @@ export default function WorldPage() {
                         <MediaControls stream={localStream} hasPermission={hasMediaPermission} />
                     </div>
                     <Separator />
-                    <UserList users={userEmails} />
+                    <UserList users={userList} onFollow={onFollowPlayer} />
                     <Chat messages={currentMessages} onSendMessage={handleSendMessage} />
                 </div>
              )}
@@ -377,5 +377,3 @@ export default function WorldPage() {
     </SidebarProvider>
   );
 }
-
-    
