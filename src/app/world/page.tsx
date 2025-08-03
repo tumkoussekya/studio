@@ -12,7 +12,7 @@ import { realtimeService, type PresenceData, type PlayerUpdateData, type KnockDa
 import { useToast } from '@/hooks/use-toast';
 import LogoutButton from '@/components/world/LogoutButton';
 import UserList from '@/components/world/UserList';
-import AudioControl from '@/components/world/AudioControl';
+import MediaControls from '@/components/world/MediaControls';
 import type { MainScene } from '@/lib/phaser/scenes/MainScene';
 import { useRouter } from 'next/navigation';
 import AlexChat from '@/components/world/AlexChat';
@@ -23,6 +23,7 @@ import Announcements from '@/components/chat/Announcements';
 import type { UserRole } from '@/models/User';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import UserVideo from '@/components/world/UserVideo';
 
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
@@ -52,6 +53,28 @@ export default function WorldPage() {
   const sceneRef = useRef<MainScene | null>(null);
   const router = useRouter();
   const [activeRightPanel, setActiveRightPanel] = useState('chat');
+  const [hasMediaPermission, setHasMediaPermission] = useState(false);
+  const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+
+
+  useEffect(() => {
+    const getMediaPermissions = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            setVideoStream(stream);
+            setHasMediaPermission(true);
+        } catch (error) {
+            console.error('Error accessing media devices.', error);
+            setHasMediaPermission(false);
+            toast({
+                variant: 'destructive',
+                title: 'Media Access Denied',
+                description: 'Please enable camera and microphone permissions in your browser settings to use video and audio features.',
+            });
+        }
+    };
+    getMediaPermissions();
+  }, [toast]);
 
 
   useEffect(() => {
@@ -97,9 +120,12 @@ export default function WorldPage() {
     return () => {
         window.removeEventListener('show-announcements', handleShowAnnouncements);
         realtimeService.disconnect();
+         if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
     }
 
-  }, [router, toast]);
+  }, [router, toast, videoStream]);
 
 
   useEffect(() => {
@@ -247,6 +273,7 @@ export default function WorldPage() {
             onPlayerFar={handlePlayerFar}
             onSceneReady={(scene) => sceneRef.current = scene} 
         />}
+        {videoStream && <UserVideo stream={videoStream} />}
       </div>
       <Sidebar collapsible="offcanvas" side="right" className="w-full md:w-80 lg:w-96 border-l bg-card p-0 flex flex-col gap-0 order-1 md:order-2 shrink-0 h-1/2 md:h-full">
         <SidebarHeader>
@@ -288,7 +315,7 @@ export default function WorldPage() {
                     </div>
                     <Separator />
                     <div className="p-4">
-                        <AudioControl />
+                        <MediaControls stream={videoStream} hasPermission={hasMediaPermission} />
                     </div>
                     <Separator />
                     <UserList users={onlineUsers} />
