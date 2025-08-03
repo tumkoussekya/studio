@@ -32,21 +32,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Signup successful, but no user data returned.' }, { status: 500 });
   }
 
-  // Insert a corresponding row into the public.users table
-  // This is now handled by a trigger in Supabase for consistency
-  // but we can leave this here as a fallback or for more complex setups.
-  const { error: dbError } = await supabase
-    .from('users')
-    .insert([
-      { id: authData.user.id, email: authData.user.email, role: 'TeamMember', last_x: 200, last_y: 200, profile_complete: false, onboarding_complete: false },
-    ]);
-
-  if (dbError) {
-    console.error('Supabase DB insert error:', dbError.message);
-    // Best effort to clean up if DB insert fails
-    await supabase.auth.admin.deleteUser(authData.user.id);
-    return NextResponse.json({ message: 'Could not create user profile.' }, { status: 500 });
-  }
+  // A trigger in Supabase now handles inserting the user into the public.users table.
+  // This ensures consistency. The trigger is defined in the initial setup SQL.
+  // So, the explicit insert call here is no longer needed.
 
   return NextResponse.json({ message: 'User created successfully. Please check your email to verify.' }, { status: 201 });
 }

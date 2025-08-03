@@ -17,7 +17,7 @@ async function getUserData() {
 
     const { data: userData, error } = await supabase
         .from('users')
-        .select('id, email, role, profile_complete')
+        .select('id, email, role, profile_complete, first_name')
         .eq('id', user.id)
         .single();
     
@@ -51,7 +51,7 @@ function DashboardSkeleton() {
                                 <CardTitle className="flex items-center gap-3">
                                     <Skeleton className="h-7 w-7 rounded-full" />
                                     <Skeleton className="h-6 w-32" />
-                                </CardTitle>
+                                 </CardTitle>
                                 <Skeleton className="h-4 w-full mt-1" />
                                 <Skeleton className="h-4 w-3/4" />
                             </CardHeader>
@@ -91,7 +91,7 @@ async function Dashboard() {
             </header>
             <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div id="tour-welcome" className="mb-8">
-                    <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user?.email || 'Explorer'}!</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user?.first_name || user?.email || 'Explorer'}!</h2>
                     <p className="text-muted-foreground">What would you like to do today?</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
