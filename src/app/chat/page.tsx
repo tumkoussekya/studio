@@ -89,7 +89,7 @@ const emojis = ['😀', '😂', '👍', '❤️', '🙏', '🎉', '🔥', '🚀'
 
 export default function ChatPage() {
   const [activeView, setActiveView] = React.useState('messages');
-  const [activeConversation, setActiveConversation] = React.useState('general'); // Default to 'general' channel id
+  const [activeConversation, setActiveConversation] = React.useState('');
   const [conversationType, setConversationType] = React.useState<'channel' | 'dm'>('channel');
   
   const [users, setUsers] = React.useState<ChatUser[]>([]);
@@ -520,7 +520,7 @@ export default function ChatPage() {
                         </div>
                     )}
                     {currentMessages.map((msg, index) => (
-                         <div key={msg.id || index} className={cn("flex items-start gap-3", chatDensity === 'compact' ? 'py-1' : 'py-2')}>
+                         <div key={msg.id || index} className={cn("flex items-start gap-3", chatDensity === 'compact' ? 'py-1' : 'py-3')}>
                             <Avatar className={cn(chatDensity === 'compact' ? 'size-8' : 'size-9')}>
                                 <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="avatar" alt={msg.author} />
                                 <AvatarFallback>{msg.author.charAt(0).toUpperCase()}</AvatarFallback>
@@ -530,8 +530,8 @@ export default function ChatPage() {
                                     <span className="font-bold">{msg.author}</span>
                                     <span className="text-xs text-muted-foreground">{new Date().toLocaleTimeString()}</span>
                                 </div>
-                                <div className={`p-3 rounded-lg mt-1 ${msg.author === 'You' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
-                                    <p>{msg.text}</p>
+                                <div className={cn("p-2 rounded-lg mt-1", msg.author === 'You' ? 'bg-primary text-primary-foreground' : 'bg-secondary')}>
+                                    <p className="leading-normal">{msg.text}</p>
                                 </div>
                             </div>
                         </div>
