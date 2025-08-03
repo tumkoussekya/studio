@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import * as Tone from 'tone';
 import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Video, VideoOff, Volume2, VolumeX } from 'lucide-react';
@@ -25,14 +25,7 @@ export default function MediaControls({ stream, hasPermission }: MediaControlsPr
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (stream) {
-        setIsMicOn(stream.getAudioTracks().some(track => track.enabled));
-        setIsCameraOn(stream.getVideoTracks().some(track => track.enabled));
-    }
-  }, [stream]);
-
-  const toggleTrack = (kind: 'audio' | 'video') => {
+  const toggleTrack = useCallback((kind: 'audio' | 'video') => {
     if (!stream) return;
     const tracks = kind === 'audio' ? stream.getAudioTracks() : stream.getVideoTracks();
     tracks.forEach(track => {
@@ -40,7 +33,34 @@ export default function MediaControls({ stream, hasPermission }: MediaControlsPr
     });
     if (kind === 'audio') setIsMicOn(prev => !prev);
     if (kind === 'video') setIsCameraOn(prev => !prev);
-  };
+  }, [stream]);
+
+  useEffect(() => {
+    if (stream) {
+        setIsMicOn(stream.getAudioTracks().some(track => track.enabled));
+        setIsCameraOn(stream.getVideoTracks().some(track => track.enabled));
+    }
+    
+    const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.ctrlKey && event.shiftKey) {
+            if (event.key.toUpperCase() === 'A') {
+                event.preventDefault();
+                toggleTrack('audio');
+            }
+            if (event.key.toUpperCase() === 'V') {
+                event.preventDefault();
+                toggleTrack('video');
+            }
+        }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+
+  }, [stream, toggleTrack]);
+
   
   const startSpatialAudio = async () => {
     if (Tone.context.state !== 'running') {
@@ -94,7 +114,7 @@ export default function MediaControls({ stream, hasPermission }: MediaControlsPr
             </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-            Enable media to see, hear, and be heard by others in the world. Use headphones for the best experience.
+            Use headphones for the best experience. Hotkeys: Ctrl+Shift+A (mic), Ctrl+Shift+V (camera).
         </p>
     </div>
   );

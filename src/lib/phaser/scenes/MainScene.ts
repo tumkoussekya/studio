@@ -40,6 +40,9 @@ export class MainScene extends Phaser.Scene {
 
   private followingClientId: string | null = null;
   private emoteText!: Phaser.GameObjects.Text;
+  private hotkeys!: { [key: string]: Phaser.Input.Keyboard.Key };
+  private confettiEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+
 
   constructor() {
     super({ key: 'MainScene' });
@@ -47,6 +50,7 @@ export class MainScene extends Phaser.Scene {
   
   preload() {
     this.load.audio('synth', '/assets/synth.mp3');
+    this.load.image('sparkle', '/assets/sparkle.png');
   }
 
   init(data: { startX: number, startY: number, email: string, clientId: string, role: UserRole, realtimeService: InstanceType<typeof RealtimeService> }) {
@@ -63,6 +67,11 @@ export class MainScene extends Phaser.Scene {
     this.realtimeService.subscribeToChannelEvent('pixel-space', 'emote', (message) => {
       const { clientId, emote } = message.data;
       this.showPlayerEmote(clientId, emote);
+    });
+
+    this.realtimeService.subscribeToChannelEvent('pixel-space', 'confetti', (message) => {
+        const { clientId } = message.data;
+        this.triggerPlayerConfetti(clientId);
     });
   }
 
@@ -219,6 +228,15 @@ export class MainScene extends Phaser.Scene {
         font: '16px VT323', color: '#ef4444', backgroundColor: 'rgba(0,0,0,0.7)', padding: { x: 10, y: 5 },
     }).setOrigin(0.5).setDepth(100).setVisible(false);
 
+    this.confettiEmitter = this.add.particles(0, 0, 'sparkle', {
+        lifespan: 1000,
+        speed: { min: 150, max: 250 },
+        scale: { start: 0.8, end: 0 },
+        gravityY: 300,
+        blendMode: 'ADD',
+        emitting: false
+    });
+
     this.physics.add.collider(this.player, walls);
     this.physics.add.collider(this.player, this.npc);
 
@@ -229,6 +247,12 @@ export class MainScene extends Phaser.Scene {
         left: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
         right: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
     };
+
+    this.hotkeys = {
+        z: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Z),
+        f: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.F),
+    };
+
 
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setZoom(1.5);
@@ -372,6 +396,32 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
+  private triggerConfetti() {
+    this.confettiEmitter.setX(this.player.x);
+    this.confettiEmitter.setY(this.player.y);
+    this.confettiEmitter.explode(30);
+    this.realtimeService.publishToChannel('pixel-space', 'confetti', { clientId: this.myClientId });
+  }
+
+  private triggerPlayerConfetti(clientId: string) {
+    const playerData = this.otherPlayers.get(clientId);
+    if (playerData) {
+      this.confettiEmitter.setX(playerData.avatar.x);
+      this.confettiEmitter.setY(playerData.avatar.y);
+      this.confettiEmitter.explode(30);
+    }
+  }
+
+  private handleHotkeys() {
+    if (Phaser.Input.Keyboard.JustDown(this.hotkeys.z)) {
+        this.showEmote('❤️');
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.hotkeys.f)) {
+        this.triggerConfetti();
+    }
+  }
+
+
   update() {
     const speed = 200;
     const body = this.player.body as Phaser.Physics.Arcade.Body;
@@ -398,6 +448,8 @@ export class MainScene extends Phaser.Scene {
         this.input.keyboard?.checkDown(this.wasd.left, 1) || this.input.keyboard?.checkDown(this.wasd.right, 1) || this.input.keyboard?.checkDown(this.wasd.up, 1) || this.input.keyboard?.checkDown(this.wasd.down, 1)) {
       this.followingClientId = null;
     }
+    
+    this.handleHotkeys();
 
     if (this.isAudioReady) {
         Tone.Listener.positionX.value = body.position.x;

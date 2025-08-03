@@ -35,6 +35,10 @@ export interface EmoteData {
     emote: string;
 }
 
+export interface ConfettiData {
+    clientId: string;
+}
+
 export interface ClearData {}
 
 export interface WebRTCSignalData {
