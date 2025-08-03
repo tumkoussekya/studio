@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { buttonVariants } from '@/components/ui/button';
 
 const profileFormSchema = z.object({
   first_name: z.string().min(1, { message: 'First name is required.' }),
@@ -79,11 +80,18 @@ export default function ProfilePage() {
 
   async function onSubmit(values: ProfileFormValues) {
     setIsLoading(true);
+
+    // Convert date to string if it exists, for JSON serialization
+    const valuesForApi = {
+        ...values,
+        birth_date: values.birth_date ? format(values.birth_date, 'yyyy-MM-dd') : undefined,
+    };
+
     try {
       const response = await fetch('/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify(valuesForApi),
       });
 
       const data = await response.json();
