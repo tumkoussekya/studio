@@ -30,6 +30,11 @@ export interface KnockData {
     targetClientId: string;
 }
 
+export interface EmoteData {
+    clientId: string;
+    emote: string;
+}
+
 export interface ClearData {}
 
 

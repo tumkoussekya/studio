@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { Hand, Sparkles } from "lucide-react";
+import { Hand, Sparkles, UserPlus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { suggestConversationStarter } from "@/ai/flows/suggest-conversation-starter";
 import { useToast } from "@/hooks/use-toast";
@@ -15,9 +15,10 @@ interface KnockButtonProps {
         email: string;
     };
     onKnock: (targetClientId: string) => void;
+    onFollow: (targetClientId: string) => void;
 }
 
-export default function KnockButton({ player, onKnock }: KnockButtonProps) {
+export default function KnockButton({ player, onKnock, onFollow }: KnockButtonProps) {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -58,19 +59,25 @@ export default function KnockButton({ player, onKnock }: KnockButtonProps) {
                     <Hand className="mr-2 h-4 w-4" />
                     Knock
                 </Button>
-                <Button onClick={handleGenerateIcebreaker} disabled={isLoading} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    {isLoading ? (
-                        <>
-                            <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                            Generating...
-                        </>
-                    ) : (
-                        <>
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            AI Icebreaker
-                        </>
-                    )}
+                <Button onClick={() => onFollow(player.clientId)} variant="outline">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Follow
                 </Button>
+                <div className="sm:col-span-2">
+                    <Button onClick={handleGenerateIcebreaker} disabled={isLoading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                        {isLoading ? (
+                            <>
+                                <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                                Generating...
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                AI Icebreaker
+                            </>
+                        )}
+                    </Button>
+                </div>
             </CardContent>
         </Card>
     );

@@ -24,6 +24,7 @@ import type { UserRole } from '@/models/User';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import UserVideo from '@/components/world/UserVideo';
+import EmoteMenu from '@/components/world/EmoteMenu';
 
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
@@ -199,6 +200,19 @@ export default function WorldPage() {
     }
   }, [currentUser, messages]);
 
+  const onFollowPlayer = (clientId: string) => {
+    if (sceneRef.current) {
+      sceneRef.current.followPlayer(clientId);
+      toast({ title: `Following ${nearbyPlayer?.email}`});
+    }
+  }
+
+  const onEmote = (emote: string) => {
+     if (sceneRef.current) {
+      sceneRef.current.showEmote(emote);
+    }
+  }
+
   const renderInteractionPanel = () => {
       if (isNearAlex) { return <AlexChat />; }
       if (nearbyPlayer) {
@@ -210,6 +224,7 @@ export default function WorldPage() {
                            toast({ title: `You knocked on ${nearbyPlayer.email}!`});
                         }
                     }}
+                    onFollow={() => onFollowPlayer(nearbyPlayer.clientId)}
                  />;
       }
       return (
@@ -244,6 +259,7 @@ export default function WorldPage() {
             onSceneReady={(scene) => sceneRef.current = scene} 
         />}
         {videoStream && <UserVideo stream={videoStream} />}
+        <EmoteMenu onEmote={onEmote} />
       </div>
       <Sidebar collapsible="offcanvas" side="right" className="w-full md:w-80 lg:w-96 border-l bg-card p-0 flex flex-col gap-0 order-1 md:order-2 shrink-0 h-1/2 md:h-full">
         <SidebarHeader>
