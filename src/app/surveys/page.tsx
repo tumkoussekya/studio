@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Plus, BarChart2, Share2, MessageSquare, CheckSquare, FilePlus2 } from 'lucide-react';
+import { Plus, BarChart2, Share2, MessageSquare, CheckSquare, FilePlus2, ArrowRight } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -19,46 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-
-const sampleSurveys = [
-  {
-    id: 1,
-    title: 'Q3 Employee Satisfaction Survey',
-    responses: 124,
-    status: 'Completed',
-    data: [
-      { name: 'Strongly Disagree', value: 10 },
-      { name: 'Disagree', value: 15 },
-      { name: 'Neutral', value: 25 },
-      { name: 'Agree', value: 50 },
-      { name: 'Strongly Agree', value: 24 },
-    ],
-  },
-  {
-    id: 2,
-    title: 'New Feature Feedback',
-    responses: 78,
-    status: 'In Progress',
-    data: [
-      { name: 'Very Difficult', value: 5 },
-      { name: 'Difficult', value: 12 },
-      { name: 'Neutral', value: 20 },
-      { name: 'Easy', value: 30 },
-      { name: 'Very Easy', value: 11 },
-    ],
-  },
-  {
-    id: 3,
-    title: 'Weekly Team Lunch Poll',
-    responses: 22,
-    status: 'Completed',
-    data: [
-      { name: 'Tacos', value: 10 },
-      { name: 'Pizza', value: 8 },
-      { name: 'Sushi', value: 4 },
-    ],
-  },
-];
+import { sampleSurveys } from '@/lib/survey-data';
+import Link from 'next/link';
 
 export default function SurveysPage() {
     const { toast } = useToast();
@@ -116,7 +78,7 @@ export default function SurveysPage() {
       <main className="flex-grow p-4 md:p-6 lg:p-8 overflow-y-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {sampleSurveys.map((survey) => (
-            <Card key={survey.id} className="flex flex-col">
+            <Card key={survey.id} className="flex flex-col hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
                     <CardTitle>{survey.title}</CardTitle>
@@ -127,10 +89,10 @@ export default function SurveysPage() {
                     <span>{survey.responses} Responses</span>
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow flex flex-col justify-between">
+              <CardContent className="flex-grow flex flex-col justify-center">
                 <div className="h-48 w-full -ml-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={survey.data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                    <BarChart data={survey.results} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                       <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} interval={0} />
                       <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                       <Tooltip
@@ -147,13 +109,10 @@ export default function SurveysPage() {
                 </div>
               </CardContent>
                <CardFooter className="flex justify-end gap-2 mt-4">
-                  <Button variant="outline" size="sm">
-                    <BarChart2 className="mr-2 h-4 w-4" />
-                    View Results
-                  </Button>
-                   <Button variant="secondary" size="sm">
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/surveys/${survey.id}`}>
+                      View Details <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                 </CardFooter>
             </Card>
