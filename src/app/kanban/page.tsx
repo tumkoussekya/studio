@@ -19,12 +19,19 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Interfaces to match Supabase schema
 interface Task {
@@ -47,6 +54,14 @@ interface KanbanData {
   columns: Record<string, Column>;
   columnOrder: string[];
 }
+
+const addTaskSchema = z.object({
+    content: z.string().min(3, { message: 'Task content must be at least 3 characters long.' }),
+    priority: z.enum(['Low', 'Medium', 'High']),
+});
+
+type AddTaskFormValues = z.infer<typeof addTaskSchema>;
+
 
 const priorityColors: Record<Task['priority'], string> = {
     Low: 'bg-blue-500 hover:bg-blue-600',
@@ -95,11 +110,19 @@ const KanbanSkeleton = () => (
 
 export default function KanbanPage() {
   const [data, setData] = useState<KanbanData | null>(null);
-  const [newTaskContent, setNewTaskContent] = useState('');
   const [selectedColumn, setSelectedColumn] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  const form = useForm<AddTaskFormValues>({
+    resolver: zodResolver(addTaskSchema),
+    defaultValues: {
+      content: '',
+      priority: 'Medium',
+    },
+  });
+
 
   const fetchKanbanData = useCallback(async () => {
     // Keep loader visible for a moment to prevent flashing
@@ -177,19 +200,19 @@ export default function KanbanPage() {
     }
   };
 
-  const handleAddTask = async () => {
-    if (!newTaskContent.trim() || !selectedColumn) return;
+  const handleAddTask = async (values: AddTaskFormValues) => {
+    if (!selectedColumn) return;
     
     try {
         const response = await fetch('/api/kanban/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: newTaskContent, columnId: selectedColumn }),
+            body: JSON.stringify({ content: values.content, columnId: selectedColumn, priority: values.priority }),
         });
         if (!response.ok) throw new Error('Failed to add task.');
         
-        toast({ title: 'Task Added', description: `"${newTaskContent}" has been added.`});
-        setNewTaskContent('');
+        toast({ title: 'Task Added', description: `"${values.content}" has been added.`});
+        form.reset();
         setSelectedColumn('');
         setIsModalOpen(false);
         fetchKanbanData(); // Refresh data
@@ -226,6 +249,12 @@ export default function KanbanPage() {
   if (isLoading || !data) {
     return <KanbanSkeleton />;
   }
+  
+  const openModalForColumn = (columnId: string) => {
+      setSelectedColumn(columnId);
+      setIsModalOpen(true);
+      form.reset();
+  }
 
   return (
     <TooltipProvider>
@@ -244,36 +273,68 @@ export default function KanbanPage() {
                   <Card key={column.id} className="bg-secondary/50">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <h2 className="text-lg font-semibold">{column.title} ({tasks.length})</h2>
-                       <Dialog open={isModalOpen && selectedColumn === column.id} onOpenChange={(isOpen) => {
-                          if (!isOpen) {
-                            setSelectedColumn('');
-                          }
-                          setIsModalOpen(isOpen);
-                        }}>
+                       <Dialog open={isModalOpen && selectedColumn === column.id} onOpenChange={setIsModalOpen}>
                         <DialogTrigger asChild>
-                           <Button variant="ghost" size="icon" onClick={() => { setSelectedColumn(column.id); setIsModalOpen(true);}}>
+                           <Button variant="ghost" size="icon" onClick={() => openModalForColumn(column.id)}>
                               <Plus className="h-4 w-4" />
                               <span className="sr-only">Add task</span>
                             </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>Add New Task to {column.title}</DialogTitle>
+                            <DialogTitle>Add New Task to "{column?.title}"</DialogTitle>
+                            <DialogDescription>
+                                Fill in the details for your new task below.
+                            </DialogDescription>
                           </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <Textarea
-                              placeholder="Enter task description..."
-                              value={newTaskContent}
-                              onChange={(e) => setNewTaskContent(e.target.value)}
-                              rows={4}
-                            />
-                             <div className="flex justify-end gap-2">
-                                <DialogClose asChild>
-                                  <Button variant="outline">Cancel</Button>
-                                </DialogClose>
-                                <Button onClick={handleAddTask}>Add Task</Button>
-                              </div>
-                          </div>
+                            <Form {...form}>
+                              <form onSubmit={form.handleSubmit(handleAddTask)} className="space-y-4">
+                                <FormField
+                                  control={form.control}
+                                  name="content"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Task Content</FormLabel>
+                                      <FormControl>
+                                        <Textarea placeholder="e.g., Design the new dashboard layout" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name="priority"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Priority</FormLabel>
+                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select a priority" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="Low">Low</SelectItem>
+                                          <SelectItem value="Medium">Medium</SelectItem>
+                                          <SelectItem value="High">High</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                 <DialogFooter>
+                                    <DialogClose asChild>
+                                      <Button type="button" variant="outline">Cancel</Button>
+                                    </DialogClose>
+                                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                                        {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Add Task
+                                    </Button>
+                                  </DialogFooter>
+                              </form>
+                            </Form>
                         </DialogContent>
                       </Dialog>
                     </CardHeader>

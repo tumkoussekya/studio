@@ -53,6 +53,10 @@ export async function POST(req: NextRequest) {
 
     const { content, columnId, priority } = await req.json();
 
+    if (!content || !columnId) {
+        return new NextResponse('Content and Column ID are required', { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from('tasks')
       .insert({ 
