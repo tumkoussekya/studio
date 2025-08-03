@@ -42,7 +42,6 @@ import {
 import { summarizeChat, type ChatMessage } from '@/ai/flows/summarize-chat';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import Image from 'next/image';
 import Announcements from '@/components/chat/Announcements';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -202,7 +201,7 @@ export default function ChatPage() {
         <>
             <Sidebar collapsible="offcanvas" className="w-full md:w-80 md:border-r flex-col flex shrink-0">
                  <SidebarHeader>
-                     <div className="flex justify-between items-center mb-4 p-4 md:p-0">
+                     <div className="flex justify-between items-center mb-4 p-4 md:p-2">
                         <h1 className="text-2xl font-bold">Chats</h1>
                         <div className='flex gap-2'>
                           <Button variant="ghost" size="icon">
@@ -212,12 +211,12 @@ export default function ChatPage() {
                         </div>
                     </div>
                 </SidebarHeader>
-                <SidebarContent>
-                    <SidebarGroup>
+                <SidebarContent className="p-0">
+                    <SidebarGroup className="p-2">
                         <SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
                         <SidebarMenu>
                             {isLoadingUsers ? (
-                                Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)
+                                Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-md" />)
                             ) : (
                                 users.map(user => (
                                     <SidebarMenuItem key={user.id}>
@@ -226,7 +225,7 @@ export default function ChatPage() {
                                                 <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="avatar" alt={user.email} />
                                                 <AvatarFallback>{user.email.charAt(0).toUpperCase()}</AvatarFallback>
                                             </Avatar>
-                                            <div className="flex flex-col items-start">
+                                            <div className="flex flex-col items-start text-left">
                                                 <span>{user.email}</span>
                                                 <span className="text-xs text-muted-foreground">{user.role}</span>
                                             </div>
@@ -236,7 +235,7 @@ export default function ChatPage() {
                             )}
                         </SidebarMenu>
                     </SidebarGroup>
-                    <SidebarGroup>
+                    <SidebarGroup className="p-2">
                         <SidebarGroupLabel>Channels</SidebarGroupLabel>
                         <SidebarMenu>
                             {sampleChannels.map(channel => (
@@ -245,7 +244,7 @@ export default function ChatPage() {
                                         <div className="p-2 bg-muted rounded-md mr-2">
                                             <MessageSquare className="size-4"/>
                                         </div>
-                                    <div className="flex flex-col items-start">
+                                    <div className="flex flex-col items-start text-left">
                                             <span>{channel.name}</span>
                                             <span className="text-xs text-muted-foreground">{channel.status}</span>
                                         </div>
@@ -257,9 +256,8 @@ export default function ChatPage() {
                 </SidebarContent>
             </Sidebar>
 
-            <SidebarInset className="flex-grow flex flex-col">
-            <div className="flex-grow flex flex-col">
-                <header className="p-4 border-b flex items-center justify-between">
+            <SidebarInset className="flex-grow flex flex-col h-screen">
+                <header className="p-4 border-b flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
                         <SidebarTrigger className='md:hidden' />
                         <Avatar className="size-9">
@@ -309,7 +307,7 @@ export default function ChatPage() {
                         </div>
                     ))}
                 </main>
-                <footer className="p-4 border-t">
+                <footer className="p-4 border-t shrink-0">
                     <div className="relative">
                         <Input 
                             placeholder={`Message ${getActiveConversationName()}`} 
@@ -357,7 +355,6 @@ export default function ChatPage() {
                         </div>
                     </div>
                 </footer>
-            </div>
             </SidebarInset>
         </>
         )}
