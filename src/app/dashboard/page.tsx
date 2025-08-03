@@ -233,7 +233,7 @@ async function Dashboard() {
                                     <CardDescription>
                                         Manage users, teams, and system settings.
                                     </CardDescription>
-                                </Header>
+                                </CardHeader>
                                 <CardContent>
                                     <Link href="/admin">
                                         <Button className="w-full">
@@ -257,3 +257,5 @@ export default function DashboardPage() {
         </Suspense>
     );
 }
+
+    
