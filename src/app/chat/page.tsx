@@ -30,6 +30,7 @@ import {
   Rss,
   Hand,
   Plus,
+  Send,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -541,7 +542,7 @@ export default function ChatPage() {
                     <div className="relative">
                         <Input 
                             placeholder={`Message ${getActiveConversationName()}`} 
-                            className="w-full pr-24"
+                            className="w-full pr-32"
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             onKeyDown={(e) => {
@@ -580,6 +581,10 @@ export default function ChatPage() {
                             <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
                                 <Paperclip className="size-5" />
                                 <span className="sr-only">Attach file</span>
+                            </Button>
+                             <Button variant="ghost" size="icon" onClick={() => handleSendMessage(message)}>
+                                <Send className="size-5" />
+                                <span className="sr-only">Send message</span>
                             </Button>
                         </div>
                     </div>
