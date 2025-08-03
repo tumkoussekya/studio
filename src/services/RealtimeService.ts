@@ -32,7 +32,7 @@ export interface KnockData {
 
 type MessageHandler = (message: Ably.Types.Message, channelId: string) => void;
 type HistoryHandler = (messages: Ably.Types.Message[], channelId: string) => void;
-type PresenceHandler = (presenceMessage: Ably.Types.PresenceMessage) => void;
+type PresenceHandler = (presenceMessage?: Ably.Types.PresenceMessage) => void;
 type PlayerUpdateHandler = (message: Ably.Types.Message) => void;
 type KnockHandler = (data: KnockData) => void;
 
@@ -42,12 +42,12 @@ class RealtimeService {
     private ably: Ably.Realtime;
     private channels: Map<string, Ably.Types.RealtimeChannel> = new Map();
     private connectionPromise: Promise<void>;
+    private currentUserId: string | null = null;
 
     private messageHandler: MessageHandler | null = null;
     private historyHandler: HistoryHandler | null = null;
     private playerUpdateHandler: PlayerUpdateHandler | null = null;
     private knockHandler: KnockHandler | null = null;
-    private presenceHandlers: Map<string, { enter: PresenceHandler[], leave: PresenceHandler[], update: PresenceHandler[] }> = new Map();
 
 
     constructor() {
@@ -59,6 +59,7 @@ class RealtimeService {
         this.connectionPromise = new Promise((resolve) => {
             this.ably.connection.on('connected', () => {
                 console.log('Ably connected!');
+                this.currentUserId = this.ably.auth.clientId;
                 resolve();
             });
         });
@@ -68,8 +69,13 @@ class RealtimeService {
         });
     }
 
-    private getChannel(channelId: string): Ably.Types.RealtimeChannel {
-        if (!this.channels.has(channelId)) {
+    private getChannel(channelId: string, conversationType: 'channel' | 'dm' = 'channel'): Ably.Types.RealtimeChannel {
+        let finalChannelId = channelId;
+        if (conversationType === 'dm' && this.currentUserId) {
+            finalChannelId = this.getDmChannelId(this.currentUserId, channelId);
+        }
+        
+        if (!this.channels.has(finalChannelId)) {
             const channelOptions: Ably.Types.ChannelOptions = {
                 params: { rewind: '50' },
                 cipher: {
@@ -79,10 +85,11 @@ class RealtimeService {
                     key: E2E_KEY
                 }
             };
-            const channel = this.ably.channels.get(channelId, channelOptions);
-            this.channels.set(channelId, channel);
+            const channel = this.ably.channels.get(finalChannelId, channelOptions);
+            this.channels.set(finalChannelId, channel);
+            this.subscribeToChannelEvents(channel, finalChannelId);
         }
-        return this.channels.get(channelId)!;
+        return this.channels.get(finalChannelId)!;
     }
     
     public getDmChannelId(userId1: string, userId2: string): string {
@@ -92,28 +99,18 @@ class RealtimeService {
 
     public async subscribeToChannels(channelIds: string[], currentUserId: string) {
         await this.connectionPromise;
-        const allChannelIds = new Set<string>(channelIds.map(id => {
-            if (this.isUserChannel(id)) {
-                return this.getDmChannelId(currentUserId, id);
-            }
-            return id;
-        }));
+        this.currentUserId = currentUserId;
 
-        allChannelIds.add('pixel-space'); // Always subscribe to the main world channel
+        const allChannelIds = new Set<string>(channelIds);
+        allChannelIds.add('pixel-space');
 
         for (const id of allChannelIds) {
-            this.subscribeToChannel(id);
+            this.getChannel(id);
         }
     }
     
-    private isUserChannel(id: string): boolean {
-        // A simple check; in a real app, you might have a prefix or a different format.
-        return !['general', 'design-team', 'project-phoenix', 'pixel-space'].includes(id);
-    }
-    
-    private async subscribeToChannel(channelId: string) {
+    private async subscribeToChannelEvents(channel: Ably.Types.RealtimeChannel, channelId: string) {
         await this.connectionPromise;
-        const channel = this.getChannel(channelId);
         
         channel.subscribe('message', (message) => this.messageHandler?.(message, channelId));
         channel.subscribe('player-update', (message) => this.playerUpdateHandler?.(message));
@@ -121,12 +118,6 @@ class RealtimeService {
             const data = message.data as KnockData;
             if (this.knockHandler && data.targetClientId === this.getClientId()) {
                 this.knockHandler(data);
-            }
-        });
-
-        channel.history((err, result) => {
-            if (!err && result.items) {
-                this.historyHandler?.(result.items, channelId);
             }
         });
     }
@@ -143,7 +134,6 @@ class RealtimeService {
     public onPresenceUpdate(channelId: string, handler: PresenceHandler): void {
         const channel = this.getChannel(channelId);
         channel.presence.subscribe(['enter', 'leave', 'update'], handler);
-        // Also call it immediately with current members
         channel.presence.get((err, members) => {
             if (!err && members) handler();
         });
@@ -160,17 +150,19 @@ class RealtimeService {
         pixelSpaceChannel.presence.enter(userData);
     }
 
-    public fetchHistory(channelId: string) {
-        const channel = this.getChannel(channelId);
+    public fetchHistory(channelId: string, type: 'channel' | 'dm') {
+        const channel = this.getChannel(channelId, type);
          channel.history((err, result) => {
             if (!err && result.items) {
-                this.historyHandler?.(result.items, channelId);
+                this.historyHandler?.(result.items, channel.name);
+            } else if (err) {
+                console.error(`Error fetching history for ${channel.name}:`, err);
             }
         });
     }
     
-    public sendMessage(channelId: string, text: string, data?: { author: string }): void {
-        const channel = this.getChannel(channelId);
+    public sendMessage(channelId: string, text: string, data?: { author: string }, type: 'channel' | 'dm' = 'channel'): void {
+        const channel = this.getChannel(channelId, type);
         channel.publish('message', { text, ...data });
     }
 
@@ -192,9 +184,12 @@ class RealtimeService {
         };
         channel.publish('player-update', event);
     }
-
+    
     public disconnect(): void {
-        this.ably.close();
+        if (this.ably && this.ably.connection.state === 'connected') {
+            this.ably.close();
+        }
+        this.channels.clear();
     }
 }
 
