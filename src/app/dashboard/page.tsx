@@ -1,13 +1,15 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield, MessageSquare, Video, LayoutDashboard } from 'lucide-react';
+import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield, MessageSquare, Video, LayoutDashboard, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import LogoutButton from '@/components/world/LogoutButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import TourGuide from '@/components/TourGuide';
+import { Suspense } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 async function getUserData() {
     const supabase = createClient();
@@ -28,7 +30,45 @@ async function getUserData() {
     return userData;
 }
 
-export default async function DashboardPage() {
+function DashboardSkeleton() {
+    return (
+        <div className="flex flex-col min-h-screen bg-background">
+            <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                 <Skeleton className="h-8 w-40" />
+                 <div className="flex items-center gap-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <Skeleton className="h-9 w-24 rounded-md" />
+                 </div>
+            </header>
+            <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="mb-8">
+                    <Skeleton className="h-9 w-1/2 mb-2" />
+                    <Skeleton className="h-5 w-1/3" />
+                </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <Card key={i}>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-3">
+                                    <Skeleton className="h-7 w-7 rounded-full" />
+                                    <Skeleton className="h-6 w-32" />
+                                </CardTitle>
+                                <Skeleton className="h-4 w-full mt-1" />
+                                <Skeleton className="h-4 w-3/4" />
+                            </CardHeader>
+                            <CardContent>
+                                <Skeleton className="h-10 w-full" />
+                            </CardContent>
+                        </Card>
+                    ))}
+                 </div>
+            </main>
+        </div>
+    );
+}
+
+
+async function Dashboard() {
     const user = await getUserData();
 
     if (!user) {
@@ -40,7 +80,6 @@ export default async function DashboardPage() {
     }
 
     const isAdmin = user.role === 'Admin';
-
     return (
         <div className="flex flex-col min-h-screen bg-background">
              <TourGuide isAdmin={isAdmin} />
@@ -194,7 +233,7 @@ export default async function DashboardPage() {
                                     <CardDescription>
                                         Manage users, teams, and system settings.
                                     </CardDescription>
-                                </CardHeader>
+                                </Header>
                                 <CardContent>
                                     <Link href="/admin">
                                         <Button className="w-full">
@@ -211,4 +250,10 @@ export default async function DashboardPage() {
     )
 }
 
-    
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<DashboardSkeleton />}>
+            <Dashboard />
+        </Suspense>
+    );
+}

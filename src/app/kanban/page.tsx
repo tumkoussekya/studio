@@ -54,6 +54,45 @@ const priorityColors: Record<Task['priority'], string> = {
     High: 'bg-red-500 hover:bg-red-600',
 };
 
+const KanbanSkeleton = () => (
+    <div className="bg-background min-h-screen">
+        <header className="p-4 border-b">
+            <Skeleton className="h-8 w-1/3" />
+        </header>
+        <main className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                    <Card key={i} className="bg-secondary/50">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <Skeleton className="h-6 w-1/2" />
+                            <Skeleton className="h-8 w-8" />
+                        </CardHeader>
+                        <CardContent className="p-2 space-y-2">
+                            {Array.from({ length: 2 }).map((_, j) => (
+                                <div key={j} className="p-3 rounded-md bg-card border flex flex-col gap-3">
+                                    <div className="flex items-start justify-between">
+                                        <Skeleton className="h-5 w-3/4" />
+                                        <Skeleton className="h-5 w-5" />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Skeleton className="h-5 w-16 rounded-full" />
+                                            <Skeleton className="h-5 w-20" />
+                                        </div>
+                                        <Skeleton className="h-6 w-6 rounded-full" />
+                                    </div>
+                                </div>
+                            ))}
+                             <Skeleton className="h-24 w-full" />
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </main>
+    </div>
+);
+
+
 export default function KanbanPage() {
   const [data, setData] = useState<KanbanData | null>(null);
   const [newTaskContent, setNewTaskContent] = useState('');
@@ -63,7 +102,8 @@ export default function KanbanPage() {
   const { toast } = useToast();
 
   const fetchKanbanData = useCallback(async () => {
-    setIsLoading(true);
+    // Keep loader visible for a moment to prevent flashing
+    if (!isLoading) setIsLoading(true);
     try {
         const response = await fetch('/api/kanban/tasks');
         if (!response.ok) {
@@ -184,14 +224,7 @@ export default function KanbanPage() {
 
 
   if (isLoading || !data) {
-    return (
-        <div className="flex items-center justify-center h-screen bg-background">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary"/>
-                <p className="text-muted-foreground">Loading Kanban board...</p>
-            </div>
-        </div>
-    );
+    return <KanbanSkeleton />;
   }
 
   return (

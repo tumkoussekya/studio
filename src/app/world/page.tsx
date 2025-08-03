@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import AlexChat from '@/components/world/AlexChat';
 import KnockButton from '@/components/world/KnockButton';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenuItem, SidebarMenu, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
-import { MessageSquare, Rss } from 'lucide-react';
+import { MessageSquare, Rss, Loader2 } from 'lucide-react';
 import Announcements from '@/components/chat/Announcements';
 import type { UserRole } from '@/models/User';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,17 @@ import { createClient } from '@/lib/supabase/client';
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
 });
+
+const WorldLoadingSkeleton = () => {
+    return (
+        <div className="w-screen h-screen overflow-hidden bg-background flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+                <p className="text-muted-foreground">Entering SyncroSpace...</p>
+            </div>
+        </div>
+    )
+}
 
 export default function WorldPage() {
   const [isNearAlex, setIsNearAlex] = useState(false);
@@ -85,6 +96,7 @@ export default function WorldPage() {
 
     return () => {
         window.removeEventListener('show-announcements', handleShowAnnouncements);
+        realtimeService.disconnect();
     }
 
   }, [router, toast]);
@@ -166,7 +178,6 @@ export default function WorldPage() {
     return () => {
       // It's good practice to disconnect and clean up listeners
       isSubscribed = false;
-      realtimeService.disconnect();
     };
   }, [currentUser, toast]);
 
@@ -212,6 +223,10 @@ export default function WorldPage() {
             <p>Move your avatar closer to Alex or another player to interact with them.</p>
         </div>
       );
+  }
+  
+  if (!currentUser) {
+    return <WorldLoadingSkeleton />;
   }
 
   return (
