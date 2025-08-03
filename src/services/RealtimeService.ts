@@ -37,6 +37,13 @@ export interface EmoteData {
 
 export interface ClearData {}
 
+export interface WebRTCSignalData {
+    from: string;
+    to: string;
+    type: 'offer' | 'answer' | 'candidate';
+    payload: any;
+}
+
 
 type MessageHandler = (message: Ably.Types.Message, channelId: string) => void;
 type HistoryHandler = (messages: Ably.Types.Message[], channelId: string) => void;
@@ -83,15 +90,18 @@ class RealtimeService {
         }
         
         if (!this.channels.has(finalChannelId)) {
+            const isEncrypted = !['pixel-space', 'whiteboard'].includes(finalChannelId);
             const channelOptions: Ably.Types.ChannelOptions = {
                 params: { rewind: '50' },
-                cipher: {
+            };
+            if(isEncrypted) {
+                channelOptions.cipher = {
                     algorithm: 'aes',
                     keyLength: 256,
                     mode: 'cbc',
                     key: E2E_KEY
                 }
-            };
+            }
             const channel = this.ably.channels.get(finalChannelId, channelOptions);
             this.channels.set(finalChannelId, channel);
             this.subscribeToAllEvents(channel, finalChannelId);
@@ -171,6 +181,16 @@ class RealtimeService {
         };
         this.subscribeToChannelEvent('pixel-space', 'knock', knockWrapper);
     }
+    public onWebRTCSignal(handler: (data: WebRTCSignalData) => void) {
+        const signalWrapper = (message: Ably.Types.Message) => {
+            const data = message.data as WebRTCSignalData;
+            if(data.to === this.getClientId()) {
+                handler(data);
+            }
+        };
+        this.subscribeToChannelEvent('pixel-space', 'webrtc-signal', signalWrapper);
+    }
+
 
     public onPresenceUpdate(channelId: string, handler: PresenceHandler): void {
         const channel = this.getChannel(channelId);
@@ -226,6 +246,10 @@ class RealtimeService {
         };
         this.publishToChannel('pixel-space', 'player-update', event);
     }
+
+    public sendWebRTCSignal(data: WebRTCSignalData): void {
+        this.publishToChannel('pixel-space', 'webrtc-signal', data);
+    }
     
     public disconnect(): void {
         if (this.ably && this.ably.connection.state === 'connected') {
@@ -238,3 +262,5 @@ class RealtimeService {
 
 export const realtimeService = new RealtimeService();
 export { RealtimeService };
+
+    

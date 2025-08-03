@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import UserVideo from '@/components/world/UserVideo';
 import EmoteMenu from '@/components/world/EmoteMenu';
-
+import { webRTCService } from '@/services/WebRTCService';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -40,6 +40,12 @@ const WorldLoadingSkeleton = () => {
             </div>
         </div>
     )
+}
+
+interface RemoteStream {
+    clientId: string;
+    stream: MediaStream;
+    email: string;
 }
 
 export default function WorldPage() {
@@ -57,7 +63,8 @@ export default function WorldPage() {
   const router = useRouter();
   const [activeRightPanel, setActiveRightPanel] = useState('chat');
   const [hasMediaPermission, setHasMediaPermission] = useState(false);
-  const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStreams, setRemoteStreams] = useState<RemoteStream[]>([]);
   const [currentZone, setCurrentZone] = useState('pixel-space');
 
 
@@ -65,8 +72,9 @@ export default function WorldPage() {
     const getMediaPermissions = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            setVideoStream(stream);
+            setLocalStream(stream);
             setHasMediaPermission(true);
+            webRTCService.setLocalStream(stream);
         } catch (error) {
             console.error('Error accessing media devices.', error);
             setHasMediaPermission(false);
@@ -78,6 +86,24 @@ export default function WorldPage() {
         }
     };
     getMediaPermissions();
+
+     // Set up WebRTC event handlers
+    webRTCService.onRemoteStream((clientId, stream, clientEmail) => {
+        console.log(`Received remote stream from ${clientId}`);
+        setRemoteStreams(prev => {
+            if (prev.some(s => s.clientId === clientId)) return prev;
+            return [...prev, { clientId, stream, email: clientEmail }];
+        });
+    });
+
+    webRTCService.onConnectionClose(clientId => {
+        console.log(`Closing connection with ${clientId}`);
+        setRemoteStreams(prev => prev.filter(s => s.clientId !== clientId));
+    });
+
+    return () => {
+        webRTCService.closeAllConnections();
+    };
   }, [toast]);
 
 
@@ -109,9 +135,10 @@ export default function WorldPage() {
     return () => {
         window.removeEventListener('show-announcements', handleShowAnnouncements);
         realtimeService.disconnect();
-        if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); }
+        if (localStream) { localStream.getTracks().forEach(track => track.stop()); }
+        webRTCService.closeAllConnections();
     }
-  }, [router, toast, videoStream]);
+  }, [router, toast, localStream]);
 
 
   useEffect(() => {
@@ -144,6 +171,7 @@ export default function WorldPage() {
                     const leftEmail = (presenceMessage.data as PresenceData).email;
                     toast({ title: 'User Left', description: `${leftEmail} has left the space.` });
                     sceneRef.current?.removePlayer(presenceMessage.clientId);
+                    webRTCService.closeConnection(presenceMessage.clientId);
                 }
            }
        });
@@ -185,8 +213,22 @@ export default function WorldPage() {
 
   const handlePlayerNearNpc = useCallback(() => { setIsNearAlex(true); }, []);
   const handlePlayerFarNpc = useCallback(() => { setIsNearAlex(false); }, []);
-  const handlePlayerNear = useCallback((clientId: string, email: string) => { setNearbyPlayer({ clientId, email }); }, []);
-  const handlePlayerFar = useCallback(() => { setNearbyPlayer(null); }, []);
+
+  const handlePlayerNear = useCallback((clientId: string, email: string) => {
+      setNearbyPlayer({ clientId, email });
+      if (hasMediaPermission) {
+          console.log(`Initiating call with ${clientId}`);
+          webRTCService.call(clientId, email);
+      }
+  }, [hasMediaPermission]);
+
+  const handlePlayerFar = useCallback(() => {
+    if (nearbyPlayer) {
+        webRTCService.closeConnection(nearbyPlayer.clientId);
+    }
+    setNearbyPlayer(null);
+  }, [nearbyPlayer]);
+  
   const handleSendMessage = useCallback((text: string) => {
     if (!currentUser) return;
     realtimeService.sendMessage(currentZone, text, { author: currentUser.email }, 'channel');
@@ -258,7 +300,17 @@ export default function WorldPage() {
             onZoneChange={handleZoneChange}
             onSceneReady={(scene) => sceneRef.current = scene} 
         />}
-        {videoStream && <UserVideo stream={videoStream} />}
+
+        {/* Local Video Preview */}
+        {localStream && <UserVideo stream={localStream} muted={true} isLocal={true} />}
+
+        {/* Remote Video Streams */}
+        <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+            {remoteStreams.map(({ clientId, stream, email }) => (
+                <UserVideo key={clientId} stream={stream} muted={false} email={email} />
+            ))}
+        </div>
+
         <EmoteMenu onEmote={onEmote} />
       </div>
       <Sidebar collapsible="offcanvas" side="right" className="w-full md:w-80 lg:w-96 border-l bg-card p-0 flex flex-col gap-0 order-1 md:order-2 shrink-0 h-1/2 md:h-full">
@@ -306,7 +358,7 @@ export default function WorldPage() {
                     </div>
                     <Separator />
                     <div className="p-4">
-                        <MediaControls stream={videoStream} hasPermission={hasMediaPermission} />
+                        <MediaControls stream={localStream} hasPermission={hasMediaPermission} />
                     </div>
                     <Separator />
                     <UserList users={userEmails} />
@@ -325,3 +377,5 @@ export default function WorldPage() {
     </SidebarProvider>
   );
 }
+
+    
