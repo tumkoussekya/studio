@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { SendHorizonal, Sparkles } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
@@ -77,23 +77,26 @@ export default function AlexChat() {
          <Sparkles className="text-accent h-5 w-5" />
          <h3 className="text-base font-semibold">Chat with Alex</h3>
       </div>
-      <ScrollArea className="flex-grow bg-secondary/30" viewportRef={scrollViewportRef}>
-        <div className="space-y-3 p-3 text-sm">
-          {messages.map((msg, index) => (
-            <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-               <div className={`rounded-lg px-3 py-2 max-w-[80%] break-words ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                  {msg.content}
-               </div>
+      <ScrollArea className="flex-grow bg-secondary/30">
+        <div ref={scrollViewportRef} className="h-full w-full">
+            <div className="space-y-3 p-3 text-sm">
+            {messages.map((msg, index) => (
+                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`rounded-lg px-3 py-2 max-w-[80%] break-words ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                    {msg.content}
+                </div>
+                </div>
+            ))}
+            {isLoading && (
+                <div className="flex justify-start">
+                    <div className="rounded-lg px-3 py-2 bg-muted animate-pulse">
+                        ...
+                    </div>
+                </div>
+            )}
             </div>
-          ))}
-          {isLoading && (
-            <div className="flex justify-start">
-                 <div className="rounded-lg px-3 py-2 bg-muted animate-pulse">
-                    ...
-                 </div>
-            </div>
-          )}
         </div>
+        <ScrollBar />
       </ScrollArea>
        <div className="p-2 border-t">
           <Button variant="outline" size="sm" className="w-full" onClick={handleSuggestionClick} disabled={isLoading}>
