@@ -12,6 +12,11 @@ interface PlayerData {
   email: string;
 }
 
+interface PrivateZone {
+  zone: Phaser.GameObjects.Zone;
+  id: string;
+}
+
 export class MainScene extends Phaser.Scene {
   private player!: Phaser.Types.Physics.Arcade.GameObjectWithBody & Phaser.GameObjects.Shape;
   private npc!: Phaser.Types.Physics.Arcade.GameObjectWithBody & Phaser.GameObjects.Shape;
@@ -28,6 +33,9 @@ export class MainScene extends Phaser.Scene {
   private isAudioReady = false;
   private nearbyPlayer: { clientId: string, email: string } | null = null;
   private restrictionMessage!: Phaser.GameObjects.Text;
+
+  private privateZones: PrivateZone[] = [];
+  private currentZoneId: string = 'pixel-space';
 
 
   constructor() {
@@ -81,6 +89,28 @@ export class MainScene extends Phaser.Scene {
   private playerStartX = 200;
   private playerStartY = 200;
 
+  private createPrivateZone(x: number, y: number, width: number, height: number, id: string): void {
+      const zone = this.add.zone(x + width / 2, y + height / 2, width, height);
+      this.physics.world.enable(zone);
+      (zone.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
+      (zone.body as Phaser.Physics.Arcade.Body).setImmovable(true);
+      this.privateZones.push({ zone, id });
+      
+      this.physics.add.overlap(this.player, zone, () => {
+        if (this.currentZoneId !== id) {
+          this.handleZoneChange(id);
+        }
+      });
+  }
+
+  private handleZoneChange(newZoneId: string) {
+    this.currentZoneId = newZoneId;
+    const onZoneChangeCallback = this.game.registry.get('onZoneChange');
+    if (onZoneChangeCallback) {
+        onZoneChangeCallback(newZoneId);
+    }
+  }
+
   create() {
     const wallColor = 0x6678B8; // Primary color
     const playerColor = 0xF7B733; // Accent color
@@ -109,6 +139,7 @@ export class MainScene extends Phaser.Scene {
     // --- Private Zone ---
     this.add.rectangle(225, 525, 350, 250).setStrokeStyle(2, 0xfb923c, 0.5); // Orange border
     this.add.text(65, 410, 'Admin Lounge', { font: '24px "Press Start 2P"', color: textColor });
+    this.createPrivateZone(50, 400, 350, 250, 'private-admin-lounge');
 
 
     // --- Interactive Objects ---
@@ -394,6 +425,21 @@ export class MainScene extends Phaser.Scene {
     if (this.isAudioReady) {
         Tone.Listener.positionX.value = body.position.x;
         Tone.Listener.positionY.value = body.position.y;
+    }
+
+    let inAnyPrivateZone = false;
+    for (const { zone, id } of this.privateZones) {
+        if (this.physics.overlap(this.player, zone)) {
+            inAnyPrivateZone = true;
+            if (this.currentZoneId !== id) {
+                this.handleZoneChange(id);
+            }
+            break; 
+        }
+    }
+
+    if (!inAnyPrivateZone && this.currentZoneId !== 'pixel-space') {
+        this.handleZoneChange('pixel-space');
     }
 
     this.otherPlayers.forEach(playerData => {

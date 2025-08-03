@@ -20,11 +20,12 @@ interface PhaserContainerProps {
   onPlayerFarNpc: () => void;
   onPlayerNear: (clientId: string, email: string) => void;
   onPlayerFar: () => void;
+  onZoneChange: (zoneId: string) => void;
   onSceneReady: (scene: MainScene) => void;
   user: UserData;
 }
 
-export default function PhaserContainer({ user, onPlayerNearNpc, onPlayerFarNpc, onPlayerNear, onPlayerFar, onSceneReady }: PhaserContainerProps) {
+export default function PhaserContainer({ user, onPlayerNearNpc, onPlayerFarNpc, onPlayerNear, onPlayerFar, onZoneChange, onSceneReady }: PhaserContainerProps) {
   const gameRef = useRef<Phaser.Game | null>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
 
@@ -56,6 +57,7 @@ export default function PhaserContainer({ user, onPlayerNearNpc, onPlayerFarNpc,
           game.registry.set('onPlayerFarNpc', onPlayerFarNpc);
           game.registry.set('onPlayerNear', onPlayerNear);
           game.registry.set('onPlayerFar', onPlayerFar);
+          game.registry.set('onZoneChange', onZoneChange);
           
           const mainScene = game.scene.getScene('MainScene') as MainScene;
           if (mainScene) {
@@ -80,7 +82,7 @@ export default function PhaserContainer({ user, onPlayerNearNpc, onPlayerFarNpc,
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [user, onPlayerNearNpc, onPlayerFarNpc, onPlayerNear, onPlayerFar, onSceneReady]);
+  }, [user, onPlayerNearNpc, onPlayerFarNpc, onPlayerNear, onPlayerFar, onZoneChange, onSceneReady]);
 
   return <div ref={gameContainerRef} className="w-full h-full" />;
 }

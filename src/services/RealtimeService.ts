@@ -88,6 +88,7 @@ class RealtimeService {
             const channel = this.ably.channels.get(finalChannelId, channelOptions);
             this.channels.set(finalChannelId, channel);
             this.subscribeToChannelEvents(channel, finalChannelId);
+            this.fetchHistory(finalChannelId, conversationType);
         }
         return this.channels.get(finalChannelId)!;
     }
@@ -101,11 +102,7 @@ class RealtimeService {
         await this.connectionPromise;
         this.currentUserId = currentUserId;
 
-        const allChannelIds = new Set<string>(channelIds);
-        // The world page also uses this, so we ensure pixel-space is always included for now.
-        allChannelIds.add('pixel-space');
-
-        for (const id of allChannelIds) {
+        for (const id of channelIds) {
             this.getChannel(id);
         }
     }
@@ -151,7 +148,7 @@ class RealtimeService {
         pixelSpaceChannel.presence.enter(userData);
     }
 
-    public fetchHistory(channelId: string, type: 'channel' | 'dm') {
+    public fetchHistory(channelId: string, type: 'channel' | 'dm' = 'channel') {
         const channel = this.getChannel(channelId, type);
          channel.history((err, result) => {
             if (!err && result.items) {

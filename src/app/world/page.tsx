@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import AlexChat from '@/components/world/AlexChat';
 import KnockButton from '@/components/world/KnockButton';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenuItem, SidebarMenu, SidebarMenuButton, SidebarProvider, SidebarTrigger, SidebarFooter, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
-import { MessageSquare, Rss, Loader2 } from 'lucide-react';
+import { MessageSquare, Rss, Loader2, Lock, Globe } from 'lucide-react';
 import Announcements from '@/components/chat/Announcements';
 import type { UserRole } from '@/models/User';
 import { Button } from '@/components/ui/button';
@@ -44,9 +44,11 @@ const WorldLoadingSkeleton = () => {
 export default function WorldPage() {
   const [isNearAlex, setIsNearAlex] = useState(false);
   const [nearbyPlayer, setNearbyPlayer] = useState<{ clientId: string; email: string } | null>(null);
-  const [messages, setMessages] = useState<Message[]>([
-    { author: 'System', text: 'Welcome to SyncroSpace! Use WASD or arrow keys to move. Click on other players to "knock"!' },
-  ]);
+  
+  const [messages, setMessages] = useState<Record<string, Message[]>>({
+      'pixel-space': [{ author: 'System', text: 'Welcome to SyncroSpace! Use WASD or arrow keys to move.' }]
+  });
+
   const [onlineUsers, setOnlineUsers] = useState<Ably.Types.PresenceMessage[]>([]);
   const [currentUser, setCurrentUser] = useState<{ email: string, id: string, role: UserRole, last_x: number, last_y: number } | null>(null);
   const { toast } = useToast();
@@ -55,6 +57,7 @@ export default function WorldPage() {
   const [activeRightPanel, setActiveRightPanel] = useState('chat');
   const [hasMediaPermission, setHasMediaPermission] = useState(false);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+  const [currentZone, setCurrentZone] = useState('pixel-space');
 
 
   useEffect(() => {
@@ -78,22 +81,12 @@ export default function WorldPage() {
 
 
   useEffect(() => {
-    // This is the recommended client-side Supabase client.
     const supabase = createClient();
-
     const fetchUserAndConnect = async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-            router.push('/login');
-            return;
-        }
+        if (!session) { router.push('/login'); return; }
 
-        const { data: userData, error } = await supabase
-            .from('users')
-            .select('id, email, role, last_x, last_y')
-            .eq('id', session.user.id)
-            .single();
-
+        const { data: userData, error } = await supabase.from('users').select('id, email, role, last_x, last_y').eq('id', session.user.id).single();
         if (error || !userData) {
             console.error("Failed to fetch user data", error);
             toast({ variant: 'destructive', title: 'Authentication Error', description: 'Could not fetch your profile.' });
@@ -104,27 +97,19 @@ export default function WorldPage() {
         setCurrentUser(userData);
         await realtimeService.enterPresence({ email: userData.email, id: userData.id });
     }
-
     fetchUserAndConnect();
 
     const handleShowAnnouncements = () => {
         setActiveRightPanel('announcements');
-        toast({
-            title: "Bulletin Board",
-            description: "Showing latest announcements.",
-        });
+        toast({ title: "Bulletin Board", description: "Showing latest announcements." });
     }
-
     window.addEventListener('show-announcements', handleShowAnnouncements);
 
     return () => {
         window.removeEventListener('show-announcements', handleShowAnnouncements);
         realtimeService.disconnect();
-         if (videoStream) {
-            videoStream.getTracks().forEach(track => track.stop());
-        }
+        if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); }
     }
-
   }, [router, toast, videoStream]);
 
 
@@ -136,7 +121,12 @@ export default function WorldPage() {
         if (!isSubscribed) return;
         const authorEmail = (ablyMessage.data.author || 'Anonymous');
         const author = authorEmail === currentUser.email ? 'You' : authorEmail;
-        setMessages((prev) => [...prev, { author, text: ablyMessage.data.text }]);
+        const newMessage = { author, text: ablyMessage.data.text };
+
+        setMessages(prev => {
+            const channelMessages = prev[channelId] || [];
+            return { ...prev, [channelId]: [...channelMessages, newMessage] };
+        });
     };
     
     const handlePresenceUpdate = (presenceMessage?: Ably.Types.PresenceMessage) => {
@@ -144,8 +134,7 @@ export default function WorldPage() {
        realtimeService.getPresence('pixel-space', (err, members) => {
            if (!err && members) {
                setOnlineUsers(members);
-
-                if (presenceMessage?.action === 'enter') {
+               if (presenceMessage?.action === 'enter') {
                     const joinedEmail = (presenceMessage.data as PresenceData).email;
                     if (joinedEmail !== currentUser.email) {
                         toast({ title: 'User Joined', description: `${joinedEmail} has entered the space.` });
@@ -166,7 +155,7 @@ export default function WorldPage() {
         const author = authorEmail === currentUser.email ? 'You' : authorEmail;
         return { author, text: message.data.text };
       });
-      setMessages(prev => [...prev, ...pastMessages.reverse()]);
+      setMessages(prev => ({ ...prev, [channelId]: [...pastMessages.reverse()] }));
     };
     
     const handlePlayerUpdate = (message: Ably.Types.Message) => {
@@ -179,11 +168,7 @@ export default function WorldPage() {
     
     const handleKnock = (data: KnockData) => {
         if (!isSubscribed) return;
-        toast({
-            title: 'Someone is knocking!',
-            description: `${data.fromEmail} is knocking.`,
-            duration: 5000,
-        });
+        toast({ title: 'Someone is knocking!', description: `${data.fromEmail} is knocking.`, duration: 5000 });
     };
 
     realtimeService.onMessage(handleNewMessage);
@@ -191,41 +176,31 @@ export default function WorldPage() {
     realtimeService.onHistory(handleHistory);
     realtimeService.onPlayerUpdate(handlePlayerUpdate);
     realtimeService.onKnock(handleKnock);
-
-    // This must be called to start listening to the events.
     realtimeService.subscribeToChannels(['pixel-space'], currentUser.id);
 
-    return () => {
-      isSubscribed = false;
-    };
+    return () => { isSubscribed = false; };
   }, [currentUser, toast]);
 
 
-  const handlePlayerNearNpc = useCallback(() => {
-    setIsNearAlex(true);
-  }, []);
-
-  const handlePlayerFarNpc = useCallback(() => {
-    setIsNearAlex(false);
-  }, []);
-  
-  const handlePlayerNear = useCallback((clientId: string, email: string) => {
-    setNearbyPlayer({ clientId, email });
-  }, []);
-
-  const handlePlayerFar = useCallback(() => {
-    setNearbyPlayer(null);
-  }, []);
-
+  const handlePlayerNearNpc = useCallback(() => { setIsNearAlex(true); }, []);
+  const handlePlayerFarNpc = useCallback(() => { setIsNearAlex(false); }, []);
+  const handlePlayerNear = useCallback((clientId: string, email: string) => { setNearbyPlayer({ clientId, email }); }, []);
+  const handlePlayerFar = useCallback(() => { setNearbyPlayer(null); }, []);
   const handleSendMessage = useCallback((text: string) => {
     if (!currentUser) return;
-    realtimeService.sendMessage('pixel-space', text, { author: currentUser.email }, 'channel');
-  }, [currentUser]);
-  
+    realtimeService.sendMessage(currentZone, text, { author: currentUser.email }, 'channel');
+  }, [currentUser, currentZone]);
+
+  const handleZoneChange = useCallback((zoneId: string) => {
+    realtimeService.subscribeToChannels([zoneId], currentUser!.id);
+    setCurrentZone(zoneId);
+    if (!messages[zoneId]) {
+      setMessages(prev => ({ ...prev, [zoneId]: [{ author: 'System', text: `You have entered ${zoneId}.`}] }));
+    }
+  }, [currentUser, messages]);
+
   const renderInteractionPanel = () => {
-      if (isNearAlex) {
-          return <AlexChat />;
-      }
+      if (isNearAlex) { return <AlexChat />; }
       if (nearbyPlayer) {
           return <KnockButton 
                     player={nearbyPlayer} 
@@ -244,11 +219,10 @@ export default function WorldPage() {
       );
   }
   
-  if (!currentUser) {
-    return <WorldLoadingSkeleton />;
-  }
-
+  if (!currentUser) { return <WorldLoadingSkeleton />; }
   const userEmails = onlineUsers.map(u => (u.data as PresenceData).email).filter(Boolean);
+  const currentMessages = messages[currentZone] || [];
+  const isPrivateZone = currentZone !== 'pixel-space';
 
   return (
     <SidebarProvider>
@@ -266,6 +240,7 @@ export default function WorldPage() {
             onPlayerFarNpc={handlePlayerFarNpc}
             onPlayerNear={handlePlayerNear}
             onPlayerFar={handlePlayerFar}
+            onZoneChange={handleZoneChange}
             onSceneReady={(scene) => sceneRef.current = scene} 
         />}
         {videoStream && <UserVideo stream={videoStream} />}
@@ -274,8 +249,13 @@ export default function WorldPage() {
         <SidebarHeader>
             <div className="flex justify-between items-center p-4">
                 <div>
-                <CardTitle>SyncroSpace</CardTitle>
-                <CardDescription>Your virtual commons room.</CardDescription>
+                  <CardTitle className="flex items-center gap-2">
+                      {isPrivateZone ? <Lock className="text-accent h-5 w-5"/> : <Globe className="text-accent h-5 w-5"/>}
+                      {isPrivateZone ? 'Private Zone' : 'SyncroSpace'}
+                  </CardTitle>
+                  <CardDescription>
+                      {isPrivateZone ? 'Your conversation here is private.' : 'Your virtual commons room.'}
+                  </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                     <LogoutButton />
@@ -314,7 +294,7 @@ export default function WorldPage() {
                     </div>
                     <Separator />
                     <UserList users={userEmails} />
-                    <Chat messages={messages} onSendMessage={handleSendMessage} />
+                    <Chat messages={currentMessages} onSendMessage={handleSendMessage} />
                 </div>
              )}
              {activeRightPanel === 'announcements' && (
