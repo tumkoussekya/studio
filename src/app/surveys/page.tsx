@@ -95,7 +95,7 @@ export default function SurveysPage() {
                         Fill out the details below to start creating your survey. You can add questions in the next step.
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleCreateSurvey}>
+                <form id="new-survey-form" onSubmit={handleCreateSurvey}>
                     <div className="grid gap-4 py-4">
                         <div className="grid w-full items-center gap-1.5">
                             <Label htmlFor="title">Survey Title</Label>
@@ -107,7 +107,7 @@ export default function SurveysPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="submit">Save and Add Questions</Button>
+                        <Button type="submit" form="new-survey-form">Save and Add Questions</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
@@ -131,7 +131,7 @@ export default function SurveysPage() {
                 <div className="h-48 w-full -ml-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={survey.data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                      <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                      <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} interval={0} />
                       <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                       <Tooltip
                         cursor={{ fill: 'hsla(var(--accent) / 0.2)' }}
