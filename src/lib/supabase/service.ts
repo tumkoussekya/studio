@@ -11,15 +11,10 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 
-export const serviceClient = createClient(supabaseUrl, supabaseAnonKey, {
+export const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
         autoRefreshToken: false,
         persistSession: false,
         detectSessionInUrl: false
-    },
-    global: {
-        headers: {
-            Authorization: `Bearer ${supabaseServiceKey}`
-        }
     }
 });

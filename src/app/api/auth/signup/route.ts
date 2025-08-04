@@ -1,6 +1,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json();
@@ -9,7 +10,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
   }
   
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
 
   // Check for domain restriction
   const { data: setting, error: settingError } = await supabase
@@ -32,9 +34,7 @@ export async function POST(req: NextRequest) {
     password,
     options: {
         data: {
-            // This metadata doesn't directly go to the table anymore,
-            // but can be useful for triggers or other logic.
-            // The public.users table now has a default for role and profile_complete.
+            profile_complete: false,
         }
     }
   });
