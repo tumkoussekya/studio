@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Users, Volume2, MessageSquare, Video, KanbanSquare, Shapes, ClipboardList, BarChart2, Shield, Bot } from 'lucide-react';
+import { Users, Volume2, MessageSquare, Video, KanbanSquare, Shapes, ClipboardList, BarChart2, Shield, Bot, Camera } from 'lucide-react';
 
 export default function FeaturesPage() {
   const features = [
@@ -54,6 +54,11 @@ export default function FeaturesPage() {
       icon: <Shield className="text-accent h-8 w-8" />,
       title: 'Admin Controls',
       description: 'Manage users, roles, and system settings from a dedicated administrator panel.'
+    },
+    {
+      icon: <Camera className="text-accent h-8 w-8" />,
+      title: 'Photo Mode',
+      description: 'Capture in-world moments with a built-in screenshot tool to share content or promote events.'
     },
   ];
 
