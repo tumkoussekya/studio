@@ -116,6 +116,7 @@ export default function ChatPage() {
 
 
   const fetchInitialData = React.useCallback(async () => {
+    let isMounted = true;
     setIsLoading(true);
     const supabase = createClient();
     try {
@@ -127,7 +128,7 @@ export default function ChatPage() {
         
         const { data: userData, error: userError } = await supabase.from('users').select('*').eq('id', session.user.id).single();
         if (userError) throw userError;
-        setCurrentUser(userData);
+        if (isMounted) setCurrentUser(userData);
 
         const [usersResponse, channelsResponse] = await Promise.all([
             fetch('/api/users'),
@@ -137,25 +138,32 @@ export default function ChatPage() {
         if (!channelsResponse.ok) throw new Error('Could not fetch channels');
 
         const allUsersData = await usersResponse.json();
-        setUsers(allUsersData.filter((u: ChatUser) => u.id !== session.user.id));
-        
         const channelsData = await channelsResponse.json();
-        setChannels(channelsData);
 
-        // Set default channel if available
-        const generalChannel = channelsData.find((c: ChatChannel) => c.name === 'general');
-        if (generalChannel) {
-            setActiveConversation(generalChannel.id);
-        } else if (channelsData.length > 0) {
-            setActiveConversation(channelsData[0].id);
+        if(isMounted) {
+            setUsers(allUsersData.filter((u: ChatUser) => u.id !== session.user.id));
+            setChannels(channelsData);
+
+            // Set default channel if available
+            const generalChannel = channelsData.find((c: ChatChannel) => c.name === 'general');
+            if (generalChannel) {
+                setActiveConversation(generalChannel.id);
+            } else if (channelsData.length > 0) {
+                setActiveConversation(channelsData[0].id);
+            }
         }
+        
 
         await realtimeService.enterPresence({ email: userData.email, id: userData.id });
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not load chat data.'});
         console.error(error);
     } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
+    }
+
+    return () => {
+        isMounted = false;
     }
   }, [router, toast]);
 
