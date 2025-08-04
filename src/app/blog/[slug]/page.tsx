@@ -9,14 +9,14 @@ import Image from 'next/image';
 
 // Generate static pages for each blog post
 export async function generateStaticParams() {
-  const posts = getAllPosts();
+  const posts = await getAllPosts();
   return posts.map((post) => ({
     slug: post.slug,
   }));
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = getPostBySlug(params.slug);
+export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+  const post = await getPostBySlug(params.slug);
 
   if (!post) {
     notFound();
@@ -61,7 +61,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Calendar className="h-5 w-5" />
-                  <span>{post.date}</span>
+                  <span>{new Date(post.date).toLocaleDateString()}</span>
                 </div>
               </CardDescription>
             </CardHeader>

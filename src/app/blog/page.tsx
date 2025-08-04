@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Calendar, User } from 'lucide-react';
 import Image from 'next/image';
 
-export default function BlogPage() {
-  const posts = getAllPosts();
+export default async function BlogPage() {
+  const posts = await getAllPosts();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -49,7 +49,7 @@ export default function BlogPage() {
                         </CardTitle>
                          <CardDescription className="flex items-center gap-4 text-sm mb-4">
                             <span className="flex items-center gap-1.5"><User className="h-4 w-4" /> {post.author.name}</span>
-                            <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {post.date}</span>
+                            <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {new Date(post.date).toLocaleDateString()}</span>
                         </CardDescription>
                         <CardContent className="p-0 flex-grow">
                             <p className="text-muted-foreground line-clamp-3">

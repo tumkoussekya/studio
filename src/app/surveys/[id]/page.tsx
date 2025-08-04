@@ -1,25 +1,36 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getSurveyById, sampleSurveys } from '@/lib/survey-data';
+import type { Survey } from '@/lib/survey-data';
+import { getSurveyById } from '@/lib/survey-data';
 import { notFound, useParams } from 'next/navigation';
 import AnswerForm from '@/components/surveys/AnswerForm';
 import ResultsDisplay from '@/components/surveys/ResultsDisplay';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function SurveyDetailPage() {
   const params = useParams();
   const surveyId = params.id as string;
-  const survey = getSurveyById(surveyId);
+  const [survey, setSurvey] = useState<Survey | undefined | null>(undefined);
 
-  if (!survey) {
-    // In a real app, you would fetch from a DB and show a proper loading/error state
-    // For this static example, we'll just use notFound
+  useEffect(() => {
+    async function fetchSurvey() {
+        const surveyData = await getSurveyById(surveyId);
+        setSurvey(surveyData);
+    }
+    fetchSurvey();
+  }, [surveyId]);
+
+  if (survey === undefined) {
+    return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (survey === null) {
     notFound();
   }
 
