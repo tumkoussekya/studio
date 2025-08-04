@@ -1,12 +1,12 @@
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Briefcase, MapPin, ArrowRight } from 'lucide-react';
 import { getAllJobs } from '@/lib/job-openings';
 
-export default function CareersPage() {
-    const jobOpenings = getAllJobs();
+export default async function CareersPage() {
+    const jobOpenings = await getAllJobs();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -45,6 +45,9 @@ export default function CareersPage() {
                         </CardHeader>
                     </Card>
                 ))}
+                 {jobOpenings.length === 0 && (
+                    <p className="text-center text-muted-foreground">There are no open positions at this time. Check back soon!</p>
+                )}
             </div>
              <div className="text-center mt-12">
                 <p className="text-muted-foreground">Don't see a role that fits? <Link href="/contact" className="text-primary underline">Get in touch</Link> and tell us why you'd be a great fit for SyncroSpace.</p>

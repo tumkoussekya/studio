@@ -9,14 +9,14 @@ import ApplicationForm from '@/components/careers/ApplicationForm';
 
 
 export async function generateStaticParams() {
-  const jobs = getAllJobs();
+  const jobs = await getAllJobs();
   return jobs.map((job) => ({
     id: job.id,
   }));
 }
 
-export default function JobDetailPage({ params }: { params: { id: string } }) {
-  const job = getJobById(params.id);
+export default async function JobDetailPage({ params }: { params: { id: string } }) {
+  const job = await getJobById(params.id);
 
   if (!job) {
     notFound();
