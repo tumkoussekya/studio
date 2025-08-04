@@ -1,3 +1,4 @@
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
@@ -56,8 +57,8 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const publicRoutes = ['/', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/faq', '/blog'];
-  const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route) && route !== '/') || request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/careers');
+  const publicRoutes = ['/', '/about', '/privacy-policy', '/terms-of-service', '/features', '/pricing', '/contact', '/documentation', '/faq', '/blog', '/careers'];
+  const isPublicRoute = publicRoutes.some(route => request.nextUrl.pathname.startsWith(route) && route !== '/') || request.nextUrl.pathname === '/';
   
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/signup') || request.nextUrl.pathname.startsWith('/forgot-password');
 
