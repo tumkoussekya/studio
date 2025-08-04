@@ -44,11 +44,17 @@ interface RecentTask {
     created_at: string;
 }
 
+interface UserActivityData {
+    date: string;
+    users: number;
+}
+
 interface AnalyticsData {
     totalUsers: number;
     totalTasks: number;
     taskStatusDistribution: TaskStatusData[];
     recentTasks: RecentTask[];
+    userActivity: UserActivityData[];
 }
 
 
@@ -223,21 +229,17 @@ export default function AnalyticsPage() {
 
         <Card className="sm:col-span-2 lg:col-span-4">
           <CardHeader>
-            <CardTitle>Dummy User Activity</CardTitle>
+            <CardTitle>User Sign-ups (Last 7 Days)</CardTitle>
             <CardDescription>
-              This is a placeholder chart showing fake daily active user data.
+              A chart showing the number of new users who signed up each day.
             </CardDescription>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={[
-                  { date: 'Mon', users: 120 }, { date: 'Tue', users: 150 }, { date: 'Wed', users: 170 },
-                  { date: 'Thu', users: 160 }, { date: 'Fri', users: 210 }, { date: 'Sat', users: 250 },
-                  { date: 'Sun', users: 230 }
-                ]}>
+              <LineChart data={data.userActivity}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                 <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{
                     background: 'hsl(var(--background))',
