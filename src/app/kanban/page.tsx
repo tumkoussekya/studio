@@ -275,9 +275,9 @@ export default function KanbanPage() {
         <header className="p-4 border-b">
           <h1 className="text-2xl font-bold">Project Kanban Board</h1>
         </header>
-        <main className="p-4">
+        <main className="p-4 overflow-x-auto">
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:min-w-[1024px]">
               {data.columnOrder.map((columnId) => {
                 const column = data.columns[columnId];
                 const tasks = column.taskIds.map((taskId) => data.tasks[taskId]).filter(Boolean);

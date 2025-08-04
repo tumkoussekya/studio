@@ -157,7 +157,7 @@ export default function MeetingsPage() {
         </Dialog>
       </header>
       <main className="flex-grow flex flex-col md:flex-row p-4 md:p-6 lg:p-8 gap-8">
-        <aside className="w-full md:w-80 lg:w-96">
+        <aside className="w-full md:w-auto md:max-w-xs">
           <Card>
             <CardHeader>
                 <CardTitle>Select a Date</CardTitle>
@@ -173,7 +173,7 @@ export default function MeetingsPage() {
           </Card>
         </aside>
         <section className="flex-1">
-          <h2 className="text-2xl font-bold mb-4">
+          <h2 className="text-xl md:text-2xl font-bold mb-4">
             Meetings for {date ? format(date, 'PPP') : '...'}
           </h2>
           <div className="space-y-4">
@@ -181,10 +181,10 @@ export default function MeetingsPage() {
                 Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
             ) : meetings.length > 0 ? meetings.map((meeting) => (
               <Card key={meeting.id}>
-                <CardContent className="p-4 flex items-center justify-between">
+                <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                      <div className="text-center w-16">
-                        <p className="text-2xl font-bold">{format(new Date(meeting.scheduled_time), 'h')}</p>
+                        <p className="text-xl sm:text-2xl font-bold">{format(new Date(meeting.scheduled_time), 'h')}</p>
                         <p className="text-sm text-muted-foreground">{format(new Date(meeting.scheduled_time), 'aa')}</p>
                     </div>
                     <div>
@@ -195,7 +195,7 @@ export default function MeetingsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-end sm:self-center">
                     <Button variant="outline" size="sm" onClick={() => handleExportICS(meeting)}>
                       <Download className="mr-2 h-4 w-4" />
                       Export

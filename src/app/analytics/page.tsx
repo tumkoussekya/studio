@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="p-4 border-b">
-        <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
+        <h1 className="text-xl md:text-2xl font-bold">Analytics Dashboard</h1>
       </header>
       <main className="flex-grow p-4 md:p-6 lg:p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
