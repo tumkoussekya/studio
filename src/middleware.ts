@@ -10,6 +10,13 @@ export async function middleware(request: NextRequest) {
   const ablyApiKey = process.env.ABLY_API_KEY;
 
   const isConfigured = supabaseUrl && supabaseAnonKey && ablyApiKey;
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
+
+  // If the request is for an API route, we shouldn't redirect it.
+  // We just want to let the request pass through.
+  if (isApiRoute) {
+    return NextResponse.next();
+  }
 
   // If not configured and not on the setup page, redirect to setup.
   if (!isConfigured && request.nextUrl.pathname !== '/setup') {
