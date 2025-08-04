@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import TourGuide from '@/components/TourGuide';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AnimatedCard } from '@/components/AnimatedCard';
 
 async function getUserData() {
     const supabase = createClient();
@@ -95,7 +96,7 @@ async function Dashboard() {
                     <p className="text-muted-foreground">What would you like to do today?</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card id="tour-world" className="hover:shadow-lg transition-all hover:-translate-y-1">
+                    <AnimatedCard id="tour-world">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                 <Users className="text-accent" />
@@ -112,8 +113,8 @@ async function Dashboard() {
                             </Button>
                            </Link>
                         </CardContent>
-                    </Card>
-                     <Card id="tour-chat" className="hover:shadow-lg transition-all hover:-translate-y-1">
+                    </AnimatedCard>
+                     <AnimatedCard id="tour-chat">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                <MessageSquare className="text-accent" />
@@ -130,8 +131,8 @@ async function Dashboard() {
                                 </Button>
                             </Link>
                         </CardContent>
-                    </Card>
-                     <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+                    </AnimatedCard>
+                     <AnimatedCard>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                <Video className="text-accent" />
@@ -148,8 +149,8 @@ async function Dashboard() {
                                 </Button>
                             </Link>
                         </CardContent>
-                    </Card>
-                     <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+                    </AnimatedCard>
+                     <AnimatedCard>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                <Shapes className="text-accent" />
@@ -166,8 +167,8 @@ async function Dashboard() {
                                 </Button>
                             </Link>
                         </CardContent>
-                    </Card>
-                     <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+                    </AnimatedCard>
+                     <AnimatedCard>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                                <ClipboardList className="text-accent" />
@@ -184,8 +185,8 @@ async function Dashboard() {
                                 </Button>
                             </Link>
                         </CardContent>
-                    </Card>
-                    <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+                    </AnimatedCard>
+                    <AnimatedCard>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3">
                             <KanbanSquare className="text-accent" />
@@ -202,10 +203,10 @@ async function Dashboard() {
                                 </Button>
                             </Link>
                         </CardContent>
-                    </Card>
+                    </AnimatedCard>
                     {isAdmin && (
                         <>
-                            <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+                            <AnimatedCard>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-3">
                                         <LayoutDashboard className="text-accent" />
@@ -222,8 +223,8 @@ async function Dashboard() {
                                         </Button>
                                     </Link>
                                 </CardContent>
-                            </Card>
-                            <Card id="tour-admin" className="hover:shadow-lg transition-all hover:-translate-y-1">
+                            </AnimatedCard>
+                            <AnimatedCard id="tour-admin">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-3">
                                     <Shield className="text-accent" />
@@ -240,7 +241,7 @@ async function Dashboard() {
                                         </Button>
                                     </Link>
                                 </CardContent>
-                            </Card>
+                            </AnimatedCard>
                         </>
                     )}
                 </div>

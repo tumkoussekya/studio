@@ -5,6 +5,7 @@ import { ArrowRight, LogIn, UserPlus, Users, Volume2, MessageSquare, Video, Kanb
 import LogoutButton from '@/components/world/LogoutButton';
 import { createClient } from '@/lib/supabase/server';
 import Image from 'next/image';
+import { AnimatedCard } from '@/components/AnimatedCard';
 
 async function IsAuthenticated() {
     const supabase = createClient();
@@ -75,7 +76,7 @@ export default async function Home() {
                 <p className="text-muted-foreground mt-2">All-in-one platform for a distributed team.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <Card className="text-left">
+              <AnimatedCard>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <Users className="text-accent h-6 w-6" />
@@ -87,8 +88,8 @@ export default async function Home() {
                     Explore a 2D world, move your avatar, and interact with colleagues in different rooms.
                   </p>
                 </CardContent>
-              </Card>
-              <Card className="text-left">
+              </AnimatedCard>
+              <AnimatedCard>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <Volume2 className="text-accent h-6 w-6" />
@@ -100,8 +101,8 @@ export default async function Home() {
                     Engage in natural conversations by hearing only those who are near you in the virtual space.
                   </p>
                 </CardContent>
-              </Card>
-              <Card className="text-left">
+              </AnimatedCard>
+              <AnimatedCard>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <MessageSquare className="text-accent h-6 w-6" />
@@ -113,8 +114,8 @@ export default async function Home() {
                     Communicate in real-time with one-to-one DMs and group channels.
                   </p>
                 </CardContent>
-              </Card>
-               <Card className="text-left">
+              </AnimatedCard>
+               <AnimatedCard>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <Video className="text-accent h-6 w-6" />
@@ -126,8 +127,8 @@ export default async function Home() {
                     Jump into audio/video calls with screen sharing for quick syncs or scheduled meetings.
                   </p>
                 </CardContent>
-              </Card>
-              <Card className="text-left">
+              </AnimatedCard>
+              <AnimatedCard>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <KanbanSquare className="text-accent h-6 w-6" />
@@ -139,8 +140,8 @@ export default async function Home() {
                     Organize work and track progress with a collaborative Kanban board.
                   </p>
                 </CardContent>
-              </Card>
-              <Card className="text-left">
+              </AnimatedCard>
+              <AnimatedCard>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <Shapes className="text-accent h-6 w-6" />
@@ -152,8 +153,8 @@ export default async function Home() {
                     Brainstorm ideas together in real-time on an infinite, collaborative canvas.
                   </p>
                 </CardContent>
-              </Card>
-              <Card className="text-left">
+              </AnimatedCard>
+              <AnimatedCard>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <ClipboardList className="text-accent h-6 w-6" />
@@ -165,8 +166,8 @@ export default async function Home() {
                     Gather feedback and make decisions quickly with team-wide surveys and polls.
                   </p>
                 </CardContent>
-              </Card>
-               <Card className="text-left">
+              </AnimatedCard>
+               <AnimatedCard>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <BarChart2 className="text-accent h-6 w-6" />
@@ -178,7 +179,7 @@ export default async function Home() {
                     Admins can view dashboards on team activity, engagement, and productivity.
                   </p>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             </div>
           </div>
         </section>
