@@ -27,8 +27,9 @@ const JitsiMeet: React.FC<JitsiMeetProps> = ({ roomName, onMeetingEnd }) => {
     const fetchUser = async () => {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
-        if (user && user.email) {
-            setDisplayName(user.email);
+        if (user) {
+            const { data: userData } = await supabase.from('users').select('first_name, email').eq('id', user.id).single();
+            setDisplayName(userData?.first_name || userData?.email || 'Guest');
         }
     };
     fetchUser();
@@ -37,13 +38,20 @@ const JitsiMeet: React.FC<JitsiMeetProps> = ({ roomName, onMeetingEnd }) => {
   useEffect(() => {
     if (!displayName || !jitsiContainerRef.current) return;
 
-    if (!window.JitsiMeetExternalAPI) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Jitsi Meet API not loaded. Please refresh the page.',
-      });
-      return;
+    // Check if the Jitsi API script is loaded
+    if (typeof window.JitsiMeetExternalAPI === 'undefined') {
+        toast({
+            variant: 'destructive',
+            title: 'Error Loading Meeting',
+            description: 'The Jitsi Meet API script could not be found. Please ensure you are connected to the internet and refresh the page.',
+        });
+        setLoading(false);
+        return;
+    }
+    
+    // Avoid re-initializing the API if it already exists
+    if (jitsiApiRef.current) {
+        return;
     }
 
     const domain = 'meet.jit.si';
@@ -70,19 +78,30 @@ const JitsiMeet: React.FC<JitsiMeetProps> = ({ roomName, onMeetingEnd }) => {
       }
     };
 
-    const api = new window.JitsiMeetExternalAPI(domain, options);
-    jitsiApiRef.current = api;
-    setLoading(false);
+    try {
+        const api = new window.JitsiMeetExternalAPI(domain, options);
+        jitsiApiRef.current = api;
+        setLoading(false);
+    
+        api.addEventListener('videoConferenceLeft', () => {
+          if (onMeetingEnd) {
+            onMeetingEnd();
+          }
+        });
+    
+        return () => {
+          jitsiApiRef.current?.dispose();
+          jitsiApiRef.current = null;
+        };
+    } catch (error) {
+        console.error("Failed to initialize Jitsi Meet API:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Meeting Error',
+            description: 'Could not initialize the video meeting.',
+        });
+    }
 
-    api.addEventListener('videoConferenceLeft', () => {
-      if (onMeetingEnd) {
-        onMeetingEnd();
-      }
-    });
-
-    return () => {
-      jitsiApiRef.current?.dispose();
-    };
   }, [roomName, onMeetingEnd, toast, displayName]);
 
   return (

@@ -66,7 +66,7 @@ export default function MeetingsPage() {
   }
 
   const handleJoinMeeting = (meeting: Meeting) => {
-    const roomName = slugify(meeting.title);
+    const roomName = slugify(`${meeting.title}-${meeting.id.substring(0, 8)}`);
     router.push(`/meetings/${roomName}`);
   };
 
@@ -83,7 +83,8 @@ export default function MeetingsPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: newMeetingTitle, scheduled_time: newMeetingTime }),
         });
-        if (!response.ok) throw new Error('Failed to schedule meeting.');
+        const newMeeting = await response.json();
+        if (!response.ok) throw new Error(newMeeting.error || 'Failed to schedule meeting.');
 
         toast({ title: 'Meeting Scheduled!', description: `"${newMeetingTitle}" is on the calendar.`});
         setIsDialogOpen(false);
@@ -110,7 +111,7 @@ export default function MeetingsPage() {
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `${meeting.title.replace(/ /g, '_')}.ics`;
+    link.download = `${slugify(meeting.title)}.ics`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -197,7 +198,7 @@ export default function MeetingsPage() {
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleExportICS(meeting)}>
                       <Download className="mr-2 h-4 w-4" />
-                      Export ICS
+                      Export
                     </Button>
                     <Button size="sm" onClick={() => handleJoinMeeting(meeting)}>
                       <Video className="mr-2 h-4 w-4" />

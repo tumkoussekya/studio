@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
             return new NextResponse('Title and scheduled time are required', { status: 400 });
         }
 
-        const { data, error } = await supabase
+        const { data: meetingData, error } = await supabase
             .from('meetings')
             .insert({
                 title,
@@ -61,10 +61,12 @@ export async function POST(req: NextRequest) {
         
         if (error) throw error;
 
-        // In a real app, you would also add attendees to the meeting_attendees table.
-        // For simplicity, we're just creating the meeting event itself here.
+        // Also add the organizer as an attendee
+        await supabase
+            .from('meeting_attendees')
+            .insert({ meeting_id: meetingData.id, user_id: user.id });
 
-        return NextResponse.json(data);
+        return NextResponse.json(meetingData);
     } catch (error: any) {
          return new NextResponse(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
