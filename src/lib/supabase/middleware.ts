@@ -75,24 +75,21 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    const { data: userData } = await supabase.from('users').select('onboarding_complete, profile_complete, role').eq('id', user.id).single();
+    const { data: userData } = await supabase.from('users').select('profile_complete, role').eq('id', user.id).single();
 
     if (userData) {
-      const isOnboardingPage = request.nextUrl.pathname === '/onboarding';
       const isProfilePage = request.nextUrl.pathname === '/profile';
 
-      // New users (after signup) need to complete their profile.
+      // If the user's profile is not complete and they are not already on the profile page, redirect them.
+      // This primarily catches new users after their first login.
       if (!userData.profile_complete && !isProfilePage) {
-        // Allow access to /onboarding if they go there, but prioritize profile completion.
-        if (!isOnboardingPage) {
-          const url = request.nextUrl.clone()
-          url.pathname = '/profile'
-          return NextResponse.redirect(url)
-        }
+        const url = request.nextUrl.clone()
+        url.pathname = '/profile'
+        return NextResponse.redirect(url)
       }
       
-      // If profile is complete, don't let them go back to onboarding or profile pages.
-      if (userData.profile_complete && (isProfilePage || isOnboardingPage)) {
+      // If the profile IS complete, but they try to visit the profile page again, redirect them to the dashboard.
+      if (userData.profile_complete && isProfilePage) {
           const url = request.nextUrl.clone()
           url.pathname = '/dashboard'
           return NextResponse.redirect(url)

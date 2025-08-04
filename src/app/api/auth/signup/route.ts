@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
     password,
     options: {
         data: {
-            role: 'TeamMember', // Default role
-            profile_complete: false, // Custom metadata
-            onboarding_complete: false,
+            // This metadata doesn't directly go to the table anymore,
+            // but can be useful for triggers or other logic.
+            // The public.users table now has a default for role and profile_complete.
         }
     }
   });
@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
   }
 
   // A trigger in Supabase now handles inserting the user into the public.users table.
-  // This ensures consistency. The trigger is defined in the initial setup SQL.
-  // So, the explicit insert call here is no longer needed.
+  // The trigger sets default values for role ('TeamMember') and profile_complete (false).
+  // So, no explicit insert or update call is needed here.
 
   return NextResponse.json({ message: 'User created successfully. Please check your email to verify.' }, { status: 201 });
 }
