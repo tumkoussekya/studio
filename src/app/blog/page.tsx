@@ -13,7 +13,7 @@ export default async function BlogPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center border-b">
         <Link href="/">
-          <h1 className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
+          <h1 className="text-2xl font-bold text-primary font-headline tracking-wider">SyncroSpace</h1>
         </Link>
          <Link href="/dashboard">
             <p className="text-sm text-muted-foreground hover:text-primary">Back to Dashboard</p>
@@ -21,7 +21,7 @@ export default async function BlogPage() {
       </header>
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4 font-headline">The SyncroSpace Blog</h2>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-wide text-foreground mb-4 font-headline">The SyncroSpace Blog</h2>
             <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground">
                 Insights on remote work, collaboration, and building the future of digital offices.
             </p>
@@ -42,7 +42,7 @@ export default async function BlogPage() {
                         </Link>
                     </CardHeader>
                     <div className="p-6 flex flex-col flex-grow">
-                        <CardTitle className="font-headline text-2xl mb-2">
+                        <CardTitle className="font-headline text-2xl mb-2 tracking-wide">
                             <Link href={`/blog/${post.slug}`} className="hover:text-primary transition-colors">
                                 {post.title}
                             </Link>

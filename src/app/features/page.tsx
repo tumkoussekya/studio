@@ -88,7 +88,7 @@ export default function FeaturesPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center border-b">
         <Link href="/">
-          <h1 className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
+          <h1 className="text-2xl font-bold text-primary font-headline tracking-wider">SyncroSpace</h1>
         </Link>
         <Link href="/dashboard">
           <p className="text-sm text-muted-foreground hover:text-primary">Back to Dashboard</p>
@@ -96,7 +96,7 @@ export default function FeaturesPage() {
       </header>
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4 font-headline">Features</h2>
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-wide text-foreground mb-4 font-headline">Features</h2>
           <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground">
             Everything your team needs to connect, collaborate, and create, all in one space.
           </p>
@@ -114,7 +114,7 @@ export default function FeaturesPage() {
                     <div className="bg-accent/20 p-3 rounded-full">
                       {feature.icon}
                     </div>
-                    <CardTitle className="font-headline text-2xl pt-2">{feature.title}</CardTitle>
+                    <CardTitle className="font-headline text-2xl pt-2 tracking-wide">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">

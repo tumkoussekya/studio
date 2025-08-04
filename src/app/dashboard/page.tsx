@@ -84,7 +84,7 @@ async function Dashboard() {
         <div className="flex flex-col min-h-screen bg-background">
              <TourGuide isAdmin={isAdmin} />
             <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                <h1 id="tour-logo" className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
+                <h1 id="tour-logo" className="text-2xl font-bold text-primary font-headline tracking-wider">SyncroSpace</h1>
                  <div id="tour-header-buttons" className="flex items-center gap-4">
                     <ThemeToggle />
                     <LogoutButton />

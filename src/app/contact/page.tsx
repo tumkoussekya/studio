@@ -37,7 +37,7 @@ export default function ContactPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center border-b">
         <Link href="/">
-          <h1 className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
+          <h1 className="text-2xl font-bold text-primary font-headline tracking-wider">SyncroSpace</h1>
         </Link>
         <Link href="/dashboard">
             <p className="text-sm text-muted-foreground hover:text-primary">Back to Dashboard</p>
@@ -46,7 +46,7 @@ export default function ContactPage() {
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 flex items-center justify-center">
         <Card className="w-full max-w-2xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-4xl font-headline">Contact Us</CardTitle>
+            <CardTitle className="text-4xl font-headline tracking-wide">Contact Us</CardTitle>
             <CardDescription>
               Have a question or feedback? We'd love to hear from you.
             </CardDescription>

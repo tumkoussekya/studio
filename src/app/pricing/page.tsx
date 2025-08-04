@@ -54,7 +54,7 @@ export default function PricingPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center border-b">
         <Link href="/">
-          <h1 className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
+          <h1 className="text-2xl font-bold text-primary font-headline tracking-wider">SyncroSpace</h1>
         </Link>
         <Link href="/dashboard">
           <p className="text-sm text-muted-foreground hover:text-primary">Back to Dashboard</p>
@@ -62,7 +62,7 @@ export default function PricingPage() {
       </header>
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4 font-headline">Pricing</h2>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-wide text-foreground mb-4 font-headline">Pricing</h2>
             <p className="max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground">
                 Choose the plan that's right for your team.
             </p>
@@ -71,7 +71,7 @@ export default function PricingPage() {
           {tiers.map((tier) => (
             <Card key={tier.name} className={`flex flex-col ${tier.name === 'Pro' ? 'border-primary shadow-lg' : ''}`}>
               <CardHeader>
-                <CardTitle className="font-headline text-2xl">{tier.name}</CardTitle>
+                <CardTitle className="font-headline text-2xl tracking-wide">{tier.name}</CardTitle>
                  <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-extrabold">{tier.price}</span>
                     {tier.priceSuffix && <span className="text-muted-foreground">{tier.priceSuffix}</span>}

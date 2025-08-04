@@ -26,7 +26,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center border-b">
         <Link href="/">
-          <h1 className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
+          <h1 className="text-2xl font-bold text-primary font-headline tracking-wider">SyncroSpace</h1>
         </Link>
         <div>
             <Link href="/blog">
@@ -48,7 +48,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                       data-ai-hint={post.imageHint}
                     />
                 </div>
-              <CardTitle className="text-4xl md:text-5xl font-extrabold font-headline leading-tight tracking-tight">
+              <CardTitle className="text-4xl md:text-5xl font-extrabold font-headline leading-tight tracking-wide">
                 {post.title}
               </CardTitle>
               <CardDescription className="mt-4 flex items-center gap-6 text-base">

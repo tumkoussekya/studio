@@ -26,7 +26,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center border-b">
         <Link href="/">
-          <h1 className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
+          <h1 className="text-2xl font-bold text-primary font-headline tracking-wider">SyncroSpace</h1>
         </Link>
         <Link href="/careers">
             <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4" /> Back to All Openings</Button>
@@ -36,7 +36,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
         <div className="max-w-4xl mx-auto">
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-4xl font-headline mb-2">{job.title}</CardTitle>
+                    <CardTitle className="text-4xl font-headline mb-2 tracking-wide">{job.title}</CardTitle>
                     <CardDescription className="flex items-center flex-wrap gap-x-6 gap-y-2 text-lg">
                         <span className="flex items-center gap-1.5"><Briefcase className="h-5 w-5" /> {job.department}</span>
                         <span className="flex items-center gap-1.5"><MapPin className="h-5 w-5" /> {job.location}</span>

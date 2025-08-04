@@ -9,7 +9,7 @@ export default function AboutUsPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center border-b">
         <Link href="/">
-          <h1 className="text-2xl font-bold text-primary font-headline">SyncroSpace</h1>
+          <h1 className="text-2xl font-bold text-primary font-headline tracking-wider">SyncroSpace</h1>
         </Link>
         <Link href="/dashboard">
             <p className="text-sm text-muted-foreground hover:text-primary">Back to Dashboard</p>
@@ -17,7 +17,7 @@ export default function AboutUsPage() {
       </header>
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4 font-headline">About SyncroSpace</h2>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-wide text-foreground mb-4 font-headline">About SyncroSpace</h2>
             <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground">
                 We're rebuilding the office, one pixel at a time.
             </p>
@@ -29,7 +29,7 @@ export default function AboutUsPage() {
                     <div className="mx-auto bg-accent/20 text-accent p-3 rounded-full w-fit mb-2">
                         <Target className="h-8 w-8" />
                     </div>
-                    <CardTitle className="font-headline text-2xl">Our Mission</CardTitle>
+                    <CardTitle className="font-headline text-2xl tracking-wide">Our Mission</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-muted-foreground">
@@ -42,7 +42,7 @@ export default function AboutUsPage() {
                     <div className="mx-auto bg-accent/20 text-accent p-3 rounded-full w-fit mb-2">
                         <Eye className="h-8 w-8" />
                     </div>
-                    <CardTitle className="font-headline text-2xl">Our Vision</CardTitle>
+                    <CardTitle className="font-headline text-2xl tracking-wide">Our Vision</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-muted-foreground">
@@ -55,7 +55,7 @@ export default function AboutUsPage() {
                     <div className="mx-auto bg-accent/20 text-accent p-3 rounded-full w-fit mb-2">
                         <Heart className="h-8 w-8" />
                     </div>
-                    <CardTitle className="font-headline text-2xl">Our Values</CardTitle>
+                    <CardTitle className="font-headline text-2xl tracking-wide">Our Values</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-muted-foreground">
@@ -66,7 +66,7 @@ export default function AboutUsPage() {
         </div>
         
         <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold font-headline">Meet the Team</h3>
+            <h3 className="text-3xl font-bold font-headline tracking-wide">Meet the Team</h3>
             <p className="text-muted-foreground mt-2">The architects of your new virtual world.</p>
         </div>
 
