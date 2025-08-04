@@ -66,7 +66,6 @@ export async function POST(
       .from('whiteboards')
       .update({ 
           content: content, 
-          updated_at: new Date().toISOString(),
           last_updated_by: user.id
        })
       .eq('id', whiteboardId);
