@@ -78,22 +78,21 @@ export async function updateSession(request: NextRequest) {
     const { data: userData } = await supabase.from('users').select('onboarding_complete, profile_complete, role').eq('id', user.id).single();
 
     if (userData) {
-      // If onboarding is not complete, redirect to /onboarding.
-      if (!userData.onboarding_complete && request.nextUrl.pathname !== '/onboarding') {
-        const url = request.nextUrl.clone()
-        url.pathname = '/onboarding'
-        return NextResponse.redirect(url)
+      const isOnboardingPage = request.nextUrl.pathname === '/onboarding';
+      const isProfilePage = request.nextUrl.pathname === '/profile';
+
+      // New users (after signup) need to complete their profile.
+      if (!userData.profile_complete && !isProfilePage) {
+        // Allow access to /onboarding if they go there, but prioritize profile completion.
+        if (!isOnboardingPage) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/profile'
+          return NextResponse.redirect(url)
+        }
       }
       
-      // If onboarding is complete but profile is not, redirect to /profile.
-      if (userData.onboarding_complete && !userData.profile_complete && request.nextUrl.pathname !== '/profile') {
-        const url = request.nextUrl.clone()
-        url.pathname = '/profile'
-        return NextResponse.redirect(url)
-      }
-
-      // If everything is complete and user tries to access onboarding/profile, redirect to dashboard.
-      if (userData.onboarding_complete && userData.profile_complete && (request.nextUrl.pathname === '/profile' || request.nextUrl.pathname === '/onboarding')) {
+      // If profile is complete, don't let them go back to onboarding or profile pages.
+      if (userData.profile_complete && (isProfilePage || isOnboardingPage)) {
           const url = request.nextUrl.clone()
           url.pathname = '/dashboard'
           return NextResponse.redirect(url)
