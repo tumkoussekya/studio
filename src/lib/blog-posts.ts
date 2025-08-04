@@ -1,8 +1,5 @@
 
-// This file is now obsolete. Blog posts are fetched directly from the Supabase database.
-// You can safely delete this file from your project.
-
-import { createClient } from './supabase/server';
+import { serviceClient } from './supabase/service';
 
 export interface Post {
     slug: string;
@@ -19,15 +16,14 @@ export interface Post {
 }
 
 // Fetches all blog posts from the database
-export async function getAllPosts() {
-    const supabase = createClient();
-    const { data, error } = await supabase
+export async function getAllPosts(): Promise<Post[]> {
+    const { data, error } = await serviceClient
         .from('blog_posts')
         .select('*')
         .order('date', { ascending: false });
 
     if (error) {
-        console.error('Error fetching blog posts:', error);
+        console.error('Error fetching blog posts:', error.message);
         return [];
     }
 
@@ -43,15 +39,14 @@ export async function getAllPosts() {
 
 // Fetches a single blog post by its slug from the database
 export async function getPostBySlug(slug: string): Promise<Post | null> {
-    const supabase = createClient();
-    const { data, error } = await supabase
+    const { data, error } = await serviceClient
         .from('blog_posts')
         .select('*')
         .eq('slug', slug)
         .single();
     
     if (error) {
-        console.error('Error fetching post by slug:', error);
+        console.error('Error fetching post by slug:', error.message);
         return null;
     }
     

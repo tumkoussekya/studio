@@ -1,5 +1,5 @@
 
-import { createClient } from './supabase/server';
+import { serviceClient } from './supabase/service';
 
 export interface JobOpening {
     id: string;
@@ -12,14 +12,13 @@ export interface JobOpening {
 }
 
 export async function getAllJobs(): Promise<JobOpening[]> {
-    const supabase = createClient();
-    const { data, error } = await supabase
+    const { data, error } = await serviceClient
         .from('job_openings')
         .select('*')
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error('Error fetching jobs:', error);
+        console.error('Error fetching jobs:', error.message);
         return [];
     }
 
@@ -27,15 +26,14 @@ export async function getAllJobs(): Promise<JobOpening[]> {
 }
 
 export async function getJobById(id: string): Promise<JobOpening | null> {
-    const supabase = createClient();
-    const { data, error } = await supabase
+    const { data, error } = await serviceClient
         .from('job_openings')
         .select('*')
         .eq('id', id)
         .single();
     
     if (error) {
-        console.error(`Error fetching job ${id}:`, error);
+        console.error(`Error fetching job ${id}:`, error.message);
         return null;
     }
 
