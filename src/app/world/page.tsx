@@ -26,7 +26,9 @@ import { createClient } from '@/lib/supabase/client';
 import UserVideo from '@/components/world/UserVideo';
 import EmoteMenu from '@/components/world/EmoteMenu';
 import { webRTCService } from '@/services/WebRTCService';
-import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { generateMoment } from '@/ai/flows/generate-moment-flow';
+import Image from 'next/image';
 
 const PhaserContainer = dynamic(() => import('@/components/world/PhaserContainer'), {
   ssr: false,
@@ -67,7 +69,9 @@ export default function WorldPage() {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<RemoteStream[]>([]);
   const [currentZone, setCurrentZone] = useState('pixel-space');
-  const worldContainerRef = useRef<HTMLDivElement>(null);
+
+  const [isGeneratingMoment, setIsGeneratingMoment] = useState(false);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -257,35 +261,26 @@ export default function WorldPage() {
     }
   }
 
-  const handleScreenshot = () => {
-    const worldEl = worldContainerRef.current;
-    const sidebarEl = document.querySelector('[data-sidebar="sidebar"]');
-    const emoteMenuEl = document.querySelector('.absolute.bottom-4.right-4');
+  const handleGenerateMoment = async () => {
+    if (!currentUser) return;
+    setIsGeneratingMoment(true);
 
-    if (!worldEl || !sceneRef.current?.game.canvas) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not capture screenshot.' });
-      return;
+    let prompt = `User ${currentUser.email} is in the ${currentZone}.`;
+    if(isNearAlex) prompt += ` They are talking to Alex, the AI assistant.`;
+    if(nearbyPlayer) prompt += ` They are interacting with ${nearbyPlayer.email}.`;
+
+
+    try {
+      const result = await generateMoment({ prompt });
+      setGeneratedImageUrl(result.imageUrl);
+    } catch (error) {
+      console.error("Error generating moment:", error);
+      toast({ variant: 'destructive', title: "Generation Failed", description: "Couldn't create your moment. The AI might be busy." });
+    } finally {
+      setIsGeneratingMoment(false);
     }
+  }
 
-    // Hide UI elements
-    if (sidebarEl) (sidebarEl as HTMLElement).style.display = 'none';
-    if (emoteMenuEl) (emoteMenuEl as HTMLElement).style.display = 'none';
-
-    setTimeout(() => {
-      const canvas = sceneRef.current!.game.canvas;
-      const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = `syncrospace-moment-${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.png`;
-      link.href = dataUrl;
-      link.click();
-
-      // Restore UI elements
-      if (sidebarEl) (sidebarEl as HTMLElement).style.display = '';
-      if (emoteMenuEl) (emoteMenuEl as HTMLElement).style.display = '';
-
-      toast({ title: 'Screenshot Saved!', description: 'Your moment has been captured.' });
-    }, 100); // Small delay to allow UI to hide
-  };
 
   const renderInteractionPanel = () => {
       if (isNearAlex) { return <AlexChat />; }
@@ -316,7 +311,7 @@ export default function WorldPage() {
   return (
     <SidebarProvider>
     <div className="w-screen h-screen overflow-hidden bg-background flex flex-col md:flex-row">
-      <div ref={worldContainerRef} className="flex-grow relative order-2 md:order-1 h-1/2 md:h-full">
+      <div className="flex-grow relative order-2 md:order-1 h-1/2 md:h-full">
        {currentUser && <PhaserContainer 
             user={{
               id: currentUser.id,
@@ -344,9 +339,9 @@ export default function WorldPage() {
         </div>
 
         <div className="absolute bottom-4 right-20 z-20 flex items-center gap-2">
-            <Button variant="outline" size="icon" className="rounded-full w-12 h-12 shadow-lg" onClick={handleScreenshot}>
-                <Camera className="h-6 w-6" />
-                <span className="sr-only">Take Screenshot</span>
+            <Button variant="outline" size="icon" className="rounded-full w-12 h-12 shadow-lg" onClick={handleGenerateMoment} disabled={isGeneratingMoment}>
+                {isGeneratingMoment ? <Loader2 className="h-6 w-6 animate-spin"/> : <Camera className="h-6 w-6" />}
+                <span className="sr-only">Take a generative photo</span>
             </Button>
             <EmoteMenu onEmote={onEmote} />
         </div>
@@ -411,6 +406,26 @@ export default function WorldPage() {
 
         </SidebarContent>
       </Sidebar>
+
+      <Dialog open={!!generatedImageUrl} onOpenChange={(isOpen) => !isOpen && setGeneratedImageUrl(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Your Generated Moment!</DialogTitle>
+            <DialogDescription>
+              Here's an AI-generated artistic impression of your moment. You can download it and share it!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4">
+            {generatedImageUrl && <Image src={generatedImageUrl} alt="Generated moment" width={800} height={450} className="rounded-lg shadow-lg" />}
+          </div>
+          <DialogFooter>
+             <Button asChild variant="secondary">
+                <a href={generatedImageUrl!} download={`syncrospace-moment-${Date.now()}.png`}>Download</a>
+              </Button>
+             <Button onClick={() => setGeneratedImageUrl(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </SidebarProvider>
   );

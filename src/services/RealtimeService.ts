@@ -94,7 +94,7 @@ class RealtimeService {
         }
         
         if (!this.channels.has(finalChannelId)) {
-            const isEncrypted = !['pixel-space', 'whiteboard'].includes(finalChannelId);
+            const isEncrypted = !['pixel-space', 'whiteboard'].some(unencryptedChannel => finalChannelId.startsWith(unencryptedChannel));
             const channelOptions: Ably.Types.ChannelOptions = {
                 params: { rewind: '50' },
             };

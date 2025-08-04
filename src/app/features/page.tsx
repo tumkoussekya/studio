@@ -60,7 +60,7 @@ const features = [
   {
     icon: <Camera className="text-accent h-8 w-8" />,
     title: 'Photo Mode',
-    description: 'Capture in-world moments with a built-in screenshot tool to share content or promote events.'
+    description: 'Capture in-world moments with an AI-powered tool to generate artistic, shareable images of your interactions.'
   },
 ];
 
