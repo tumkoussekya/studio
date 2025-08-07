@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as Ably from 'ably';
 import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
 
 const ABLY_API_KEY = process.env.ABLY_API_KEY;
 
@@ -12,7 +13,8 @@ export async function POST(req: NextRequest) {
         }, { status: 500 });
     }
     
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
