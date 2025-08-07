@@ -41,6 +41,8 @@ export class MainScene extends Phaser.Scene {
   private emoteText!: Phaser.GameObjects.Text;
   private hotkeys!: { [key: string]: Phaser.Input.Keyboard.Key };
   private confettiEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private playerStartX = 200;
+  private playerStartY = 200;
 
 
   constructor() {
@@ -102,9 +104,6 @@ export class MainScene extends Phaser.Scene {
       navigator.sendBeacon('/api/world/update-position', JSON.stringify({ x, y }));
     }
   }
-
-  private playerStartX = 200;
-  private playerStartY = 200;
 
   private createPrivateZone(x: number, y: number, width: number, height: number, id: string): void {
       const zone = this.add.zone(x + width / 2, y + height / 2, width, height);
@@ -450,5 +449,3 @@ export class MainScene extends Phaser.Scene {
     this.time.removeAllEvents();
   }
 }
-
-    

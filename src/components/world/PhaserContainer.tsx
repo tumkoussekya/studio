@@ -34,12 +34,15 @@ export default function PhaserContainer({ user, onPlayerNearNpc, onPlayerFarNpc,
       return;
     }
 
+    const scene = new MainScene();
+    onSceneReady(scene);
+
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       width: '100%',
       height: '100%',
       parent: gameContainerRef.current,
-      scene: MainScene,
+      scene: scene,
       scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -61,7 +64,6 @@ export default function PhaserContainer({ user, onPlayerNearNpc, onPlayerFarNpc,
           
           const mainScene = game.scene.getScene('MainScene') as MainScene;
           if (mainScene) {
-            onSceneReady(mainScene);
             // Pass necessary data to the scene's init method
             mainScene.scene.start(undefined, { 
                 startX: user.last_x, 
