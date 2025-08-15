@@ -1,9 +1,8 @@
 
 'use client';
-
-import * as Ably from 'ably';
+import Ably, { RealtimeChannel } from 'ably';
 import type { DrawingData } from '@/models/Whiteboard';
-
+import { RealtimePromise } from 'ably/promises';
 export interface MessageData {
     author: string;
     text: string;
@@ -49,27 +48,27 @@ export interface WebRTCSignalData {
 }
 
 
-type MessageHandler = (message: Ably.Types.Message, channelId: string) => void;
-type HistoryHandler = (messages: Ably.Types.Message[], channelId: string) => void;
-type PresenceHandler = (presenceMessage?: Ably.Types.PresenceMessage) => void;
-type PlayerUpdateHandler = (message: Ably.Types.Message) => void;
+type MessageHandler = (message: Ably.Message, channelId: string) => void;
+type HistoryHandler = (messages: Ably.Message[], channelId: string) => void;
+type PresenceHandler = (presenceMessage: Ably.PresenceMessage) => void;
+type PlayerUpdateHandler = (message: Ably.Message) => void;
 type KnockHandler = (data: KnockData) => void;
-type DrawingHandler = (message: Ably.Types.Message) => void;
+type DrawingHandler = (message: Ably.Message) => void;
 type ClearHandler = () => void;
 
 
-const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "HO4oK9VllF/g3Y+e1dG1A/dDESfSDjI0aEZ1LzH1y0E=";
+const E2E_KEY = process.env.NEXT_PUBLIC_ABLY_E2E_KEY || "aG94b0s5VmxsR2YzWStlMWRHMUQvZERFU2ZTRGpJMGFFWjFMekgxeTBFPQ==";
 
 class RealtimeService {
-    private ably: Ably.Realtime;
-    private channels: Map<string, Ably.Types.RealtimeChannel> = new Map();
+ private ably: RealtimePromise;
+    private channels: Map<string, RealtimeChannel> = new Map();
     private connectionPromise: Promise<void>;
     private currentUserId: string | null = null;
     private eventHandlers: Map<string, Map<string, ((...args: any[]) => void)[]>> = new Map();
 
 
-    constructor() {
-        this.ably = new Ably.Realtime({
+ constructor() {
+ this.ably = new RealtimePromise({
             authUrl: '/api/ably-token',
             authMethod: 'POST',
         });
@@ -85,9 +84,9 @@ class RealtimeService {
         this.ably.connection.on('closed', () => {
             console.log('Ably connection was closed.');
         });
-    }
+    } 
 
-    private getChannel(channelId: string, conversationType: 'channel' | 'dm' = 'channel'): Ably.Types.RealtimeChannel {
+    private getChannel(channelId: string, conversationType: 'channel' | 'dm' = 'channel'): RealtimeChannel {
         let finalChannelId = channelId;
         if (conversationType === 'dm' && this.currentUserId) {
             finalChannelId = this.getDmChannelId(this.currentUserId, channelId);
@@ -95,8 +94,8 @@ class RealtimeService {
         
         if (!this.channels.has(finalChannelId)) {
             const isEncrypted = !['pixel-space', 'whiteboard'].some(unencryptedChannel => finalChannelId.startsWith(unencryptedChannel));
-            const channelOptions: Ably.Types.ChannelOptions = {
-                params: { rewind: '50' },
+            const channelOptions: Ably.Rest.ChannelOptions = {
+                params: { rewind: '50' }, 
             };
             if(isEncrypted) {
                 channelOptions.cipher = {
@@ -128,17 +127,19 @@ class RealtimeService {
         }
     }
     
-    private async subscribeToAllEvents(channel: Ably.Types.RealtimeChannel, channelId: string) {
+    private async subscribeToAllEvents(channel: RealtimeChannel, channelId: string) {
         await this.connectionPromise;
         
-        channel.subscribe((message) => {
-            const handlers = this.eventHandlers.get(channelId)?.get(message.name);
-            if(handlers) {
-                handlers.forEach(handler => handler(message));
+        channel.subscribe((message: Ably.Message) => {
+ if (typeof message.name === 'string') {
+ const handlers = this.eventHandlers.get(channelId)?.get(message.name);
+ if(handlers) {
+ handlers.forEach(handler => handler(message));
+ }
             }
 
             // Also trigger generic message handler if it exists
-            const genericHandlers = this.eventHandlers.get('__any__')?.get('__generic_message');
+ const genericHandlers = this.eventHandlers.get('__any__')?.get('__generic_message');
              if(genericHandlers) {
                 genericHandlers.forEach(handler => handler(message, channelId));
             }
@@ -167,7 +168,7 @@ class RealtimeService {
     }
 
     public onMessage(handler: MessageHandler): void { 
-      const genericMessageHandler = (message: Ably.Types.Message, channelId: string) => {
+      const genericMessageHandler = (message: Ably.Message, channelId: string) => {
         if (message.name === 'message') {
             handler(message, channelId);
         }
@@ -179,7 +180,7 @@ class RealtimeService {
     public onKnock(handler: KnockHandler): void { 
          const knockWrapper = (message: Ably.Types.Message) => {
             const data = message.data as KnockData;
-            if (data.targetClientId === this.getClientId()) {
+            if (typeof data.targetClientId === 'string' && data.targetClientId === this.getClientId()) {
                 handler(data);
             }
         };
@@ -196,15 +197,21 @@ class RealtimeService {
     }
 
 
-    public onPresenceUpdate(channelId: string, handler: PresenceHandler): void {
+    public onPresenceUpdate(channelId: string, handler: (presenceMessage: Ably.PresenceMessage) => void): void {
         const channel = this.getChannel(channelId);
         channel.presence.subscribe(['enter', 'leave', 'update'], handler);
-        channel.presence.get((err, members) => {
-            if (!err && members) handler();
+        channel.presence.get((err: any, members: any) => {
+            if (!err && members) {
+                // Manually trigger handler for existing members
+                members.forEach((member: any) => {
+                    // Create a PresenceMessage object that the handler expects
+                    handler(member as Ably.PresenceMessage);
+                });
+            }
         });
     }
     
-    public getPresence(channelId: string, callback: Ably.Types.PaginatedResultCallback<Ably.Types.PresenceMessage>): void {
+    public getPresence(channelId: string, callback: Ably.PaginatedResultCallback<Ably.PresenceMessage>): void {
         const channel = this.getChannel(channelId);
         channel.presence.get(callback);
     }
@@ -216,8 +223,8 @@ class RealtimeService {
     }
 
     public fetchHistory(channelId: string, type: 'channel' | 'dm' = 'channel') {
-        const channel = this.getChannel(channelId, type);
-         channel.history((err, result) => {
+        const channel = this.getChannel(channelId, type); 
+         channel.history((err: any, result: { items: any; }) => {
             if (!err && result.items) {
                 const historyHandlers = this.eventHandlers.get('__any__')?.get('__history');
                 if (historyHandlers) {
