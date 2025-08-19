@@ -10,11 +10,9 @@ import TourGuide from '@/components/TourGuide';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatedCard } from '@/components/AnimatedCard';
-import { cookies } from 'next/headers';
 
 async function getUserData() {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 

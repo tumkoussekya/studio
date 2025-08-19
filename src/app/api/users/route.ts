@@ -1,11 +1,9 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 export async function GET(req: NextRequest) {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
     try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return new NextResponse('Unauthorized', { status: 401 });

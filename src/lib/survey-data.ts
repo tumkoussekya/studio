@@ -1,7 +1,4 @@
 
-// This file is now obsolete. Survey data is fetched directly from the Supabase database.
-// You can safely delete this file from your project.
-
 import { createClient } from './supabase/server';
 
 export interface Question {
