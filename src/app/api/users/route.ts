@@ -7,16 +7,16 @@ export async function GET() {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
   try {
-    const { data: { user: adminUser } } = await supabase.auth.getUser();
-    if (!adminUser) return new NextResponse('Unauthorized', { status: 401 });
+    const { data: { user: requestingUser } } = await supabase.auth.getUser();
+    if (!requestingUser) return new NextResponse('Unauthorized', { status: 401 });
 
     const { data: adminUserData, error: adminError } = await supabase
       .from('users')
       .select('role')
-      .eq('id', adminUser.id)
+      .eq('id', requestingUser.id)
       .single();
       
-    if (adminError || adminUserData?.role !== 'Admin') {
+    if (adminError || !adminUserData || adminUserData.role !== 'Admin') {
       return new NextResponse('Forbidden', { status: 403 });
     }
 
@@ -41,3 +41,4 @@ export async function GET() {
     return NextResponse.json({ message: error.message || 'An internal server error occurred' }, { status: 500 });
   }
 }
+
