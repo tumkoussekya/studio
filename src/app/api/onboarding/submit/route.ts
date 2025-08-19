@@ -4,6 +4,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { cookies } from 'next/headers';
 
 const onboardingSchema = z.object({
   role: z.string(),
@@ -14,7 +15,8 @@ const onboardingSchema = z.object({
 const adminRoles = ['Founder or C-Level', 'Team Lead or Manager'];
 
 export async function POST(req: NextRequest) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {

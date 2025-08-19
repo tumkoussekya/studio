@@ -2,10 +2,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { subDays, format, startOfDay } from 'date-fns';
+import { cookies } from 'next/headers';
 
 // Helper function to check admin role
-async function checkAdmin() {
-  const supabase = createClient();
+async function checkAdmin(cookieStore: ReturnType<typeof cookies>) {
+  const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('Not authenticated');
@@ -27,10 +28,11 @@ async function checkAdmin() {
 }
 
 export async function GET() {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   try {
     // Ensure the user is an admin before proceeding
-    await checkAdmin();
+    await checkAdmin(cookieStore);
 
     // 1. Get total users
     const { count: totalUsers, error: usersError } = await supabase

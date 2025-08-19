@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { cookies } from 'next/headers';
 
 const profileSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
@@ -14,7 +15,8 @@ const profileSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {

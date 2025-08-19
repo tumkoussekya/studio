@@ -2,9 +2,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { startOfDay, endOfDay } from 'date-fns';
+import { cookies } from 'next/headers';
 
 export async function GET(req: NextRequest) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new NextResponse('Unauthorized', { status: 401 });
 
@@ -39,7 +41,8 @@ export async function GET(req: NextRequest) {
 
 
 export async function POST(req: NextRequest) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new NextResponse('Unauthorized', { status: 401 });
 

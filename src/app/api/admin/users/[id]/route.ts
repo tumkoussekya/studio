@@ -1,15 +1,17 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { type UserRole } from '@/models/User';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { cookies } from 'next/headers';
 
 const roleUpdateSchema = z.object({
   role: z.enum(['Admin', 'TeamMember']),
 });
 
 
-async function checkAdmin() {
-  const supabase = createClient();
+async function checkAdmin(cookieStore: ReturnType<typeof cookies>) {
+  const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('Not authenticated');
@@ -38,8 +40,9 @@ export async function PUT(
   const targetUserId = params.id;
 
   try {
-    await checkAdmin();
-    const supabase = createClient();
+    const cookieStore = cookies();
+    await checkAdmin(cookieStore);
+    const supabase = createClient(cookieStore);
 
     const body = await request.json();
     const parseResult = roleUpdateSchema.safeParse(body);
@@ -83,8 +86,9 @@ export async function DELETE(
   const targetUserId = params.id;
 
   try {
-    await checkAdmin();
-    const supabase = createClient();
+    const cookieStore = cookies();
+    await checkAdmin(cookieStore);
+    const supabase = createClient(cookieStore);
 
     // Using the service role key to delete users is best practice for production
     // But for this demo, the admin user can delete others.

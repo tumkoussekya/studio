@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield, MessageSquare, Video, LayoutDashboard, Loader2 } from 'lucide-react';
@@ -10,9 +11,11 @@ import TourGuide from '@/components/TourGuide';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatedCard } from '@/components/AnimatedCard';
+import { cookies } from 'next/headers';
 
 async function getUserData() {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 

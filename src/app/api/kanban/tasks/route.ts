@@ -1,10 +1,12 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 // GET all Kanban data
 export async function GET(req: NextRequest) {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new NextResponse('Unauthorized', { status: 401 });
@@ -49,7 +51,8 @@ export async function GET(req: NextRequest) {
 
 // POST a new task
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new NextResponse('Unauthorized', { status: 401 });
@@ -80,7 +83,8 @@ export async function POST(req: NextRequest) {
 
 // PUT (update) a task's position
 export async function PUT(req: NextRequest) {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new NextResponse('Unauthorized', { status: 401 });
@@ -104,7 +108,8 @@ export async function PUT(req: NextRequest) {
 
 // DELETE a task
 export async function DELETE(req: NextRequest) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return new NextResponse('Unauthorized', { status: 401 });

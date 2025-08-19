@@ -4,6 +4,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { cookies } from 'next/headers';
 
 const applicationSchema = z.object({
   job_id: z.string(),
@@ -16,7 +17,8 @@ const applicationSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     
     // In a real-world scenario, you might want to protect this endpoint,
     // but for a public job application, it's typically open.

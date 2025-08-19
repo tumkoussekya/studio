@@ -11,6 +11,7 @@
 import {ai} from '@/ai/genkit';
 import { createClient } from '@/lib/supabase/server';
 import {z} from 'zod';
+import { cookies } from 'next/headers';
 
 export const addTask = ai.defineTool(
   {
@@ -30,7 +31,8 @@ export const addTask = ai.defineTool(
   },
   async (input) => {
     try {
-      const supabase = createClient();
+      const cookieStore = cookies();
+      const supabase = createClient(cookieStore);
        // In a real multi-tenant app, we would get the user ID here.
        // For now, we are adding it to the default user's board.
        const { data: { user } } = await supabase.auth.getUser();
@@ -69,7 +71,8 @@ export const getTasks = ai.defineTool(
     },
     async () => {
         try {
-            const supabase = createClient();
+            const cookieStore = cookies();
+            const supabase = createClient(cookieStore);
             const { data: columnsData, error: columnsError } = await supabase
               .from('kanban_columns')
               .select('*')

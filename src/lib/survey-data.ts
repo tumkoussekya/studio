@@ -1,5 +1,6 @@
 
 import { createClient } from './supabase/server';
+import { cookies } from 'next/headers';
 
 export interface Question {
     id: string;
@@ -66,7 +67,8 @@ const questionsAndResults: Record<string, Pick<Survey, 'questions' | 'results' |
 
 
 export async function getAllSurveys(): Promise<Survey[]> {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data, error } = await supabase.from('surveys').select('*');
 
     if (error) {
@@ -81,7 +83,8 @@ export async function getAllSurveys(): Promise<Survey[]> {
 }
 
 export async function getSurveyById(id: string): Promise<Survey | undefined> {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data, error } = await supabase.from('surveys').select('*').eq('id', id).single();
     
     if (error) {

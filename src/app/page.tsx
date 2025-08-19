@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,9 +7,11 @@ import LogoutButton from '@/components/world/LogoutButton';
 import { createClient } from '@/lib/supabase/server';
 import Image from 'next/image';
 import { AnimatedCard } from '@/components/AnimatedCard';
+import { cookies } from 'next/headers';
 
 async function IsAuthenticated() {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: { session } } = await supabase.auth.getSession();
     return !!session;
 }

@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { cookies } from 'next/headers';
 
 // Schema for validating new channel creation
 const createChannelSchema = z.object({
@@ -11,7 +12,8 @@ const createChannelSchema = z.object({
 
 // GET all chat channels
 export async function GET() {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new NextResponse('Unauthorized', { status: 401 });
@@ -34,7 +36,8 @@ export async function GET() {
 
 // POST a new chat channel
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return new NextResponse('Unauthorized', { status: 401 });
