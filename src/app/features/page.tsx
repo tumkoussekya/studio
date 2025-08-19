@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Users, Volume2, MessageSquare, Video, KanbanSquare, Shapes, ClipboardList, BarChart2, Shield, Bot, Camera, Globe } from 'lucide-react';
+import { Users, Volume2, MessageSquare, Video, KanbanSquare, Shapes, ClipboardList, BarChart2, Shield, Bot, Camera, Globe, Share2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const features = [
@@ -66,6 +66,11 @@ const features = [
     icon: <Globe className="text-accent h-8 w-8" />,
     title: 'Platform Support',
     description: 'Available on the web. Conversations and collaboration sync in real-time across all your devices seamlessly.'
+  },
+  {
+    icon: <Share2 className="text-accent h-8 w-8" />,
+    title: 'SyncroSpace Connect',
+    description: 'Collaborate with people outside your company in shared, secure channels.'
   },
 ];
 
