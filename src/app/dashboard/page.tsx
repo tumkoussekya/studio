@@ -1,9 +1,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield, MessageSquare, Video, LayoutDashboard, User } from 'lucide-react';
+import { ArrowRight, KanbanSquare, Users, Shapes, ClipboardList, Shield, MessageSquare, Video, LayoutDashboard, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import LogoutButton from '@/components/world/LogoutButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
@@ -14,6 +13,7 @@ import { AnimatedCard } from '@/components/AnimatedCard';
 import { cookies } from 'next/headers';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import LogoutButton from '@/components/world/LogoutButton';
 
 
 async function getUserData() {
@@ -116,7 +116,10 @@ async function Dashboard() {
                                 <Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <LogoutButton />
+                            <DropdownMenuItem>
+                               <LogOut className="mr-2 h-4 w-4" />
+                               <span>Logout</span>
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                  </div>
