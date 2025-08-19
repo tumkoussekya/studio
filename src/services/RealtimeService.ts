@@ -1,8 +1,8 @@
 
 'use client';
-import Ably, { RealtimeChannel } from 'ably';
+import Ably, { RealtimeChannel, RealtimePromise } from 'ably';
 import type { DrawingData } from '@/models/Whiteboard';
-import { RealtimePromise } from 'ably/promises';
+
 export interface MessageData {
     author: string;
     text: string;
