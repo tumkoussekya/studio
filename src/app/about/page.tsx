@@ -70,13 +70,13 @@ export default function AboutUsPage() {
             <p className="text-muted-foreground mt-2">The architects of your new virtual world.</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary">
                     <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="female developer" alt="Team member" />
-                    <AvatarFallback>AL</AvatarFallback>
+                    <AvatarFallback>ME</AvatarFallback>
                 </Avatar>
-                <h4 className="font-bold text-lg">Alice</h4>
+                <h4 className="font-bold text-lg">Mendapara</h4>
                 <p className="text-muted-foreground">Lead Developer</p>
             </div>
              <div className="text-center">
@@ -94,14 +94,6 @@ export default function AboutUsPage() {
                 </Avatar>
                 <h4 className="font-bold text-lg">Charlie</h4>
                 <p className="text-muted-foreground">Backend Engineer</p>
-            </div>
-             <div className="text-center">
-                <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary">
-                    <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="male project manager" alt="Team member" />
-                    <AvatarFallback>DA</AvatarFallback>
-                </Avatar>
-                <h4 className="font-bold text-lg">David</h4>
-                <p className="text-muted-foreground">Project Manager</p>
             </div>
         </div>
 
