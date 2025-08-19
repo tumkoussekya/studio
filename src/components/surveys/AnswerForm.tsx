@@ -77,7 +77,7 @@ export default function AnswerForm({ survey }: AnswerFormProps) {
                   <FormField
                     key={question.id}
                     control={form.control}
-                    name={question.id as keyof FormValues}
+                    name={question.id as any}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-base font-semibold">{index + 1}. {question.text}</FormLabel>
@@ -133,3 +133,4 @@ export default function AnswerForm({ survey }: AnswerFormProps) {
     </Card>
   );
 }
+

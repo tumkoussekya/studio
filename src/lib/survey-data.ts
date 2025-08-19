@@ -1,6 +1,5 @@
 
-import { createClient } from './supabase/server';
-import { cookies } from 'next/headers';
+import type { PostgrestSingleResponse, SupabaseClient } from '@supabase/supabase-js';
 
 export interface Question {
     id: string;
@@ -66,9 +65,7 @@ const questionsAndResults: Record<string, Pick<Survey, 'questions' | 'results' |
 };
 
 
-export async function getAllSurveys(): Promise<Survey[]> {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+export async function getAllSurveys(supabase: SupabaseClient): Promise<Survey[]> {
     const { data, error } = await supabase.from('surveys').select('*');
 
     if (error) {
@@ -82,15 +79,15 @@ export async function getAllSurveys(): Promise<Survey[]> {
     }));
 }
 
-export async function getSurveyById(id: string): Promise<Survey | undefined> {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-    const { data, error } = await supabase.from('surveys').select('*').eq('id', id).single();
+export async function getSurveyById(supabase: SupabaseClient, id: string): Promise<Survey | null> {
+    const { data, error }: PostgrestSingleResponse<Survey> = await supabase.from('surveys').select('*').eq('id', id).single();
     
     if (error) {
         console.error("Error fetching survey:", error);
-        return undefined;
+        return null;
     }
+
+    if (!data) return null;
 
     return {
         ...data,
