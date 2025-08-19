@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Users, Volume2, MessageSquare, Video, KanbanSquare, Shapes, ClipboardList, BarChart2, Shield, Bot, Camera } from 'lucide-react';
+import { Users, Volume2, MessageSquare, Video, KanbanSquare, Shapes, ClipboardList, BarChart2, Shield, Bot, Camera, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const features = [
@@ -61,6 +61,11 @@ const features = [
     icon: <Camera className="text-accent h-8 w-8" />,
     title: 'Photo Mode',
     description: 'Capture in-world moments with an AI-powered tool to generate artistic, shareable images of your interactions.'
+  },
+  {
+    icon: <Globe className="text-accent h-8 w-8" />,
+    title: 'Platform Support',
+    description: 'Available on the web. Conversations and collaboration sync in real-time across all your devices seamlessly.'
   },
 ];
 
