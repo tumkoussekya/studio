@@ -1,6 +1,6 @@
 
 'use client';
-import Ably, { RealtimeChannel, RealtimePromise } from 'ably';
+import Ably, { type RealtimeChannel, type RealtimePromise } from 'ably';
 import type { DrawingData } from '@/models/Whiteboard';
 
 export interface MessageData {
@@ -68,7 +68,7 @@ class RealtimeService {
 
 
  constructor() {
- this.ably = new RealtimePromise({
+ this.ably = new Ably.RealtimePromise({
             authUrl: '/api/ably-token',
             authMethod: 'POST',
         });
