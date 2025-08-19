@@ -12,15 +12,18 @@ export interface Survey {
     id: string;
     title: string;
     description: string;
-    responses: number; // This will be hardcoded for now, but could be a DB call
+    responses: number;
     status: 'In Progress' | 'Completed';
     questions: Question[];
     results: { name: string; value: number }[];
+    user_id?: string;
+    created_at?: string;
 }
 
 // In a real application, questions and results would be in their own tables and joined.
-// For this project, we'll keep them simplified and hardcoded here to match the survey ID.
-const questionsAndResults: Record<string, Pick<Survey, 'questions' | 'results' | 'responses'>> = {
+// For this project, we'll keep them simplified and hardcoded here to match the survey ID for initial data.
+// Newly created surveys will store their questions/results in the `surveys` table itself as JSONB.
+export const questionsAndResults: Record<string, Pick<Survey, 'questions' | 'results' | 'responses'>> = {
   'q3-employee-satisfaction': {
     responses: 124,
     questions: [
@@ -66,17 +69,24 @@ const questionsAndResults: Record<string, Pick<Survey, 'questions' | 'results' |
 
 
 export async function getAllSurveys(supabase: SupabaseClient): Promise<Survey[]> {
-    const { data, error } = await supabase.from('surveys').select('*');
+    const { data, error } = await supabase.from('surveys').select('*').order('created_at', { ascending: false });
 
     if (error) {
         console.error("Error fetching surveys:", error);
         return [];
     }
-
-    return data.map(survey => ({
-        ...survey,
-        ...questionsAndResults[survey.id],
-    }));
+    
+    // For the initial hardcoded data, we merge the questions/results.
+    // For new data from the DB, `questions` and `results` columns are used directly.
+    return data.map(survey => {
+        const hardcodedData = questionsAndResults[survey.id];
+        return {
+            ...survey,
+            questions: survey.questions || hardcodedData?.questions || [],
+            results: survey.results || hardcodedData?.results || [],
+            responses: survey.responses ?? hardcodedData?.responses ?? 0,
+        };
+    });
 }
 
 export async function getSurveyById(supabase: SupabaseClient, id: string): Promise<Survey | null> {
@@ -88,9 +98,12 @@ export async function getSurveyById(supabase: SupabaseClient, id: string): Promi
     }
 
     if (!data) return null;
-
+    
+    const hardcodedData = questionsAndResults[data.id];
     return {
         ...data,
-        ...questionsAndResults[data.id],
+        questions: data.questions || hardcodedData?.questions || [],
+        results: data.results || hardcodedData?.results || [],
+        responses: data.responses ?? hardcodedData?.responses ?? 0,
     };
 }

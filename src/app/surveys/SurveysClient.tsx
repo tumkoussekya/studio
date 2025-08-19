@@ -104,7 +104,7 @@ export default function SurveysClient({ surveys: initialSurveys }: SurveysClient
                 <DialogHeader>
                     <DialogTitle>Create a New Survey</DialogTitle>
                     <DialogDescription>
-                        Fill out the details below to start creating your survey. You can add questions in the next step.
+                        Your new survey will be created with default questions and will be immediately available to your team.
                     </DialogDescription>
                 </DialogHeader>
                 <form id="new-survey-form" onSubmit={handleCreateSurvey}>
@@ -121,7 +121,7 @@ export default function SurveysClient({ surveys: initialSurveys }: SurveysClient
                     <DialogFooter>
                         <Button type="submit" form="new-survey-form" disabled={isCreating}>
                             {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save and Add Questions
+                            Create Survey
                         </Button>
                     </DialogFooter>
                 </form>

@@ -12,6 +12,20 @@ const createSurveySchema = z.object({
   description: z.string().optional(),
 });
 
+const defaultQuestions = [
+    { id: 'q1', text: "Overall, how satisfied are you with this?", type: 'rating' },
+    { id: 'q2', text: "What could be improved?", type: 'text' },
+];
+
+const defaultResults = [
+    { name: '1 Star', value: 0 },
+    { name: '2 Stars', value: 0 },
+    { name: '3 Stars', value: 0 },
+    { name: '4 Stars', value: 0 },
+    { name: '5 Stars', value: 0 },
+];
+
+
 export async function POST(req: NextRequest) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
@@ -29,14 +43,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid data', errors: parseResult.error.flatten() }, { status: 400 });
     }
 
-    // For this demo, we'll assign a hardcoded ID and status.
-    // In a real app, the ID would be auto-generated.
     const newSurveyData = {
-      id: `new-survey-${Date.now()}`,
       title: parseResult.data.title,
       description: parseResult.data.description || '',
       status: 'In Progress' as const,
       user_id: user.id,
+      // Storing questions/results as JSONB for this implementation
+      questions: defaultQuestions, 
+      results: defaultResults,
+      responses: 0,
     };
 
     const { data, error } = await supabase
@@ -50,16 +65,7 @@ export async function POST(req: NextRequest) {
       throw error;
     }
     
-    // In a real app, you would have logic to assign default questions or an editor.
-    // For this demo, we return an empty shell.
-    const fullSurveyResponse = {
-        ...data,
-        questions: [],
-        results: [],
-        responses: 0,
-    };
-
-    return NextResponse.json(fullSurveyResponse, { status: 201 });
+    return NextResponse.json(data, { status: 201 });
 
   } catch (error: any) {
     return new NextResponse(JSON.stringify({ message: error.message }), {
