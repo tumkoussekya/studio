@@ -76,8 +76,8 @@ export default function AboutUsPage() {
                     <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="female developer" alt="Team member" />
                     <AvatarFallback>PS</AvatarFallback>
                 </Avatar>
-                <h4 className="font-bold text-lg">Priyanshi Shekhda</h4>
-                <p className="text-muted-foreground">Backend Developer</p>
+                <h4 className="font-bold text-lg">Priyanshi Shekhada</h4>
+                <p className="text-muted-foreground">CEO (Chief Executive Officer)</p>
             </div>
              <div className="text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary">
@@ -85,7 +85,7 @@ export default function AboutUsPage() {
                     <AvatarFallback>DA</AvatarFallback>
                 </Avatar>
                 <h4 className="font-bold text-lg">Dhruvi Ardeshana</h4>
-                <p className="text-muted-foreground">Backend Developer</p>
+                <p className="text-muted-foreground">COO (Chief Operating Officer)</p>
             </div>
              <div className="text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary">
@@ -93,7 +93,7 @@ export default function AboutUsPage() {
                     <AvatarFallback>MM</AvatarFallback>
                 </Avatar>
                 <h4 className="font-bold text-lg">Meet Mendapara</h4>
-                <p className="text-muted-foreground">FrontEnd Developer</p>
+                <p className="text-muted-foreground">CTO (Chief Technical Officer)</p>
             </div>
         </div>
 
