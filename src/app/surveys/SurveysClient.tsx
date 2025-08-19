@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Plus, BarChart2, Share2, MessageSquare, CheckSquare, FilePlus2, ArrowRight } from 'lucide-react';
+import { Plus, BarChart2, Share2, MessageSquare, CheckSquare, FilePlus2, ArrowRight, Loader2 } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -50,19 +50,43 @@ export default function SurveysClient({ surveys: initialSurveys }: SurveysClient
     const [openNewSurvey, setOpenNewSurvey] = useState(false);
     const [surveys, setSurveys] = useState<Survey[]>(initialSurveys);
     const [isLoading, setIsLoading] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
 
 
-    const handleCreateSurvey = (e: React.FormEvent) => {
+    const handleCreateSurvey = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsCreating(true);
         const form = e.target as HTMLFormElement;
         const title = (form.elements.namedItem('title') as HTMLInputElement).value;
+        const description = (form.elements.namedItem('description') as HTMLTextAreaElement).value;
 
-        // In a real app, you would handle form submission to your backend
-        toast({
-            title: "Survey Created!",
-            description: `The survey "${title}" has been created as a draft.`,
-        });
-        setOpenNewSurvey(false);
+        try {
+            const response = await fetch('/api/surveys', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, description }),
+            });
+            const newSurvey = await response.json();
+
+            if (!response.ok) {
+                throw new Error(newSurvey.message || 'Failed to create survey.');
+            }
+
+            setSurveys(prev => [newSurvey, ...prev]);
+            toast({
+                title: "Survey Created!",
+                description: `The survey "${title}" is now live.`,
+            });
+            setOpenNewSurvey(false);
+        } catch (error: any) {
+             toast({
+                variant: 'destructive',
+                title: "Creation Failed",
+                description: error.message,
+            });
+        } finally {
+            setIsCreating(false);
+        }
     }
 
   return (
@@ -87,15 +111,18 @@ export default function SurveysClient({ surveys: initialSurveys }: SurveysClient
                     <div className="grid gap-4 py-4">
                         <div className="grid w-full items-center gap-1.5">
                             <Label htmlFor="title">Survey Title</Label>
-                            <Input id="title" name="title" placeholder="e.g., Quarterly Feedback" required />
+                            <Input id="title" name="title" placeholder="e.g., Quarterly Feedback" required disabled={isCreating} />
                         </div>
                          <div className="grid w-full items-center gap-1.5">
                             <Label htmlFor="description">Description (Optional)</Label>
-                            <Textarea id="description" name="description" placeholder="Provide a brief description for your survey." />
+                            <Textarea id="description" name="description" placeholder="Provide a brief description for your survey." disabled={isCreating} />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="submit" form="new-survey-form">Save and Add Questions</Button>
+                        <Button type="submit" form="new-survey-form" disabled={isCreating}>
+                            {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save and Add Questions
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
