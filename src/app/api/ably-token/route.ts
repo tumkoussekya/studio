@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         capability: {
              // Use a wildcard to allow access to all channels.
              // This is necessary for dynamic channels like DMs and private zones.
-             "*": ["subscribe", "publish", "presence"],
+             "*": ["subscribe", "publish", "presence", "history"],
         }
     });
 
