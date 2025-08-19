@@ -32,6 +32,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { EditUserRoleDialog } from '@/components/admin/EditUserRoleDialog';
 import { DeleteUserConfirmationDialog } from '@/components/admin/DeleteUserConfirmationDialog';
+import { InviteUserDialog } from '@/components/admin/InviteUserDialog';
 import { Input } from '@/components/ui/input';
 
 export type UserData = Omit<User, 'passwordHash'>;
@@ -144,6 +145,7 @@ export default function AdminPage() {
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -223,7 +225,7 @@ export default function AdminPage() {
                   View and manage all users in the system.
                 </CardDescription>
               </div>
-              <Button onClick={() => handleAction('Invite User', '')}>
+              <Button onClick={() => setIsInviteModalOpen(true)}>
                 <UserPlus className="mr-2 h-4 w-4" />
                 Invite User
               </Button>
@@ -305,6 +307,7 @@ export default function AdminPage() {
           </Card>
         </main>
       </div>
+      <InviteUserDialog isOpen={isInviteModalOpen} setIsOpen={setIsInviteModalOpen} />
        {selectedUser && (
         <>
           <EditUserRoleDialog 
