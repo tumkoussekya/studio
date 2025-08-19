@@ -117,8 +117,7 @@ async function Dashboard() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem>
-                               <LogOut className="mr-2 h-4 w-4" />
-                               <span>Logout</span>
+                               <LogoutButton />
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
