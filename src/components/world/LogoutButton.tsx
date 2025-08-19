@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -38,9 +39,9 @@ export default function LogoutButton() {
   };
 
   return (
-    <Button onClick={handleLogout} variant="outline" size="sm">
+    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
       <LogOut className="mr-2 h-4 w-4" />
       Logout
-    </Button>
+    </DropdownMenuItem>
   );
 }
