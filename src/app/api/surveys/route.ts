@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
-import { questionsAndResults } from '@/lib/survey-data';
 
 const createSurveySchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -48,7 +47,7 @@ export async function POST(req: NextRequest) {
       description: parseResult.data.description || '',
       status: 'In Progress' as const,
       user_id: user.id,
-      // Storing questions/results as JSONB for this implementation
+      // Storing questions/results as JSONB
       questions: defaultQuestions, 
       results: defaultResults,
       responses: 0,

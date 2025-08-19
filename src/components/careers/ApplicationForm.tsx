@@ -22,6 +22,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { createClient } from '@/lib/supabase/client';
 
 interface ApplicationFormProps {
   jobTitle: string;
@@ -33,7 +34,7 @@ const applicationSchema = z.object({
   last_name: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
-  resume_url: z.string().optional(),
+  resume_url: z.string().url('A resume is required').optional().or(z.literal('')),
   cover_letter: z.string().optional(),
 });
 
@@ -43,6 +44,7 @@ export default function ApplicationForm({ jobTitle, jobId }: ApplicationFormProp
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
@@ -55,19 +57,47 @@ export default function ApplicationForm({ jobTitle, jobId }: ApplicationFormProp
       cover_letter: '',
     },
   });
+  
+  const handleResumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+        const file = event.target.files[0];
+        setResumeFile(file);
+    }
+  }
 
   const onSubmit = async (values: ApplicationFormValues) => {
     setIsSubmitting(true);
-    try {
-        // In a real app, you would first upload the resume file to Supabase Storage,
-        // get the URL, and then send that URL with the form data.
-        // For now, we'll just log it and send the placeholder data.
-        console.log("Form values (including resume placeholder):", values);
+    let resumeUrl = '';
 
+    if (resumeFile) {
+        try {
+            const supabase = createClient();
+            const filePath = `resumes/${jobId}-${Date.now()}-${resumeFile.name}`;
+            const { error: uploadError } = await supabase.storage
+                .from('databucket')
+                .upload(filePath, resumeFile);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from('databucket').getPublicUrl(filePath);
+            resumeUrl = data.publicUrl;
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Resume Upload Failed', description: error.message });
+            setIsSubmitting(false);
+            return;
+        }
+    } else {
+        toast({ variant: 'destructive', title: 'Resume Required', description: 'Please upload your resume to apply.' });
+        setIsSubmitting(false);
+        return;
+    }
+
+
+    try {
         const response = await fetch('/api/applications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...values, job_id: jobId }),
+            body: JSON.stringify({ ...values, job_id: jobId, resume_url: resumeUrl }),
         });
 
         const result = await response.json();
@@ -80,6 +110,7 @@ export default function ApplicationForm({ jobTitle, jobId }: ApplicationFormProp
             description: `Your application for the ${jobTitle} position has been received.`,
         });
         form.reset();
+        setResumeFile(null);
         setIsDialogOpen(false);
     } catch (error: any) {
         toast({
@@ -165,11 +196,21 @@ export default function ApplicationForm({ jobTitle, jobId }: ApplicationFormProp
                 <div className="mt-2 flex items-center justify-center w-full">
                     <label htmlFor="resume-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-secondary hover:bg-muted">
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                            <p className="text-xs text-muted-foreground">PDF, DOCX, or TXT (MAX. 5MB)</p>
+                            {resumeFile ? (
+                                <>
+                                    <FileText className="w-8 h-8 mb-4 text-primary" />
+                                    <p className="mb-2 text-sm text-foreground"><span className="font-semibold">{resumeFile.name}</span></p>
+                                    <p className="text-xs text-muted-foreground">Click to select a different file</p>
+                                </>
+                            ) : (
+                                <>
+                                    <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                                    <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                                    <p className="text-xs text-muted-foreground">PDF, DOCX, or TXT (MAX. 5MB)</p>
+                                </>
+                            )}
                         </div>
-                        <input id="resume-upload" type="file" className="hidden" />
+                        <input id="resume-upload" type="file" className="hidden" onChange={handleResumeChange} />
                     </label>
                 </div>
               </div>
