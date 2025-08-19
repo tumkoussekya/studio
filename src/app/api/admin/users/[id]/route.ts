@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { type UserRole } from '@/models/User';
 import { NextRequest, NextResponse } from 'next/server';
