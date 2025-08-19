@@ -81,11 +81,11 @@ export default function AboutUsPage() {
             </div>
              <div className="text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary">
-                    <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="male designer" alt="Team member" />
-                    <AvatarFallback>BO</AvatarFallback>
+                    <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="female developer" alt="Team member" />
+                    <AvatarFallback>DA</AvatarFallback>
                 </Avatar>
-                <h4 className="font-bold text-lg">Bob</h4>
-                <p className="text-muted-foreground">UX/UI Designer</p>
+                <h4 className="font-bold text-lg">Dhruvi Ardeshana</h4>
+                <p className="text-muted-foreground">Backend Developer</p>
             </div>
              <div className="text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary">
