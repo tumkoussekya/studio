@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -43,8 +44,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: authError.message }, { status: authError.status || 400 });
   }
 
+  // The authData.user object is returned regardless of whether email confirmation is enabled.
+  // The authData.session object is only returned when email confirmation is disabled.
   if (!authData.user) {
-    return NextResponse.json({ message: 'Signup successful, but no user data returned.' }, { status: 500 });
+    return NextResponse.json({ message: 'Signup process initiated, but no user data returned. Please check logs.' }, { status: 500 });
   }
 
   // A trigger in Supabase now handles inserting the user into the public.users table.
